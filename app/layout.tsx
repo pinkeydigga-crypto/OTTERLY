@@ -13,11 +13,17 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   title: "Otterly",
   description: "Learn to draw easily",
+  verification: {
+    google: "WhjTfub1GzTK-czyW1hlcB_kdpaEmzUUkJ2DzooEHXI",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
+      <head>
+        <meta name="google-site-verification" content="WhjTfub1GzTK-czyW1hlcB_kdpaEmzUUkJ2DzooEHXI" />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <OfflinePopup />
