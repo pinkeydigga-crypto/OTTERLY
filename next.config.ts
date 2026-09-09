@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    unoptimized: true, // Vercel build time image processing error bypass karega
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -32,7 +32,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://otsiwrtnkzhrztlpcdjx.supabase.co; connect-src 'self' https://otsiwrtnkzhrztlpcdjx.supabase.co; font-src 'self' data:;",
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://otsiwrtnkzhrztlpcdjx.supabase.co; connect-src 'self' https://otsiwrtnkzhrztlpcdjx.supabase.co; font-src 'self' data:; object-src 'none'; frame-ancestors 'none';",
           },
         ],
       },
