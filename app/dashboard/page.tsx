@@ -53,7 +53,6 @@ interface LeaderboardUser {
   avatar_url: string;
 }
 
-// Helper: Get local YYYY-MM-DD
 const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -96,13 +95,10 @@ export default function DashboardPage() {
         const lastLoginRaw = profileData.last_login;
         const lastLoginStr = lastLoginRaw ? lastLoginRaw.split("T")[0] : null;
 
-        // Agar aaj DB me activity updated nahi hai (naya din hai)
         if (lastLoginStr !== todayStr) {
-          // Soft-Streak Logic: Missed days reset nahi honge, direct +1 hoga
           const currentStreak = profileData.streak || 0;
           const newStreak = currentStreak + 1;
 
-          // Supabase DB update
           const { data: updatedProfile } = await supabase
             .from("profiles")
             .update({
@@ -175,26 +171,42 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // Fetch Leaderboard
-      const { data: topUsers } = await supabase
+      // Exact Leaderboard Logic to match Leaderboard Page
+      const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, name, xp, avatar_url")
-        .order("xp", { ascending: false })
-        .limit(3);
+        .select("*");
 
-      if (topUsers) {
-        setLeaderboard(topUsers);
-      }
+      if (profiles) {
+        let mapped = profiles.map((p: any) => {
+          const totalXP = Number(p.xp_points ?? p.xp ?? 0);
+          const userStreak = Number(p.streak ?? p.current_streak ?? p.streak_count ?? p.scans_count ?? p.scans ?? 0);
+          return {
+            id: p.id,
+            name: p.full_name || p.name || p.username || "User",
+            xp: totalXP,
+            streak: userStreak,
+            avatar_url: p.avatar_url || p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+          };
+        });
 
-      // Fetch Rank
-      const { data: allUsers } = await supabase
-        .from("profiles")
-        .select("id")
-        .order("xp", { ascending: false });
+        // Exactly match Leaderboard sorting: XP highest first, then Streak highest
+        mapped.sort((a, b) => {
+          if (b.xp !== a.xp) {
+            return b.xp - a.xp;
+          }
+          return b.streak - a.streak;
+        });
 
-      if (allUsers) {
-        const rank = allUsers.findIndex((u) => u.id === user.id) + 1;
-        setUserRank(rank > 0 ? `#${rank}` : "-");
+        // Set Top 3
+        setLeaderboard(mapped.slice(0, 3));
+
+        // Get exact current user rank
+        const rankIndex = mapped.findIndex((u) => u.id === user.id);
+        if (rankIndex !== -1) {
+          setUserRank(`#${rankIndex + 1}`);
+        } else {
+          setUserRank("-");
+        }
       }
 
     } catch (error) {
@@ -208,7 +220,6 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Realtime Subscriptions
   useEffect(() => {
     if (!profile?.id) return;
 
