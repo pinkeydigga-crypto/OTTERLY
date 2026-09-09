@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function HomePage() {
   const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png';
@@ -9,9 +10,12 @@ export default function HomePage() {
       
       {/* Header */}
       <header className="max-w-7xl w-full mx-auto px-6 pt-8 pb-4 flex justify-center items-center z-10">
-        <img
+        <Image
           src={logoUrl}
           alt="Otterly Logo"
+          width={192}
+          height={80}
+          priority
           className="h-16 sm:h-20 w-auto object-contain"
         />
       </header>
@@ -44,9 +48,12 @@ export default function HomePage() {
 
           {/* Mascot Floating Image */}
           <div className="absolute top-6 right-3 z-20 w-24 h-24 pointer-events-none">
-            <img
+            <Image
               src={mascotUrl}
               alt="Otto Mascot"
+              width={96}
+              height={96}
+              priority
               className="w-full h-full object-contain"
             />
           </div>
@@ -72,10 +79,10 @@ export default function HomePage() {
             </Link>
 
             <div className="text-center pt-2 space-y-1">
-              <p className="text-xs text-[#14B8A6] font-bold">
+              <p className="text-xs text-[#0D9488] font-bold">
                 Free to start · Ready in 10 seconds
               </p>
-              <p className="text-[11px] text-[#0F172A]/40">
+              <p className="text-[11px] text-[#0F172A]/70">
                 By continuing you agree to our Terms & Privacy Policy.
               </p>
             </div>
@@ -123,7 +130,7 @@ export default function HomePage() {
         {/* Dark Blue Footer with Pill Button Links */}
         <footer className="bg-[#2563EB] w-full py-5 px-8">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-white">
-            <p className="opacity-90">© 2026 Otterly. All rights reserved.</p>
+            <p className="text-white">© 2026 Otterly. All rights reserved.</p>
             
             {/* Styled Interactive Pill Buttons */}
             <div className="flex items-center gap-3">
