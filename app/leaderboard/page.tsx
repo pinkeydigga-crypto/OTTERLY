@@ -31,7 +31,7 @@ export default function LeaderboardPage() {
 
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/leaderbaord.png";
+  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/leaderbaord%20(1).png";
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png";
 
   const fetchLeaderboardAndUser = useCallback(async (isBackgroundRefresh = false) => {

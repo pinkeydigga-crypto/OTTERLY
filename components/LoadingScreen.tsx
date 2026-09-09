@@ -1,7 +1,7 @@
 "use client";
 
 export default function LoadingScreen() {
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20loading%20screen.png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20loading%20screen%20(1).png";
 
   return (
     <div className="min-h-screen w-full bg-[#F6FAFF] flex flex-col justify-center items-center gap-3 z-50">
