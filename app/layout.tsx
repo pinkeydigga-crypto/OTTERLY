@@ -13,12 +13,27 @@ const nunito = Nunito({
 const FAVICON_URL =
   "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_8-9-2026_214834_chatgpt_imgupscaler.ai_Beta_2K%20(1).png";
 
+const OG_IMAGE_URL =
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20LANDING%20PAGE.png";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://otterly-prototype.vercel.app"),
-  title: "Otterly - Learn Drawing The Fun Way | AI Drawing Coach",
+  title: "Otterly - Learn to Draw the Fun Way | Harjas Digga",
   description:
-    "Get instant AI feedback, complete challenges, earn XP, and improve your drawing skills every day with Otterly.",
-  keywords: ["Otterly", "Learn drawing", "AI drawing coach", "Otto", "Drawing challenges"],
+    "Learn to draw with Otterly by Harjas Digga. Get instant AI feedback, complete drawing challenges, earn XP, and improve your art daily with Otto.",
+  keywords: [
+    "Otterly",
+    "learn to draw",
+    "drawing",
+    "Harjas Digga",
+    "AI drawing coach",
+    "Otto",
+    "drawing app",
+    "drawing challenges",
+    "learn drawing online"
+  ],
+  authors: [{ name: "Harjas Digga" }],
+  creator: "Harjas Digga",
   alternates: {
     canonical: "/",
   },
@@ -41,16 +56,26 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Otterly - Learn Drawing The Fun Way",
-    description: "Get instant AI feedback and improve your drawing skills daily with Otterly.",
+    title: "Otterly - Learn to Draw the Fun Way | Harjas Digga",
+    description: "Learn to draw and improve your art skills daily with AI feedback on Otterly.",
     url: "https://otterly-prototype.vercel.app",
     siteName: "Otterly",
+    locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: OG_IMAGE_URL,
+        width: 1200,
+        height: 630,
+        alt: "Otterly - Learn to Draw with Otto",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Otterly - Learn Drawing The Fun Way",
-    description: "Get instant AI feedback and improve your drawing skills daily with Otterly.",
+    title: "Otterly - Learn to Draw the Fun Way | Harjas Digga",
+    description: "Learn to draw and improve your art skills daily with AI feedback on Otterly.",
+    images: [OG_IMAGE_URL],
   },
 };
 
