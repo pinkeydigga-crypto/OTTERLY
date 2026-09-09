@@ -38,9 +38,22 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   icons: {
-    icon: FAVICON_URL,
+    icon: [
+      { url: FAVICON_URL, sizes: "32x32", type: "image/png" },
+      { url: FAVICON_URL, sizes: "96x96", type: "image/png" },
+      { url: FAVICON_URL, sizes: "192x192", type: "image/png" },
+      { url: FAVICON_URL, sizes: "512x512", type: "image/png" },
+    ],
     shortcut: FAVICON_URL,
-    apple: FAVICON_URL,
+    apple: [
+      { url: FAVICON_URL, sizes: "180x180", type: "image/png" },
+    ],
+    other: [
+      {
+        rel: "apple-touch-icon-precomposed",
+        url: FAVICON_URL,
+      },
+    ],
   },
   verification: {
     google: "WhjTfub1GzTK-czyW1hlcB_kdpaEmzUUkJ2DzooEHXI",
