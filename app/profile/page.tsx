@@ -43,7 +43,7 @@ interface Profile {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo.png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png";
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

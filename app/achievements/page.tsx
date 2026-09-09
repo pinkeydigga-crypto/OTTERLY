@@ -88,7 +88,7 @@ export default function AchievementsPage() {
   
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo.png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png";
   const mascotImageUrl = "https://cdn.corenexis.com/f/7D52w5tSzT5.png";
 
   // Load cached XP after mount on client-side
