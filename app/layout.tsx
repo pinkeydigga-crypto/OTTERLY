@@ -11,7 +11,7 @@ const nunito = Nunito({
 });
 
 const FAVICON_URL =
-  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_9-9-2026_20260_chatgpt.com%20(1).png";
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_9-9-2026_20260_chatgpt.com-styled%20(1).png";
 
 const OG_IMAGE_URL =
   "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20LANDING%20PAGE.png";
