@@ -1,108 +1,34 @@
-import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
-import "./globals.css";
-import OfflinePopup from "@/components/offlinepopup";
-
-const nunito = Nunito({
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "800", "900"],
-  variable: "--font-nunito",
-  display: "swap",
-});
-
-const FAVICON_URL =
-  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
-
-const OG_IMAGE_URL =
-  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20LANDING%20PAGE.png";
+import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://otterly-prototype.vercel.app"),
-  title: "Otterly - Learn to Draw the Fun Way | Harjas Digga",
-  description:
-    "Learn to draw with Otterly by Harjas Digga. Get instant AI feedback, complete drawing challenges, earn XP, and improve your art daily with Otto.",
+  metadataBase: new URL('https://otterly-prototype.vercel.app'),
+  title: {
+    default: 'Otterly - Learn to Draw',
+    template: '%s | Otterly',
+  },
+  description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterly.',
   keywords: [
-    "Otterly",
-    "learn to draw",
-    "drawing",
-    "Harjas Digga",
-    "AI drawing coach",
-    "Otto",
-    "drawing app",
-    "drawing challenges",
-    "learn drawing online"
+    'Otterly',
+    'Otterly AI',
+    'Learn to Draw',
+    'AI Drawing Coach',
+    'Gamified Drawing Lessons',
   ],
-  authors: [{ name: "Harjas Digga" }],
-  creator: "Harjas Digga",
-  alternates: {
-    canonical: "/",
+  openGraph: {
+    title: 'Otterly - Learn to Draw',
+    description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterly.',
+    url: 'https://otterly-prototype.vercel.app',
+    siteName: 'Otterly',
+    locale: 'en_US',
+    type: 'website',
   },
-  icons: {
-    icon: [
-      { url: FAVICON_URL, sizes: "32x32", type: "image/png" },
-      { url: FAVICON_URL, sizes: "96x96", type: "image/png" },
-      { url: FAVICON_URL, sizes: "192x192", type: "image/png" },
-      { url: FAVICON_URL, sizes: "512x512", type: "image/png" },
-    ],
-    shortcut: FAVICON_URL,
-    apple: [
-      { url: FAVICON_URL, sizes: "180x180", type: "image/png" },
-    ],
-    other: [
-      {
-        rel: "apple-touch-icon-precomposed",
-        url: FAVICON_URL,
-      },
-    ],
-  },
-  verification: {
-    google: "WhjTfub1GzTK-czyW1hlcB_kdpaEmzUUkJ2DzooEHXI",
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Otterly - Learn to Draw',
+    description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterly.',
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
-  openGraph: {
-    title: "Otterly - Learn to Draw the Fun Way | Harjas Digga",
-    description: "Learn to draw and improve your art skills daily with AI feedback on Otterly.",
-    url: "https://otterly-prototype.vercel.app",
-    siteName: "Otterly",
-    locale: "en_US",
-    type: "website",
-    images: [
-      {
-        url: OG_IMAGE_URL,
-        width: 1200,
-        height: 630,
-        alt: "Otterly - Learn to Draw with Otto",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Otterly - Learn to Draw the Fun Way | Harjas Digga",
-    description: "Learn to draw and improve your art skills daily with AI feedback on Otterly.",
-    images: [OG_IMAGE_URL],
   },
 };
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en" className={`${nunito.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">
-        <OfflinePopup />
-        {children}
-      </body>
-    </html>
-  );
-}
