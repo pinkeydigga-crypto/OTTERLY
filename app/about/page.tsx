@@ -9,17 +9,18 @@ const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/p
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'About Otterly - Learn Drawing with Otto | Founder Harjas Digga',
-  description: 'Discover Otterly, the gamified AI drawing platform. Founded by Harjas Digga, Otterly offers interactive lessons, instant AI feedback, and daily drawing challenges with Otto.',
+  title: 'Otterly AI - Learn Drawing with Otto | Founder Harjas Digga',
+  description: 'Otterly AI is the premier gamified AI drawing platform created by Harjas Digga. Learn drawing with interactive lessons, instant AI sketch feedback, and Otto.',
   keywords: [
-    'About Otterly',
+    'Otterly',
+    'Otterly AI',
+    'Otterly Drawing App',
     'Harjas Digga',
     'Harjas Digga Otterly',
-    'Learn Drawing',
-    'Otto Mascot',
     'AI Drawing Coach',
     'Gamified Drawing Lessons',
-    'Otterly App'
+    'Otto Mascot',
+    'Learn Drawing AI'
   ],
   authors: [{ name: 'Harjas Digga' }],
   creator: 'Harjas Digga',
@@ -27,10 +28,10 @@ export const metadata: Metadata = {
     canonical: '/about',
   },
   openGraph: {
-    title: 'About Otterly - Learn Drawing with Otto | Founder Harjas Digga',
-    description: 'Learn to draw the fun way with Otterly and Otto. Created by Harjas Digga to make art education gamified and accessible.',
+    title: 'Otterly AI - Gamified Drawing Platform | Harjas Digga',
+    description: 'Learn to draw with Otterly AI and Otto. Founded by Harjas Digga to make art education gamified, affordable, and accessible.',
     url: `${SITE_URL}/about`,
-    siteName: 'Otterly',
+    siteName: 'Otterly AI',
     locale: 'en_US',
     type: 'website',
     images: [
@@ -38,14 +39,14 @@ export const metadata: Metadata = {
         url: FOUNDER_IMAGE_URL,
         width: 1200,
         height: 630,
-        alt: 'Harjas Digga - Founder of Otterly',
+        alt: 'Harjas Digga - Founder of Otterly AI',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'About Otterly - Learn Drawing with Otto | Founder Harjas Digga',
-    description: 'Gamified AI drawing platform created by Harjas Digga. Practice daily drawing challenges with Otto.',
+    title: 'Otterly AI - Learn Drawing with Otto | Founder Harjas Digga',
+    description: 'Gamified AI drawing platform created by Harjas Digga. Master drawing with instant AI feedback.',
     images: [FOUNDER_IMAGE_URL],
   },
   robots: {
@@ -59,9 +60,25 @@ export default function AboutPage() {
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "SoftwareApplication",
+        "@id": `${SITE_URL}/#application`,
+        "name": "Otterly AI",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "299",
+          "priceCurrency": "INR"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Harjas Digga"
+        }
+      },
+      {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
-        "name": "Otterly",
+        "name": "Otterly AI",
         "url": SITE_URL,
         "logo": LOGO_URL,
         "sameAs": [
@@ -72,15 +89,15 @@ export default function AboutPage() {
           "name": "Harjas Digga",
           "jobTitle": "Founder & Creator",
           "image": FOUNDER_IMAGE_URL,
-          "description": "Founder of Otterly, passionate about AI and gamified creative education."
+          "description": "Founder of Otterly AI, passionate about AI and gamified creative education."
         }
       },
       {
         "@type": "WebPage",
         "@id": `${SITE_URL}/about/#webpage`,
         "url": `${SITE_URL}/about`,
-        "name": "About Otterly & Founder Harjas Digga",
-        "description": "Information about Otterly drawing platform, Otto mascot, and founder Harjas Digga.",
+        "name": "About Otterly AI & Founder Harjas Digga",
+        "description": "Information about Otterly AI drawing platform, Otto mascot, and founder Harjas Digga.",
         "isPartOf": {
           "@id": `${SITE_URL}/#website`
         },
@@ -119,8 +136,8 @@ export default function AboutPage() {
           <div className="flex justify-center mb-6">
             <Image 
               src={LOGO_URL} 
-              alt="Otterly Logo" 
-              title="Otterly Logo"
+              alt="Otterly AI Logo" 
+              title="Otterly AI Logo"
               width={200}
               height={80}
               priority
@@ -128,11 +145,13 @@ export default function AboutPage() {
             />
           </div>
           
+          {/* OPTIMIZED SEO H1 TAG */}
           <h1 className="text-4xl md:text-5xl font-extrabold text-[#0F172A] tracking-tight mb-4">
-            Learn drawing <span className="text-[#2563EB]">the fun way.</span>
+            Otterly AI — Learn Drawing <span className="text-[#2563EB]">the Fun Way</span>
           </h1>
+          
           <p className="text-lg md:text-xl text-[#64748B] max-w-2xl mx-auto font-medium">
-            Get instant AI feedback, complete drawing challenges, earn XP, and improve your artwork every day with Otterly.
+            Get instant AI feedback, complete drawing challenges, earn XP, and improve your artwork daily with Otterly AI.
           </p>
         </section>
 
@@ -140,13 +159,13 @@ export default function AboutPage() {
         <section className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-[#E2E8F0] my-8 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
           <div className="flex-1">
             <h2 className="text-2xl md:text-3xl font-extrabold text-[#0F172A] mb-4">
-              Meet Otto & Our Mission
+              Meet Otto & The Otterly AI Mission
             </h2>
             <p className="text-[#475569] leading-relaxed mb-4 font-normal">
-              Learning to draw shouldn't feel like a boring lecture. At <strong>Otterly</strong>, we believe that practicing art should feel as engaging as playing your favorite game.
+              Learning to draw shouldn't feel like a boring lecture. At <strong>Otterly AI</strong>, we believe that practicing art should feel as engaging as playing your favorite game.
             </p>
             <p className="text-[#475569] leading-relaxed font-normal">
-              Guided by our mascot <strong>Otto</strong>, Otterly turns fundamental art skills into bite-sized levels. Earn XP, maintain daily streaks, unlock certificates, and scan your sketches for instant AI feedback.
+              Guided by our mascot <strong>Otto</strong>, Otterly AI turns fundamental art skills into bite-sized levels. Earn XP, maintain daily streaks, unlock certificates, and scan your sketches for instant AI feedback.
             </p>
           </div>
 
@@ -169,7 +188,7 @@ export default function AboutPage() {
         {/* FEATURES SECTION */}
         <section className="my-12">
           <h2 className="text-2xl font-extrabold text-center text-[#0F172A] mb-8">
-            Why Start Your Art Journey With Otterly?
+            Why Start Your Art Journey With Otterly AI?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
@@ -195,8 +214,8 @@ export default function AboutPage() {
             <div className="w-full md:w-80 h-64 md:h-80 rounded-2xl overflow-hidden border border-[#CBD5E1] flex-shrink-0 relative">
               <Image 
                 src={FOUNDER_IMAGE_URL} 
-                alt="Harjas Digga - Founder of Otterly" 
-                title="Harjas Digga - Founder of Otterly"
+                alt="Harjas Digga - Founder of Otterly AI" 
+                title="Harjas Digga - Founder of Otterly AI"
                 fill
                 sizes="(max-width: 768px) 100vw, 320px"
                 className="object-cover"
@@ -209,11 +228,11 @@ export default function AboutPage() {
               </span>
               <h2 className="text-3xl font-extrabold text-[#0F172A]">Harjas Digga</h2>
               <h3 className="text-md font-semibold text-[#2563EB] mt-1 mb-4">
-                Founder of Otterly
+                Founder of Otterly AI
               </h3>
 
               <p className="text-[#475569] leading-relaxed text-sm md:text-base">
-                <strong>Harjas Digga</strong> is the creator and founder behind <strong>Otterly</strong>. Driven by a passion for technology, design, and gamification, Harjas built Otterly to make learning how to draw intuitive, engaging, and accessible to everyone around the world.
+                <strong>Harjas Digga</strong> is the creator and founder behind <strong>Otterly AI</strong>. Driven by a passion for technology, design, and gamification, Harjas built Otterly AI to make learning how to draw intuitive, engaging, and accessible to everyone around the world.
               </p>
             </div>
 
@@ -223,7 +242,7 @@ export default function AboutPage() {
         {/* CONTACT US SECTION */}
         <section className="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-[#E2E8F0] text-center">
           <h2 className="text-2xl font-bold text-[#0F172A] mb-2">Have Questions or Feedback?</h2>
-          <p className="text-[#64748B] mb-6">Reach out to Harjas Digga & the Otterly team anytime.</p>
+          <p className="text-[#64748B] mb-6">Reach out to Harjas Digga & the Otterly AI team anytime.</p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm font-medium">
             <a 
