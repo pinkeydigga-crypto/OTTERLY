@@ -4,12 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
-// 100% reliable SVG avatars without CORS blocking issues
+// 100% Reliable SVG & PNG Avatar Links
 const AVATARS = [
-  { id: 1, name: 'Blue Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot&backgroundColor=0284c7' },
-  { id: 2, name: 'Green Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=GreenBot&backgroundColor=16a34a' },
-  { id: 3, name: 'Yellow Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=YellowBot&backgroundColor=eab308' },
-  { id: 4, name: 'Purple Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=PurpleBot&backgroundColor=9333ea' },
+  { id: 1, name: 'Blue Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=BlueBot&backgroundColor=0284c7' },
+  { id: 2, name: 'Green Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=GreenBot&backgroundColor=16a34a' },
+  { id: 3, name: 'Yellow Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=YellowBot&backgroundColor=eab308' },
+  { id: 4, name: 'Purple Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=PurpleBot&backgroundColor=9333ea' },
 ];
 
 export default function SignupPage() {
@@ -31,17 +31,18 @@ export default function SignupPage() {
   };
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    // Page reload rokna sabse important hai!
+    // Form reload aur URL params strictly stop karne ke liye
     e.preventDefault();
     e.stopPropagation();
 
+    if (loading) return;
     setLoading(true);
     setErrorMessage('');
 
     const cleanEmail = formData.email.trim().toLowerCase();
 
     try {
-      // 1. Supabase Auth Signup
+      // 1. Supabase Authentication
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: formData.password,
@@ -49,20 +50,22 @@ export default function SignupPage() {
 
       if (authError) throw authError;
 
+      // 2. Insert User Details in Supabase Database
       if (authData.user) {
-        // 2. Profiles Table Insert
-        await supabase.from('profiles').upsert([
-          {
-            id: authData.user.id,
-            name: formData.name,
-            username: formData.username,
-            email: cleanEmail,
-            avatar_url: selectedAvatar,
-          },
-        ]);
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          id: authData.user.id,
+          name: formData.name,
+          username: formData.username,
+          email: cleanEmail,
+          avatar_url: selectedAvatar,
+        });
+
+        if (profileError) {
+          console.error("Profile insert error:", profileError);
+        }
       }
 
-      // 3. Save User Locally as Fallback
+      // 3. Fallback Local Storage
       const userData = {
         id: authData.user?.id || Date.now().toString(),
         name: formData.name,
@@ -74,10 +77,10 @@ export default function SignupPage() {
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
 
-      // 4. Force hard redirect to Dashboard
-      window.location.assign('/dashboard');
+      // 4. Force Redirect to Dashboard
+      window.location.replace('/dashboard');
     } catch (err: any) {
-      console.error("Signup Catch Error:", err);
+      console.error("Signup Process Error:", err);
       setErrorMessage(err.message || 'Signup failed. Please try again.');
       setLoading(false);
     }
@@ -92,7 +95,7 @@ export default function SignupPage() {
           <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
         </div>
 
-        {/* Form Card */}
+        {/* Form Container */}
         <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-3 pt-14">
           <div className="text-center space-y-1">
             <h2 className="text-3xl font-black text-[#0F172A] tracking-tight">
@@ -107,8 +110,8 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* Form with Explicit Action Prevention */}
-          <form onSubmit={handleFormSubmit} autoComplete="off" className="space-y-3">
+          {/* Form Tag with explicit method & onSubmit */}
+          <form onSubmit={handleFormSubmit} method="POST" autoComplete="off" className="space-y-3">
             <div>
               <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-2 text-center">
                 Choose Your Avatar
@@ -125,13 +128,11 @@ export default function SignupPage() {
                         : 'opacity-70 hover:opacity-100 border border-slate-200 hover:scale-105'
                     }`}
                   >
-                    {/* SVG Image Rendering Fix */}
                     <img
                       src={avatar.url}
                       alt={avatar.name}
                       className="w-full h-full object-contain rounded-xl"
                       onError={(e) => {
-                        // Fallback UI Avatar if SVG network fails
                         (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${avatar.name}&background=2563EB&color=fff`;
                       }}
                     />
@@ -146,7 +147,6 @@ export default function SignupPage() {
                 type="text"
                 name="name"
                 required
-                autoComplete="off"
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Name"
@@ -160,7 +160,6 @@ export default function SignupPage() {
                 type="text"
                 name="username"
                 required
-                autoComplete="off"
                 value={formData.username}
                 onChange={handleChange}
                 placeholder="Username"
@@ -174,7 +173,6 @@ export default function SignupPage() {
                 type="email"
                 name="email"
                 required
-                autoComplete="off"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="youremail@gmail.com"
@@ -189,7 +187,6 @@ export default function SignupPage() {
                 name="password"
                 required
                 minLength={6}
-                autoComplete="new-password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
