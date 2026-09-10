@@ -6,7 +6,7 @@ export default function HomePage() {
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20LANDING%20PAGE.png';
 
   return (
-    <div className="min-h-screen bg-[#F8F6F0] flex flex-col justify-between relative overflow-hidden selection:bg-[#8B5CF6] selection:text-white">
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-between relative overflow-hidden selection:bg-[#FFD45A] selection:text-[#0F172A]">
       
       {/* Header */}
       <header className="max-w-7xl w-full mx-auto px-6 pt-8 pb-4 flex justify-center items-center z-10">
@@ -25,15 +25,14 @@ export default function HomePage() {
         
         {/* Left Column: Headline */}
         <div className="lg:col-span-7 space-y-6">
-          <h1 className="text-5xl sm:text-7xl font-black text-[#1E1B18] leading-[1.15] tracking-tight">
-            Learn to{' '}
-            <span className="inline-block bg-[#8B5CF6] text-white px-4 py-1 rounded-2xl border-4 border-[#1E1B18] shadow-[4px_4px_0px_#1E1B18] -rotate-1 transform">
-              Draw
-            </span>{' '}
-            <br />
-            Anything.
+          <h1 className="text-6xl sm:text-7xl font-black text-[#0F172A] leading-[1.15] tracking-tight">
+            Learn{' '}
+            <span className="inline-block bg-[#8B5CF6] text-white px-3 sm:px-4 py-0.5 sm:py-1 rounded-2xl border-4 border-[#0F172A] shadow-[4px_4px_0px_#0F172A] -rotate-1 transform">
+              drawing
+            </span> <br />
+            <span className="text-[#2563EB]">the fun way.</span>
           </h1>
-          <p className="text-lg sm:text-xl text-[#1E1B18]/80 font-medium max-w-lg leading-relaxed">
+          <p className="text-lg sm:text-xl text-[#0F172A]/75 font-medium max-w-lg leading-relaxed">
             Get AI feedback, complete challenges, earn XP, and improve your drawing skills every day.
           </p>
         </div>
@@ -43,8 +42,10 @@ export default function HomePage() {
           
           {/* Speech Bubble */}
           <div className="absolute top-1 right-24 z-30">
-            <div className="relative bubble-container px-4 py-1.5 rounded-full text-xs font-black text-[#1E1B18] bg-white border-2 border-[#1E1B18] shadow-[2px_2px_0px_#1E1B18]">
-              Hi, I'm <span className="text-[#8B5CF6]">Otto</span>
+            <div className="relative bubble-container px-4 py-1.5 rounded-full text-xs font-black text-[#0F172A]">
+              Hi, I'm <span className="text-[#2563EB]">Otto</span>
+              <div className="bubble-tail"></div>
+              <div className="bubble-tail-inner"></div>
             </div>
           </div>
 
@@ -61,11 +62,11 @@ export default function HomePage() {
           </div>
 
           {/* White Card */}
-          <div className="bg-white rounded-3xl p-8 border-2 border-[#1E1B18] shadow-[6px_6px_0px_#1E1B18] relative z-10 space-y-4 pt-12">
+          <div className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-2xl relative z-10 space-y-4 pt-12">
             <Link href="/signup" className="block w-full">
               <button 
-                style={{ backgroundColor: '#8B5CF6', boxShadow: '0px 4px 0px #1E1B18', border: '2px solid #1E1B18' }}
-                className="w-full py-4 rounded-2xl font-black text-base sm:text-lg text-white uppercase tracking-wider cursor-pointer active:translate-y-0.5 transition-transform"
+                style={{ backgroundColor: '#2563EB', boxShadow: '0px 4px 0px #1D4ED8' }}
+                className="w-full py-4 rounded-2xl font-black text-base sm:text-lg text-white uppercase tracking-wider cursor-pointer active:translate-y-0.5"
               >
                 GET STARTED
               </button>
@@ -73,18 +74,18 @@ export default function HomePage() {
 
             <Link href="/login" className="block w-full">
               <button 
-                style={{ backgroundColor: '#FFFFFF', color: '#1E1B18', border: '2px solid #1E1B18', boxShadow: '0px 4px 0px #1E1B18' }}
-                className="w-full py-4 rounded-2xl font-black text-base sm:text-lg uppercase tracking-wider cursor-pointer active:translate-y-0.5 transition-transform"
+                style={{ backgroundColor: '#FFFFFF', color: '#2563EB', border: '2px solid #E2E8F0', boxShadow: '0px 4px 0px #CBD5E1' }}
+                className="w-full py-4 rounded-2xl font-black text-base sm:text-lg uppercase tracking-wider cursor-pointer active:translate-y-0.5"
               >
                 I ALREADY HAVE AN ACCOUNT
               </button>
             </Link>
 
             <div className="text-center pt-2 space-y-1">
-              <p className="text-xs text-[#8B5CF6] font-extrabold">
+              <p className="text-xs text-[#0D9488] font-bold">
                 Free to start · Ready in 10 seconds
               </p>
-              <p className="text-[11px] text-[#1E1B18]/60 font-medium">
+              <p className="text-[11px] text-[#0F172A]/70">
                 By continuing you agree to our Terms & Privacy Policy.
               </p>
             </div>
@@ -93,7 +94,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* 4-Layer Purple Waves Background */}
+      {/* 4-Layer Waves Background */}
       <div className="relative w-full z-10">
         <div className="w-full overflow-hidden leading-none">
           <svg 
@@ -101,43 +102,44 @@ export default function HomePage() {
             viewBox="0 0 1200 120" 
             preserveAspectRatio="none"
           >
-            {/* Layer 1 - Light Purple */}
+            {/* 1. Top Lightest Transparent Layer */}
             <path 
               d="M0,15 C200,85 400,90 600,65 C800,40 1000,10 1200,30 L1200,120 L0,120 Z" 
-              fill="#DDD6FE" 
-              opacity="0.6"
+              fill="#BFDBFE" 
+              opacity="0.45"
             ></path>
 
-            {/* Layer 2 - Medium Light Purple */}
+            {/* 2. Soft Light Blue Layer */}
             <path 
               d="M0,35 C180,90 420,95 620,70 C820,45 980,20 1200,40 L1200,120 L0,120 Z" 
-              fill="#C4B5FD"
-              opacity="0.8"
+              fill="#93C5FD"
+              opacity="0.75"
             ></path>
 
-            {/* Layer 3 - Vivid Purple */}
+            {/* 3. Medium Blue Layer */}
             <path 
               d="M0,60 C160,95 450,100 650,80 C850,60 1020,35 1200,50 L1200,120 L0,120 Z" 
-              fill="#A78BFA"
+              fill="#60A5FA"
             ></path>
 
-            {/* Layer 4 - Base Purple */}
+            {/* 4. Bottom Dark Blue Layer */}
             <path 
               d="M0,85 C180,110 480,110 680,95 C880,80 1050,55 1200,70 L1200,120 L0,120 Z" 
-              fill="#8B5CF6"
+              fill="#2563EB"
             ></path>
           </svg>
         </div>
 
-        {/* Footer */}
-        <footer className="bg-[#8B5CF6] w-full py-5 px-8">
+        {/* Dark Blue Footer with Pill Button Links */}
+        <footer className="bg-[#2563EB] w-full py-5 px-8">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-white">
             <p className="text-white">© 2026 Otterly. All rights reserved.</p>
             
+            {/* Styled Interactive Pill Buttons */}
             <div className="flex items-center gap-3">
               <Link 
                 href="/about" 
-                className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white px-4 py-2 rounded-full border border-white/30 transition-all duration-200 shadow-sm active:scale-95"
+                className="bg-[#1D4ED8] hover:bg-[#1E40AF] text-white px-4 py-2 rounded-full border border-white/20 transition-all duration-200 shadow-sm hover:shadow active:scale-95"
               >
                 About Us
               </Link>
