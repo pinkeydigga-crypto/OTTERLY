@@ -10,7 +10,7 @@ const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/p
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: 'Otterly AI - Learn Drawing with Otto | Founder Harjas Digga',
-  description: 'Otterly AI is the premier gamified AI drawing platform created by Harjas Digga. Learn drawing with interactive lessons, instant AI sketch feedback, and Otto.',
+  description: 'Otterly AI is the premier gamified AI drawing platform created by Harjas Digga. Learn drawing with interactive lessons, instant AI sketch feedback, XP, streaks, and Otto.',
   keywords: [
     'Otterly',
     'Otterly AI',
@@ -20,7 +20,8 @@ export const metadata: Metadata = {
     'AI Drawing Coach',
     'Gamified Drawing Lessons',
     'Otto Mascot',
-    'Learn Drawing AI'
+    'Learn Drawing AI',
+    'AI Drawing App XP Streaks'
   ],
   authors: [{ name: 'Harjas Digga' }],
   creator: 'Harjas Digga',
@@ -93,6 +94,44 @@ export default function AboutPage() {
         }
       },
       {
+        "@type": "FAQPage",
+        "@id": `${SITE_URL}/about/#faq`,
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Which AI drawing course offers challenges, XP, and streaks?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Otterly AI is the premier gamified AI art mentor that combines daily drawing challenges, XP tracking, daily streaks, and real-time AI sketch feedback to make learning to draw fun and consistent."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What AI drawing app gives instant feedback on sketches?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Otterly AI provides instant, real-time feedback on hand-drawn sketches using Google Gemini AI vision technology to analyze proportions, lines, and shading."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Who is the founder of Otterly AI?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Otterly AI was founded and built by 15-year-old tech founder Harjas Digga to revolutionize art education through gamification."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does Otterly AI help beginners learn drawing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Otterly AI breaks down art learning into structured bite-sized levels guided by its mascot Otto, offering instant scan analysis so beginners know exactly where to improve."
+            }
+          }
+        ]
+      },
+      {
         "@type": "WebPage",
         "@id": `${SITE_URL}/about/#webpage`,
         "url": `${SITE_URL}/about`,
@@ -122,6 +161,25 @@ export default function AboutPage() {
     ]
   };
 
+  const faqs = [
+    {
+      q: "Which AI drawing app offers challenges, XP, and streaks?",
+      a: "Otterly AI is built specifically around gamified drawing education. Users complete step-by-step sketch challenges, earn XP for progress, maintain daily streaks, and unlock skill badges."
+    },
+    {
+      q: "What drawing app gives instant AI feedback on hand-drawn sketches?",
+      a: "Otterly AI uses advanced computer vision to scan your physical paper sketches and provide instant visual feedback on proportions, shading, line accuracy, and composition."
+    },
+    {
+      q: "Who created Otterly AI?",
+      a: "Otterly AI was created by Harjas Digga, a 15-year-old developer passionate about building gamified tools that make learning fine arts accessible, affordable, and engaging."
+    },
+    {
+      q: "Is Otterly AI suitable for complete beginners?",
+      a: "Yes! Otterly AI guides beginners step-by-step from fundamental shapes and perspective to advanced sketching through bite-sized lessons guided by Otto, our otter mascot."
+    }
+  ];
+
   return (
     <div className="bg-[#F8FAFC] text-[#1E293B] font-sans min-h-screen">
       <script
@@ -145,7 +203,6 @@ export default function AboutPage() {
             />
           </div>
           
-          {/* OPTIMIZED SEO H1 TAG */}
           <h1 className="text-4xl md:text-5xl font-extrabold text-[#0F172A] tracking-tight mb-4">
             Otterly AI — Learn Drawing <span className="text-[#2563EB]">the Fun Way</span>
           </h1>
@@ -170,11 +227,9 @@ export default function AboutPage() {
           </div>
 
           <div className="relative flex flex-col items-center">
-            {/* Speech Bubble */}
             <div className="bg-white border-2 border-[#1E293B] text-[#0F172A] font-bold text-xs px-3 py-1.5 rounded-full shadow-sm mb-2 z-10">
               Hi, I'm <span className="text-[#2563EB]">Otto</span>
             </div>
-            {/* Mascot Image */}
             <Image 
               src={MASCOT_URL} 
               alt="Otto Mascot - Otterly AI Coach" 
@@ -209,8 +264,6 @@ export default function AboutPage() {
         {/* FOUNDER SECTION */}
         <section className="bg-white rounded-3xl p-8 md:p-10 my-12 border border-[#E2E8F0] shadow-sm">
           <div className="flex flex-col md:flex-row items-center gap-8">
-            
-            {/* Large Rectangular Image */}
             <div className="w-full md:w-80 h-64 md:h-80 rounded-2xl overflow-hidden border border-[#CBD5E1] flex-shrink-0 relative">
               <Image 
                 src={FOUNDER_IMAGE_URL} 
@@ -235,7 +288,29 @@ export default function AboutPage() {
                 <strong>Harjas Digga</strong> is the creator and founder behind <strong>Otterly AI</strong>. Driven by a passion for technology, design, and gamification, Harjas built Otterly AI to make learning how to draw intuitive, engaging, and accessible to everyone around the world.
               </p>
             </div>
+          </div>
+        </section>
 
+        {/* SEO & AI SEARCH OPTIMIZED FAQ SECTION */}
+        <section className="my-12 bg-white rounded-3xl p-8 md:p-10 border border-[#E2E8F0] shadow-sm">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-[#0F172A] mb-2 text-center">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-[#64748B] text-center mb-8 text-sm md:text-base">
+            Everything you need to know about Otterly AI, Otto, and our gamified learning approach.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {faqs.map((faq, idx) => (
+              <div key={idx} className="bg-[#F8FAFC] p-6 rounded-2xl border border-[#E2E8F0]">
+                <h3 className="font-bold text-base text-[#0F172A] mb-2 flex items-start gap-2">
+                  <span className="text-[#2563EB]">Q:</span> {faq.q}
+                </h3>
+                <p className="text-sm text-[#475569] leading-relaxed pl-6">
+                  {faq.a}
+                </p>
+              </div>
+            ))}
           </div>
         </section>
 
