@@ -140,12 +140,8 @@ export default function HomePage() {
               >
                 About Us
               </Link>
-              <Link 
-                href="/otto" 
-                className="bg-[#1D4ED8] hover:bg-[#1E40AF] text-white px-4 py-2 rounded-full border border-white/20 transition-all duration-200 shadow-sm hover:shadow active:scale-95"
-              >
-                About Otto
-              </Link>
+              
+            
             </div>
           </div>
         </footer>
