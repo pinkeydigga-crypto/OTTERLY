@@ -4,11 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
+// SVG Dicebear Avatars (Profile page se bilkul match karte hue)
 const AVATARS = [
-  { id: 1, name: 'Blue', url: 'https://ui-avatars.com/api/?name=Blue+Bot&background=0284c7&color=fff&size=128' },
-  { id: 2, name: 'Green', url: 'https://ui-avatars.com/api/?name=Green+Bot&background=16a34a&color=fff&size=128' },
-  { id: 3, name: 'Yellow', url: 'https://ui-avatars.com/api/?name=Yellow+Bot&background=eab308&color=fff&size=128' },
-  { id: 4, name: 'Purple', url: 'https://ui-avatars.com/api/?name=Purple+Bot&background=9333ea&color=fff&size=128' },
+  { id: 1, name: 'Blue Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot&backgroundColor=0284c7' },
+  { id: 2, name: 'Green Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=GreenBot&backgroundColor=16a34a' },
+  { id: 3, name: 'Yellow Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=YellowBot&backgroundColor=eab308' },
+  { id: 4, name: 'Purple Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=PurpleBot&backgroundColor=9333ea' },
 ];
 
 export default function SignupPage() {
@@ -29,11 +30,14 @@ export default function SignupPage() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSignup = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    
+  const handleSignup = async () => {
     if (!formData.name || !formData.username || !formData.email || !formData.password) {
       setErrorMessage('Please fill in all fields.');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
       return;
     }
 
@@ -43,11 +47,45 @@ export default function SignupPage() {
     const cleanEmail = formData.email.trim().toLowerCase();
 
     try {
-      // 1. Local Data Sync First (Guaranteed state)
+      // 1. HARD LOGOUT & CLEAR LOCAL STORAGE (Kisi dusre ka session active na rahe)
+      await supabase.auth.signOut();
+      localStorage.clear();
+
+      // 2. Supabase Auth Create User
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: formData.password,
+      });
+
+      if (authError) throw authError;
+
+      const user = authData.user;
+      if (!user) throw new Error("Could not create authentication session.");
+
+      // 3. Directly Insert Unique Profile record into Supabase Table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert([
+          {
+            id: user.id, // Auth User ID hi Table key hai
+            name: formData.name.trim(),
+            username: formData.username.trim(),
+            email: cleanEmail,
+            avatar_url: selectedAvatar,
+            xp: 0,
+            streak: 0,
+          }
+        ], { onConflict: 'id' });
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+      }
+
+      // 4. Store active user credentials locally
       const userData = {
-        id: Date.now().toString(),
-        name: formData.name,
-        username: formData.username,
+        id: user.id,
+        name: formData.name.trim(),
+        username: formData.username.trim(),
         email: cleanEmail,
         avatar: selectedAvatar,
       };
@@ -55,28 +93,12 @@ export default function SignupPage() {
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
 
-      // 2. Try Supabase Save in Background
-      if (supabase) {
-        const { data: authData } = await supabase.auth.signUp({
-          email: cleanEmail,
-          password: formData.password,
-        });
-
-        if (authData?.user) {
-          await supabase.from('profiles').upsert({
-            id: authData.user.id,
-            name: formData.name,
-            username: formData.username,
-            email: cleanEmail,
-            avatar_url: selectedAvatar,
-          });
-        }
-      }
+      // 5. Force Navigation
+      window.location.href = '/dashboard';
     } catch (err: any) {
-      console.log("Supabase Sync Notice:", err);
-    } finally {
-      // 3. Force Redirect to Dashboard regardless of Supabase response
-      window.location.replace('/dashboard');
+      console.error("Signup Catch Error:", err);
+      setErrorMessage(err.message || 'Signup failed. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -89,7 +111,7 @@ export default function SignupPage() {
           <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
         </div>
 
-        {/* Main Card */}
+        {/* Card Container */}
         <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-3 pt-14">
           <div className="text-center space-y-1">
             <h2 className="text-3xl font-black text-[#0F172A] tracking-tight">
