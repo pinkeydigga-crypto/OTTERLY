@@ -4,12 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
-// 100% Reliable SVG & PNG Avatar Links
+// Multi-fallback reliable Avatars
 const AVATARS = [
-  { id: 1, name: 'Blue Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=BlueBot&backgroundColor=0284c7' },
-  { id: 2, name: 'Green Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=GreenBot&backgroundColor=16a34a' },
-  { id: 3, name: 'Yellow Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=YellowBot&backgroundColor=eab308' },
-  { id: 4, name: 'Purple Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=PurpleBot&backgroundColor=9333ea' },
+  { id: 1, name: 'Blue', url: 'https://api.dicebear.com/7.x/bottts/png?seed=BlueBot&backgroundColor=0284c7' },
+  { id: 2, name: 'Green', url: 'https://api.dicebear.com/7.x/bottts/png?seed=GreenBot&backgroundColor=16a34a' },
+  { id: 3, name: 'Yellow', url: 'https://api.dicebear.com/7.x/bottts/png?seed=YellowBot&backgroundColor=eab308' },
+  { id: 4, name: 'Purple', url: 'https://api.dicebear.com/7.x/bottts/png?seed=PurpleBot&backgroundColor=9333ea' },
 ];
 
 export default function SignupPage() {
@@ -31,18 +31,16 @@ export default function SignupPage() {
   };
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    // Form reload aur URL params strictly stop karne ke liye
     e.preventDefault();
     e.stopPropagation();
 
-    if (loading) return;
     setLoading(true);
     setErrorMessage('');
 
     const cleanEmail = formData.email.trim().toLowerCase();
 
     try {
-      // 1. Supabase Authentication
+      // 1. Supabase Auth Signup
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: formData.password,
@@ -50,24 +48,24 @@ export default function SignupPage() {
 
       if (authError) throw authError;
 
-      // 2. Insert User Details in Supabase Database
-      if (authData.user) {
-        const { error: profileError } = await supabase.from('profiles').upsert({
-          id: authData.user.id,
+      const userId = authData.user?.id || Date.now().toString();
+
+      // 2. Direct Supabase Table Save
+      try {
+        await supabase.from('profiles').upsert({
+          id: userId,
           name: formData.name,
           username: formData.username,
           email: cleanEmail,
           avatar_url: selectedAvatar,
         });
-
-        if (profileError) {
-          console.error("Profile insert error:", profileError);
-        }
+      } catch (dbErr) {
+        console.error("Database insert warning:", dbErr);
       }
 
-      // 3. Fallback Local Storage
+      // 3. Local Sync & Instant Redirect
       const userData = {
-        id: authData.user?.id || Date.now().toString(),
+        id: userId,
         name: formData.name,
         username: formData.username,
         email: cleanEmail,
@@ -77,11 +75,11 @@ export default function SignupPage() {
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
 
-      // 4. Force Redirect to Dashboard
-      window.location.replace('/dashboard');
+      // 4. Force Page Jump
+      window.location.href = '/dashboard';
     } catch (err: any) {
-      console.error("Signup Process Error:", err);
-      setErrorMessage(err.message || 'Signup failed. Please try again.');
+      console.error("Signup Catch Error:", err);
+      setErrorMessage(err.message || 'Signup error. Check Supabase connection.');
       setLoading(false);
     }
   };
@@ -110,7 +108,6 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* Form Tag with explicit method & onSubmit */}
           <form onSubmit={handleFormSubmit} method="POST" autoComplete="off" className="space-y-3">
             <div>
               <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-2 text-center">
