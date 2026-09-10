@@ -149,7 +149,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* 4-Layer Waves Background */}
+      {/* 3-Layer Waves Background (Last Dark Layer Removed) */}
       <div className="relative w-full z-10">
         <div className="w-full overflow-hidden leading-none">
           <svg 
@@ -160,7 +160,6 @@ export default function HomePage() {
             <path d="M0,15 C200,85 400,90 600,65 C800,40 1000,10 1200,30 L1200,120 L0,120 Z" fill="#BFDBFE" opacity="0.45"></path>
             <path d="M0,35 C180,90 420,95 620,70 C820,45 980,20 1200,40 L1200,120 L0,120 Z" fill="#93C5FD" opacity="0.75"></path>
             <path d="M0,60 C160,95 450,100 650,80 C850,60 1020,35 1200,50 L1200,120 L0,120 Z" fill="#60A5FA"></path>
-            <path d="M0,85 C180,110 480,110 680,95 C880,80 1050,55 1200,70 L1200,120 L0,120 Z" fill="#2563EB"></path>
           </svg>
         </div>
 
