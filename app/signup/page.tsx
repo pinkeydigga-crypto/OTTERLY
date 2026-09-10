@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
+// Updated Working Avatar URLs (No broken images)
 const AVATARS = [
-  { id: 1, name: 'Blue Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot&backgroundColor=0284c7' },
-  { id: 2, name: 'Green Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=GreenBot&backgroundColor=16a34a' },
-  { id: 3, name: 'Yellow Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=YellowBot&backgroundColor=eab308' },
-  { id: 4, name: 'Purple Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=PurpleBot&backgroundColor=9333ea' },
+  { id: 1, name: 'Blue Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=BlueBot&backgroundColor=0284c7' },
+  { id: 2, name: 'Green Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=GreenBot&backgroundColor=16a34a' },
+  { id: 3, name: 'Yellow Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=YellowBot&backgroundColor=eab308' },
+  { id: 4, name: 'Purple Bot', url: 'https://api.dicebear.com/7.x/bottts/png?seed=PurpleBot&backgroundColor=9333ea' },
 ];
 
 export default function SignupPage() {
@@ -39,6 +40,7 @@ export default function SignupPage() {
     const cleanEmail = formData.email.trim().toLowerCase();
 
     try {
+      // 1. Supabase Auth Signup
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: formData.password,
@@ -47,7 +49,8 @@ export default function SignupPage() {
       if (authError) throw authError;
 
       if (authData.user) {
-        await supabase.from('profiles').upsert([
+        // 2. Save profile in Supabase table
+        const { error: profileError } = await supabase.from('profiles').upsert([
           {
             id: authData.user.id,
             name: formData.name,
@@ -56,14 +59,28 @@ export default function SignupPage() {
             avatar_url: selectedAvatar,
           },
         ]);
+
+        if (profileError) {
+          console.error("Profile saving error:", profileError);
+        }
       }
 
-      const userData = { ...formData, email: cleanEmail, avatar: selectedAvatar };
+      // 3. Fallback LocalStorage Sync
+      const userData = {
+        id: authData.user?.id || 'temp-id',
+        name: formData.name,
+        username: formData.username,
+        email: cleanEmail,
+        avatar: selectedAvatar,
+      };
+      
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
 
-      router.push('/dashboard');
+      // Direct Redirect
+      window.location.href = '/dashboard';
     } catch (err: any) {
+      console.error("Signup Catch Error:", err);
       setErrorMessage(err.message || 'Signup failed. Please try again.');
     } finally {
       setLoading(false);
@@ -74,7 +91,7 @@ export default function SignupPage() {
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
       <div className="relative max-w-md w-full pt-16">
         
-        {/* Mascot Always Top-Left on Phone & Laptop */}
+        {/* Mascot Top-Left */}
         <div className="absolute -top-6 left-6 z-20 w-28 h-28 sm:w-32 sm:h-32 drop-shadow-md pointer-events-none">
           <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
         </div>

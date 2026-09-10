@@ -1,13 +1,11 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const mascotUrl = 'https://cdn.corenexis.com/f/XMfOqZs8e3x.png';
+  const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -46,17 +44,18 @@ export default function LoginPage() {
         const userData = {
           id: authData.user.id,
           email: cleanEmail,
-          name: profile?.name || 'User',
+          name: profile?.name || cleanEmail.split('@')[0],
           username: profile?.username || cleanEmail.split('@')[0],
-          avatar: profile?.avatar_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot&backgroundColor=0284c7',
+          avatar: profile?.avatar_url || 'https://api.dicebear.com/7.x/bottts/png?seed=BlueBot&backgroundColor=0284c7',
         };
 
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('isLoggedIn', 'true');
 
-        router.push('/dashboard');
+        window.location.href = '/dashboard';
       }
     } catch (err: any) {
+      console.error("Login Error:", err);
       setErrorMessage(err.message || 'Invalid email or password.');
     } finally {
       setLoading(false);
@@ -67,7 +66,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
       <div className="relative max-w-md w-full pt-16">
         
-        {/* Mascot Always Top-Left on Phone & Laptop */}
+        {/* Mascot */}
         <div className="absolute -top-6 left-6 z-20 w-28 h-28 sm:w-32 sm:h-32 drop-shadow-md pointer-events-none">
           <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
         </div>
