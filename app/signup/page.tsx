@@ -2,17 +2,18 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-// Multi-fallback reliable Avatars
 const AVATARS = [
-  { id: 1, name: 'Blue', url: 'https://api.dicebear.com/7.x/bottts/png?seed=BlueBot&backgroundColor=0284c7' },
-  { id: 2, name: 'Green', url: 'https://api.dicebear.com/7.x/bottts/png?seed=GreenBot&backgroundColor=16a34a' },
-  { id: 3, name: 'Yellow', url: 'https://api.dicebear.com/7.x/bottts/png?seed=YellowBot&backgroundColor=eab308' },
-  { id: 4, name: 'Purple', url: 'https://api.dicebear.com/7.x/bottts/png?seed=PurpleBot&backgroundColor=9333ea' },
+  { id: 1, name: 'Blue', url: 'https://ui-avatars.com/api/?name=Blue+Bot&background=0284c7&color=fff&size=128' },
+  { id: 2, name: 'Green', url: 'https://ui-avatars.com/api/?name=Green+Bot&background=16a34a&color=fff&size=128' },
+  { id: 3, name: 'Yellow', url: 'https://ui-avatars.com/api/?name=Yellow+Bot&background=eab308&color=fff&size=128' },
+  { id: 4, name: 'Purple', url: 'https://ui-avatars.com/api/?name=Purple+Bot&background=9333ea&color=fff&size=128' },
 ];
 
 export default function SignupPage() {
+  const router = useRouter();
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
 
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
@@ -30,10 +31,10 @@ export default function SignupPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    e.stopPropagation();
 
+    if (loading) return;
     setLoading(true);
     setErrorMessage('');
 
@@ -50,20 +51,16 @@ export default function SignupPage() {
 
       const userId = authData.user?.id || Date.now().toString();
 
-      // 2. Direct Supabase Table Save
-      try {
-        await supabase.from('profiles').upsert({
-          id: userId,
-          name: formData.name,
-          username: formData.username,
-          email: cleanEmail,
-          avatar_url: selectedAvatar,
-        });
-      } catch (dbErr) {
-        console.error("Database insert warning:", dbErr);
-      }
+      // 2. Profile Entry Save
+      await supabase.from('profiles').upsert({
+        id: userId,
+        name: formData.name,
+        username: formData.username,
+        email: cleanEmail,
+        avatar_url: selectedAvatar,
+      });
 
-      // 3. Local Sync & Instant Redirect
+      // 3. Save Local Session
       const userData = {
         id: userId,
         name: formData.name,
@@ -75,11 +72,12 @@ export default function SignupPage() {
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
 
-      // 4. Force Page Jump
-      window.location.href = '/dashboard';
+      // 4. Smooth Next.js Route Navigation
+      router.push('/dashboard');
     } catch (err: any) {
-      console.error("Signup Catch Error:", err);
-      setErrorMessage(err.message || 'Signup error. Check Supabase connection.');
+      console.error("Signup Error:", err);
+      setErrorMessage(err.message || 'Signup fail ho gaya, please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -93,7 +91,7 @@ export default function SignupPage() {
           <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
         </div>
 
-        {/* Form Container */}
+        {/* Card */}
         <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-3 pt-14">
           <div className="text-center space-y-1">
             <h2 className="text-3xl font-black text-[#0F172A] tracking-tight">
@@ -108,7 +106,7 @@ export default function SignupPage() {
             </div>
           )}
 
-          <form onSubmit={handleFormSubmit} method="POST" autoComplete="off" className="space-y-3">
+          <form onSubmit={handleCreateAccount} className="space-y-3">
             <div>
               <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-2 text-center">
                 Choose Your Avatar
@@ -129,9 +127,6 @@ export default function SignupPage() {
                       src={avatar.url}
                       alt={avatar.name}
                       className="w-full h-full object-contain rounded-xl"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${avatar.name}&background=2563EB&color=fff`;
-                      }}
                     />
                   </button>
                 ))}
