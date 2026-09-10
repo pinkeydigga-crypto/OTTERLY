@@ -19,14 +19,18 @@ export default function LoginPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    // URL me input parameters na jayein aur page reload bilkul rokne ke liye
     e.preventDefault();
+    e.stopPropagation();
+
     setLoading(true);
     setErrorMessage('');
 
     const cleanEmail = formData.email.trim().toLowerCase();
 
     try {
+      // 1. Supabase Auth Login
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: formData.password,
@@ -35,6 +39,7 @@ export default function LoginPage() {
       if (authError) throw authError;
 
       if (authData.user) {
+        // 2. Fetch User Profile
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -46,18 +51,19 @@ export default function LoginPage() {
           email: cleanEmail,
           name: profile?.name || cleanEmail.split('@')[0],
           username: profile?.username || cleanEmail.split('@')[0],
-          avatar: profile?.avatar_url || 'https://api.dicebear.com/7.x/bottts/png?seed=BlueBot&backgroundColor=0284c7',
+          avatar: profile?.avatar_url || `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
         };
 
+        // 3. LocalStorage Sync
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('isLoggedIn', 'true');
 
-        window.location.href = '/dashboard';
+        // 4. Force Hard Redirect to Dashboard
+        window.location.assign('/dashboard');
       }
     } catch (err: any) {
       console.error("Login Error:", err);
       setErrorMessage(err.message || 'Invalid email or password.');
-    } finally {
       setLoading(false);
     }
   };
@@ -86,13 +92,14 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4">
             <div>
               <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
               <input
                 type="email"
                 name="email"
                 required
+                autoComplete="off"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="youremail@gmail.com"
@@ -106,6 +113,7 @@ export default function LoginPage() {
                 type="password"
                 name="password"
                 required
+                autoComplete="current-password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
