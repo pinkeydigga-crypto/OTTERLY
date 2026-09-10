@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
 
+const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://otterly-prototype.vercel.app'),
   title: {
@@ -14,6 +16,11 @@ export const metadata: Metadata = {
     'AI Drawing Coach',
     'Gamified Drawing Lessons',
   ],
+  icons: {
+    icon: FAVICON_URL,
+    shortcut: FAVICON_URL,
+    apple: FAVICON_URL,
+  },
   openGraph: {
     title: 'Otterly - Learn to Draw',
     description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterly.',
