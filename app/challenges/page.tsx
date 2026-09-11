@@ -70,38 +70,31 @@ const CUBE_STEPS: TutorialStep[] = [
 const EYE_STEPS: TutorialStep[] = [
   {
     step: 1,
-    title: "Step 1: Basic Outlines & Guide Lines",
-    instruction: "First, lightly draw an almond shape with a pencil, then add a circle inside for the iris and mark guide lines.",
-    tips: ["Keep both sides balanced", "Use very light pencil strokes"],
-    imageUrl: "https://cdn.corenexis.com/f/6ihYUzokRln.jpeg"
+    title: "Step 1: Basic Eye Outline",
+    instruction: "Lightly sketch the almond shape of the eye, including the tear duct and defining the upper eyelid fold.",
+    tips: ["Keep lines light", "Check symmetry"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_14463_chatgpt.com.jpeg"
   },
   {
     step: 2,
-    title: "Step 2: Eyelid Crease & Structure",
-    instruction: "Draw another curved line above to represent the eyelid crease, and erase any unnecessary inner guidelines.",
-    tips: ["Match the curve to the upper slope", "Keep transitions smooth"],
-    imageUrl: "https://cdn.corenexis.com/f/S57AQudsj3l.png"
+    title: "Step 2: Iris & Pupil Details",
+    instruction: "Draw the inner circle for the iris and the central pupil. Begin adding basic shading and mark the highlight.",
+    tips: ["Center the pupil", "Define the light source"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144627_chatgpt.com.jpeg"
   },
   {
     step: 3,
-    title: "Step 3: Iris & Pupil Details",
-    instruction: "Draw the pupil inside the iris and start adding light shading inside the iris to create depth.",
-    tips: ["Make sure the pupil is centered", "Keep your lines light and easy to erase"],
-    imageUrl: "https://cdn.corenexis.com/f/Lvq32gZlqCz.png"
+    title: "Step 3: Eyelashes & Depth",
+    instruction: "Apply rich shading to the iris and add detailed, natural eyelashes along both the upper and lower lids.",
+    tips: ["Vary lash thickness", "Deepen the shadows"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144810_chatgpt.com.jpeg"
   },
   {
     step: 4,
-    title: "Step 4: Highlights & Soft Shading",
-    instruction: "Shade the surrounding skin softly, and leave a tiny white dot unshaded to show light reflection.",
-    tips: ["Leave a small white dot for light", "Blend smoothly for a natural look"],
-    imageUrl: "https://cdn.corenexis.com/f/hq7jUBRMjzk.png"
-  },
-  {
-    step: 5,
-    title: "Step 5: Final Realistic Eye & Eyelashes",
-    instruction: "Complete the drawing by adding long, natural upper and lower eyelashes. Scan your drawing for analysis.",
-    tips: ["Check your overall contrast", "Sign your completed artwork"],
-    imageUrl: "https://cdn.corenexis.com/f/jGJJCV2Bi2l.png"
+    title: "Step 4: Scan Your Drawing & Improve",
+    instruction: "Awesome work reaching the final stage! Now, use the AI Scan feature to analyze your drawing, get instant feedback, and level up your skills.",
+    tips: ["Upload a clear photo of your sketch", "Check proportions & shading feedback"],
+    imageUrl: ""
   }
 ];
 
@@ -168,7 +161,7 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     difficulty: "intermediate",
     xp: 60,
     timeLimit: "10 Min Time Attack",
-    previewImage: "https://cdn.corenexis.com/f/jGJJCV2Bi2l.png",
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144810_chatgpt.com.jpeg",
     steps: EYE_STEPS
   },
   {
@@ -196,6 +189,7 @@ export default function ChallengesPage() {
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   // Active Flow State
   const [activeView, setActiveView] = useState<'hub' | 'challenge-flow'>('hub');
@@ -204,6 +198,10 @@ export default function ChallengesPage() {
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2).png";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const fetchPageData = useCallback(async () => {
     setLoading(true);
@@ -604,14 +602,28 @@ export default function ChallengesPage() {
               </p>
             </div>
 
-            {/* Container for Tutorial Image */}
-            <div className="w-full h-56 sm:h-64 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-3 overflow-hidden shadow-inner">
-              <img
-                src={activeStepList[currentStep].imageUrl}
-                alt="Tutorial step reference"
-                className="max-h-full max-w-full object-contain scale-125 sm:scale-135 transition-transform duration-300 transform-gpu"
-              />
-            </div>
+            {/* Container for Tutorial Image or Party Pooper Scan Card */}
+            {activeStepList[currentStep].imageUrl ? (
+              <div className="w-full h-56 sm:h-64 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-3 overflow-hidden shadow-inner">
+                {mounted && (
+                  <img
+                    src={activeStepList[currentStep].imageUrl}
+                    alt="Tutorial step reference"
+                    className="max-h-full max-w-full object-contain scale-125 sm:scale-135 transition-transform duration-300 transform-gpu"
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="w-full py-12 bg-gradient-to-r from-indigo-500/10 via-purple-500/15 to-pink-500/10 border border-indigo-500/30 rounded-2xl flex flex-col items-center justify-center text-center p-6 space-y-3 animate-pulse shadow-inner">
+                <div className="w-14 h-14 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-2xl shadow-lg">
+                  🎉
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-bold text-lg text-slate-900">Scan Your Drawing & Improve</h3>
+                  <p className="text-sm text-slate-600 max-w-sm">Use our AI scan feature to review your masterpiece, get instant feedback, and sharpen your skills.</p>
+                </div>
+              </div>
+            )}
 
             {/* Tips Section */}
             <div className="bg-amber-50/60 border border-amber-200/60 p-4 rounded-2xl space-y-2">
