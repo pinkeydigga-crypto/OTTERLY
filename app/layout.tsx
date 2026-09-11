@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import './globals.css'; // Aapki global CSS file ka path (agar alag ho toh update kar lein)
+import './globals.css';
 
 const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://Otterleo-prototype.vercel.app'),
+  metadataBase: new URL('https://Otterleo.vercel.app'),
   title: {
     default: 'Otterleo - Learn to Draw',
     template: '%s | Otterleo',
@@ -21,6 +21,9 @@ export const metadata: Metadata = {
     icon: FAVICON_URL,
     shortcut: FAVICON_URL,
     apple: FAVICON_URL,
+  },
+  verification: {
+    google: 'WhjTfub1GzTK-czyW1hlcB_kdpaEmzUUkJ2DzooEHXI',
   },
   openGraph: {
     title: 'Otterleo - Learn to Draw',
@@ -41,7 +44,6 @@ export const metadata: Metadata = {
   },
 };
 
-// Next.js Validator ke liye Default Export Component hona zaroori hai:
 export default function RootLayout({
   children,
 }: {
