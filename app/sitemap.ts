@@ -1,19 +1,21 @@
 // app/sitemap.ts
-import { MetadataRoute } from 'next'
+import { MetadataRoute } from 'next';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = 'https://otterleo.in/about';
+
   return [
     {
-      url: 'https://Otterleo-prototype.vercel.app',
+      url: baseUrl,
       lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1.0,
     },
     {
-      url: 'https://Otterleo-prototype.vercel.app/about',
+      url: `${baseUrl}/achievements`,
       lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
     },
-    {
-      url: 'https://Otterleo-prototype.vercel.app/blog/how-to-learn-drawing-with-ai',
-      lastModified: new Date(),
-    },
-  ]
+  ];
 }

@@ -4,7 +4,7 @@ import './globals.css';
 const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://Otterleo.vercel.app'),
+  metadataBase: new URL('https://Otterleo.in'),
   title: {
     default: 'Otterleo - Learn to Draw',
     template: '%s | Otterleo',
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Otterleo - Learn to Draw',
     description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterleo.',
-    url: 'https://Otterleo-prototype.vercel.app',
+    url: 'https://otterleo.in',
     siteName: 'Otterleo',
     locale: 'en_US',
     type: 'website',
