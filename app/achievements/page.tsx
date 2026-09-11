@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { 
   ArrowLeft, PanelLeft, X, LayoutDashboard,
@@ -75,7 +76,7 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
-export default function AchievementsPage() {
+function AchievementsContent() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
   // Initial state zero to prevent SSR/Hydration mismatch
@@ -88,8 +89,8 @@ export default function AchievementsPage() {
   
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png";
-  const mascotImageUrl = "https://cdn.corenexis.com/f/7D52w5tSzT5.png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
+  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_11-9-2026_144618_chatgpt.com-removebg-preview.png";
 
   // Load cached XP after mount on client-side
   useEffect(() => {
@@ -253,7 +254,7 @@ export default function AchievementsPage() {
             <PanelLeft className="w-5 h-5" />
           </button>
           
-          <img src={logoUrl} alt="Otterly Logo" className="h-14 w-auto object-contain max-h-16" />
+          <img src={logoUrl} alt="otterleo Logo" className="h-14 w-auto object-contain max-h-16" />
         </div>
 
         <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-full text-amber-600 font-black text-xs">
@@ -273,7 +274,7 @@ export default function AchievementsPage() {
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="Otterly Logo" className="h-14 w-auto object-contain" />
+                <img src={logoUrl} alt="otterleo Logo" className="h-14 w-auto object-contain" />
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
                   <X className="w-5 h-5" />
                 </button>
@@ -308,7 +309,7 @@ export default function AchievementsPage() {
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Otterly Logo" className="h-16 sm:h-20 w-auto object-contain" />
+            <img src={logoUrl} alt="otterleo Logo" className="h-16 sm:h-20 w-auto object-contain" />
           </div>
 
           <nav className="space-y-1.5">
@@ -353,7 +354,7 @@ export default function AchievementsPage() {
         </div>
 
         {/* Hero Mascot Banner */}
-        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex flex-row items-center justify-between relative overflow-hidden">
+        <div className="bg-white px-6 sm:px-8 py-7 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex flex-row items-center justify-between relative overflow-hidden">
           <div className="space-y-2 z-10 max-w-sm sm:max-w-md">
             <h1 className="text-3xl sm:text-4xl font-black text-[#0F172A]">Achievements</h1>
             <p className="text-sm font-bold text-slate-500">
@@ -361,10 +362,10 @@ export default function AchievementsPage() {
             </p>
           </div>
 
-          <div className="w-36 sm:w-48 h-auto shrink-0 z-10 -mr-2">
+          <div className="w-28 sm:w-36 h-auto shrink-0 z-10 -mr-1 flex items-center justify-center">
             <img 
               src={mascotImageUrl} 
-              alt="Otterly Mascot" 
+              alt="otterleo Mascot" 
               className="w-full h-auto object-contain block"
             />
           </div>
@@ -508,3 +509,10 @@ export default function AchievementsPage() {
     </div>
   );
 }
+
+// Prevent SSR hydration mismatch via dynamic import with ssr: false
+const AchievementsPage = dynamic(() => Promise.resolve(AchievementsContent), {
+  ssr: false,
+});
+
+export default AchievementsPage;

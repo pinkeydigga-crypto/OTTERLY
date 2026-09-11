@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function HomePage() {
-  const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png';
+  const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png';
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png';
 
   return (
@@ -59,7 +59,7 @@ export default function HomePage() {
       <header className="max-w-7xl w-full mx-auto px-6 pt-8 pb-4 flex justify-center items-center z-10">
         <Image
           src={logoUrl}
-          alt="Otterly Logo"
+          alt="Otterleo Logo"
           width={192}
           height={80}
           priority
@@ -166,7 +166,7 @@ export default function HomePage() {
         {/* Dark Blue Footer */}
         <footer className="bg-[#2563EB] w-full py-5 px-8">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-white">
-            <p className="text-white">© 2026 Otterly. All rights reserved.</p>
+            <p className="text-white">© 2026 Otterleo. All rights reserved.</p>
             
             <div className="flex items-center gap-3">
               <Link 

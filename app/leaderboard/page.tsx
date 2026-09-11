@@ -32,7 +32,7 @@ export default function LeaderboardPage() {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/leaderbaord%20(1).png";
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
 
   const fetchLeaderboardAndUser = useCallback(async (isBackgroundRefresh = false) => {
     if (!isBackgroundRefresh) {
@@ -509,7 +509,7 @@ export default function LeaderboardPage() {
               <div className="flex items-center justify-between mb-4 border-b border-white/20 pb-3">
                 <span className="text-xs font-black tracking-widest text-blue-100 uppercase">LEADERBOARD RANK</span>
                 <span className="text-xs font-black bg-white/20 px-2.5 py-0.5 rounded-full text-white">
-                  Otterly
+                  Otterleo
                 </span>
               </div>
 

@@ -43,7 +43,7 @@ interface Profile {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -186,7 +186,7 @@ export default function ProfilePage() {
           
           <img
             src={logoUrl}
-            alt="Otterly Logo"
+            alt="Otterleo Logo"
             className="h-14 w-auto object-contain max-h-16"
           />
         </div>
@@ -210,7 +210,7 @@ export default function ProfilePage() {
               <div className="flex items-center justify-between">
                 <img
                   src={logoUrl}
-                  alt="Otterly Logo"
+                  alt="Otterleo Logo"
                   className="h-14 w-auto object-contain"
                 />
                 <button
@@ -264,7 +264,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3">
             <img
               src={logoUrl}
-              alt="Otterly Logo"
+              alt="Otterleo Logo"
               className="h-16 sm:h-20 w-auto object-contain"
             />
           </div>

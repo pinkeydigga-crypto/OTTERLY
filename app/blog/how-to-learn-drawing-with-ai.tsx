@@ -3,23 +3,23 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const SITE_URL = "https://otterly-prototype.vercel.app";
-const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png";
+const SITE_URL = "https://Otterleo-prototype.vercel.app";
+const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
 const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
 const FOUNDER_IMAGE_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/harjas.jpg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'How to Learn Drawing with AI (2026 Step-by-Step Guide) | Otterly AI',
-  description: 'Master drawing fast using AI feedback, daily gamified challenges, and structured lessons on Otterly AI. Complete beginner guide by founder Harjas Digga.',
+  title: 'How to Learn Drawing with AI (2026 Step-by-Step Guide) | Otterleo AI',
+  description: 'Master drawing fast using AI feedback, daily gamified challenges, and structured lessons on Otterleo AI. Complete beginner guide by founder Harjas Digga.',
   keywords: [
     'How to learn drawing with AI',
-    'Otterly AI',
+    'Otterleo AI',
     'AI drawing coach',
     'learn drawing for beginners',
-    'Otterly AI blog',
+    'Otterleo AI blog',
     'gamified art lessons',
-    'Harjas Digga Otterly',
+    'Harjas Digga Otterleo',
     'drawing feedback AI'
   ],
   authors: [{ name: 'Harjas Digga' }],
@@ -28,10 +28,10 @@ export const metadata: Metadata = {
     canonical: '/blog/how-to-learn-drawing-with-ai',
   },
   openGraph: {
-    title: 'How to Learn Drawing with AI in 2026: Step-by-Step Guide | Otterly AI',
-    description: 'Learn drawing step-by-step using instant AI sketch feedback and gamified daily goals on Otterly AI.',
+    title: 'How to Learn Drawing with AI in 2026: Step-by-Step Guide | Otterleo AI',
+    description: 'Learn drawing step-by-step using instant AI sketch feedback and gamified daily goals on Otterleo AI.',
     url: `${SITE_URL}/blog/how-to-learn-drawing-with-ai`,
-    siteName: 'Otterly AI',
+    siteName: 'Otterleo AI',
     locale: 'en_US',
     type: 'article',
     images: [
@@ -39,14 +39,14 @@ export const metadata: Metadata = {
         url: FOUNDER_IMAGE_URL,
         width: 1200,
         height: 630,
-        alt: 'Learn Drawing with Otterly AI - Harjas Digga',
+        alt: 'Learn Drawing with Otterleo AI - Harjas Digga',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'How to Learn Drawing with AI (2026 Guide) | Otterly AI',
-    description: 'Gamified AI drawing lessons and instant feedback by Otterly AI founder Harjas Digga.',
+    title: 'How to Learn Drawing with AI (2026 Guide) | Otterleo AI',
+    description: 'Gamified AI drawing lessons and instant feedback by Otterleo AI founder Harjas Digga.',
     images: [FOUNDER_IMAGE_URL],
   },
   robots: {
@@ -63,16 +63,16 @@ export default function HowToLearnDrawingWithAIPage() {
         "@type": "BlogPosting",
         "@id": `${SITE_URL}/blog/how-to-learn-drawing-with-ai/#article`,
         "headline": "How to Learn Drawing with AI in 2026: A Step-by-Step Guide for Beginners",
-        "description": "Learn how AI feedback and gamified learning can help you master drawing step-by-step with Otterly AI.",
+        "description": "Learn how AI feedback and gamified learning can help you master drawing step-by-step with Otterleo AI.",
         "author": {
           "@type": "Person",
           "name": "Harjas Digga",
-          "jobTitle": "Founder of Otterly AI",
+          "jobTitle": "Founder of Otterleo AI",
           "image": FOUNDER_IMAGE_URL
         },
         "publisher": {
           "@type": "Organization",
-          "name": "Otterly AI",
+          "name": "Otterleo AI",
           "url": SITE_URL,
           "logo": LOGO_URL
         },
@@ -129,7 +129,7 @@ export default function HowToLearnDrawingWithAIPage() {
 
         {/* Author Meta */}
         <div className="flex flex-wrap items-center gap-3 border-b border-[#E2E8F0] pb-6 mb-8 text-sm text-[#64748B]">
-          <span className="font-bold text-[#0F172A]">By Harjas Digga (Founder, Otterly AI)</span>
+          <span className="font-bold text-[#0F172A]">By Harjas Digga (Founder, Otterleo AI)</span>
           <span>•</span>
           <span>September 10, 2026</span>
           <span>•</span>
@@ -145,7 +145,7 @@ export default function HowToLearnDrawingWithAIPage() {
           </p>
 
           <p>
-            With platforms like <Link href="/" className="text-[#2563EB] font-bold hover:underline">Otterly AI</Link>, you get a personalized drawing coach right on your phone or laptop. Here is how you can master drawing step-by-step starting today.
+            With platforms like <Link href="/" className="text-[#2563EB] font-bold hover:underline">Otterleo AI</Link>, you get a personalized drawing coach right on your phone or laptop. Here is how you can master drawing step-by-step starting today.
           </p>
 
           <h2 className="text-2xl font-bold text-[#0F172A] mt-8 mb-3">
@@ -159,7 +159,7 @@ export default function HowToLearnDrawingWithAIPage() {
             2. Get Instant AI Feedback on Your Sketches
           </h2>
           <p>
-            The biggest hurdle for self-taught artists is not knowing <em>where</em> their mistakes lie. By uploading or scanning your physical paper sketches into <Link href="/about" className="text-[#2563EB] font-bold hover:underline">Otterly AI</Link>, you get real-time feedback on proportions, shading, perspective, and alignment.
+            The biggest hurdle for self-taught artists is not knowing <em>where</em> their mistakes lie. By uploading or scanning your physical paper sketches into <Link href="/about" className="text-[#2563EB] font-bold hover:underline">Otterleo AI</Link>, you get real-time feedback on proportions, shading, perspective, and alignment.
           </p>
 
           <h2 className="text-2xl font-bold text-[#0F172A] mt-8 mb-3">
@@ -174,7 +174,7 @@ export default function HowToLearnDrawingWithAIPage() {
             <div className="flex justify-center mb-4">
               <Image 
                 src={MASCOT_URL} 
-                alt="Otto Mascot - Otterly AI Coach" 
+                alt="Otto Mascot - Otterleo AI Coach" 
                 width={80} 
                 height={80} 
                 className="w-20 h-auto object-contain"
@@ -190,15 +190,15 @@ export default function HowToLearnDrawingWithAIPage() {
               href="/"
               className="inline-block bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-base px-8 py-3.5 rounded-xl transition-all shadow-md hover:shadow-lg"
             >
-              Get Started on Otterly AI
+              Get Started on Otterleo AI
             </Link>
           </div>
 
           <h2 className="text-2xl font-bold text-[#0F172A] mt-8 mb-3">
-            Why Choose Otterly AI Over Expensive Courses?
+            Why Choose Otterleo AI Over Expensive Courses?
           </h2>
           <p>
-            Traditional art bootcamps charge anywhere between ₹2,000 to ₹5,000 for rigid schedule classes. <Link href="/" className="text-[#2563EB] font-bold hover:underline">Otterly AI</Link>, created by <strong>Harjas Digga</strong>, gives you self-paced video lessons, infinite AI evaluations, and daily drawing challenges all at a fraction of that cost.
+            Traditional art bootcamps charge anywhere between ₹2,000 to ₹5,000 for rigid schedule classes. <Link href="/" className="text-[#2563EB] font-bold hover:underline">Otterleo AI</Link>, created by <strong>Harjas Digga</strong>, gives you self-paced video lessons, infinite AI evaluations, and daily drawing challenges all at a fraction of that cost.
           </p>
         </div>
       </article>

@@ -30,7 +30,7 @@ export default function ScanPage() {
   const [countdown, setCountdown] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
 
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20scan.jpeg";
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
 
   const clearLock = () => {
     setCountdown(null);
@@ -214,7 +214,7 @@ export default function ScanPage() {
             <PanelLeft className="w-5 h-5"/>
           </button>
 
-          <img src={logoUrl} alt="Otterly Logo" className="h-14 w-auto object-contain max-h-16" />
+          <img src={logoUrl} alt="Otterleo Logo" className="h-14 w-auto object-contain max-h-16" />
         </div>
       </header>
 
@@ -229,7 +229,7 @@ export default function ScanPage() {
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="Otterly Logo" className="h-14 w-auto object-contain" />
+                <img src={logoUrl} alt="Otterleo Logo" className="h-14 w-auto object-contain" />
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
                   <X className="w-5 h-5"/>
                 </button>
@@ -264,7 +264,7 @@ export default function ScanPage() {
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Otterly Logo" className="h-16 sm:h-20 w-auto object-contain" />
+            <img src={logoUrl} alt="Otterleo Logo" className="h-16 sm:h-20 w-auto object-contain" />
           </div>
 
           <nav className="space-y-1.5">

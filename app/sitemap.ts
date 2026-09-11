@@ -4,15 +4,15 @@ import { MetadataRoute } from 'next'
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: 'https://otterly-prototype.vercel.app',
+      url: 'https://Otterleo-prototype.vercel.app',
       lastModified: new Date(),
     },
     {
-      url: 'https://otterly-prototype.vercel.app/about',
+      url: 'https://Otterleo-prototype.vercel.app/about',
       lastModified: new Date(),
     },
     {
-      url: 'https://otterly-prototype.vercel.app/blog/how-to-learn-drawing-with-ai',
+      url: 'https://Otterleo-prototype.vercel.app/blog/how-to-learn-drawing-with-ai',
       lastModified: new Date(),
     },
   ]

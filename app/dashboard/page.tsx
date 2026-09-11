@@ -63,7 +63,7 @@ const getLocalDateString = (date = new Date()) => {
 export default function DashboardPage() {
   const router = useRouter();
   const mascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterly%20logo%20(1).png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -308,7 +308,7 @@ export default function DashboardPage() {
           
           <img
             src={logoUrl}
-            alt="Otterly Logo"
+            alt="Otterleo Logo"
             className="h-14 w-auto object-contain max-h-16"
           />
         </div>
@@ -332,7 +332,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <img
                   src={logoUrl}
-                  alt="Otterly Logo"
+                  alt="Otterleo Logo"
                   className="h-14 w-auto object-contain"
                 />
                 <button
@@ -386,7 +386,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <img
               src={logoUrl}
-              alt="Otterly Logo"
+              alt="Otterleo Logo"
               className="h-16 sm:h-20 w-auto object-contain"
             />
           </div>

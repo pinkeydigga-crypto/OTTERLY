@@ -9,14 +9,14 @@ export default function LoadingScreen() {
       <div className="w-24 h-24 sm:w-28 sm:h-28 relative">
         <img
           src={logoUrl}
-          alt="Otterly Logo"
+          alt="Otterleo Logo"
           className="w-full h-full object-contain drop-shadow-md rounded-2xl"
         />
       </div>
 
       {/* Brand Name Text */}
       <h1 className="text-2xl font-black text-[#0F172A] tracking-tight">
-        Otterly
+        Otterleo
       </h1>
 
       {/* Animated 3 Dots Only */}

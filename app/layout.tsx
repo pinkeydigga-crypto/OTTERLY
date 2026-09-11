@@ -4,15 +4,15 @@ import './globals.css'; // Aapki global CSS file ka path (agar alag ho toh updat
 const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://otterly-prototype.vercel.app'),
+  metadataBase: new URL('https://Otterleo-prototype.vercel.app'),
   title: {
-    default: 'Otterly - Learn to Draw',
-    template: '%s | Otterly',
+    default: 'Otterleo - Learn to Draw',
+    template: '%s | Otterleo',
   },
-  description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterly.',
+  description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterleo.',
   keywords: [
-    'Otterly',
-    'Otterly AI',
+    'Otterleo',
+    'Otterleo AI',
     'Learn to Draw',
     'AI Drawing Coach',
     'Gamified Drawing Lessons',
@@ -23,17 +23,17 @@ export const metadata: Metadata = {
     apple: FAVICON_URL,
   },
   openGraph: {
-    title: 'Otterly - Learn to Draw',
-    description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterly.',
-    url: 'https://otterly-prototype.vercel.app',
-    siteName: 'Otterly',
+    title: 'Otterleo - Learn to Draw',
+    description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterleo.',
+    url: 'https://Otterleo-prototype.vercel.app',
+    siteName: 'Otterleo',
     locale: 'en_US',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Otterly - Learn to Draw',
-    description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterly.',
+    title: 'Otterleo - Learn to Draw',
+    description: 'Learn to draw and improve your art skills daily with instant AI feedback on Otterleo.',
   },
   robots: {
     index: true,
