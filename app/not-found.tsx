@@ -9,19 +9,13 @@ export default function NotFound() {
         <p className="text-xs font-semibold text-slate-500">
           Lagta hai aap galat raste par aa gaye hain. Yeh page exist nahi karta.
         </p>
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <div className="pt-2">
           <Link
             href="/"
-            className="w-full sm:w-auto bg-blue-600 text-white font-bold text-xs px-6 py-3 rounded-2xl shadow-md hover:bg-blue-700 transition-all"
+            className="inline-block w-full bg-blue-600 text-white font-bold text-xs px-6 py-3 rounded-2xl shadow-md hover:bg-blue-700 transition-all"
           >
-            Back to Home
+            Go to Home Page
           </Link>
-          <a
-            href="https://otterleo.in"
-            className="w-full sm:w-auto bg-white border border-slate-200 text-slate-700 font-bold text-xs px-6 py-3 rounded-2xl shadow-sm hover:bg-slate-50 transition-all"
-          >
-            otterleo.in
-          </a>
         </div>
       </div>
     </div>
