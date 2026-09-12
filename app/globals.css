@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --font-sans: var(--font-nunito), system-ui, -apple-system, sans-serif;
