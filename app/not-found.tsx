@@ -58,7 +58,8 @@ export default function NotFound() {
         <div className="relative mb-6">
           <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap">
             <div className="relative bubble-container px-4 py-1.5 rounded-full text-xs font-black text-[#0F172A]">
-              Oops! Page got lost drawing... <span className="text-[#2563EB]">404</span>
+              Oops! Page got lost drawing...{" "}
+              <span className="text-[#2563EB]">404</span>
               <div className="bubble-tail"></div>
               <div className="bubble-tail-inner"></div>
             </div>
@@ -86,7 +87,7 @@ export default function NotFound() {
         </h2>
         
         <p className="text-base sm:text-lg text-[#334155] font-semibold max-w-md leading-relaxed mb-8">
-          The canvas you are looking for doesn't exist or has been moved to another page.
+          The canvas you are looking for does not exist or has been moved to another page.
         </p>
 
         {/* Action Button */}
