@@ -8,12 +8,11 @@ import {
   Eye,
   Database,
   UserCheck,
-  KeyRound,
-  FileText,
   Trash2,
   ChevronRight,
   ArrowLeft,
   Mail,
+  Phone,
   CheckCircle2,
 } from "lucide-react";
 
@@ -24,10 +23,9 @@ export default function PrivacyPolicyPage() {
     { id: "overview", title: "1. Security & Overview", icon: ShieldCheck },
     { id: "data-collection", title: "2. Data We Collect", icon: Database },
     { id: "data-usage", title: "3. How We Use Data", icon: Eye },
-    { id: "encryption", title: "4. Encryption & Protection", icon: Lock },
-    { id: "user-rights", title: "5. Your Rights & Control", icon: UserCheck },
-    { id: "deletion", title: "6. Account & Data Deletion", icon: Trash2 },
-    { id: "contact", title: "7. Contact Security Team", icon: Mail },
+    { id: "user-rights", title: "4. Your Rights & Control", icon: UserCheck },
+    { id: "deletion", title: "5. Account & Data Deletion", icon: Trash2 },
+    { id: "contact", title: "6. Contact Us", icon: Mail },
   ];
 
   const scrollToSection = (id: string) => {
@@ -53,7 +51,7 @@ export default function PrivacyPolicyPage() {
         {/* SECURED BADGE */}
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-full text-emerald-700 font-extrabold text-xs shadow-sm">
           <ShieldCheck className="w-4 h-4 text-emerald-600 animate-pulse" />
-          <span>256-Bit SSL Encrypted & Secured</span>
+          <span>Encrypted & Secured</span>
         </div>
       </header>
 
@@ -68,10 +66,10 @@ export default function PrivacyPolicyPage() {
             Your Privacy & Security First
           </h1>
           <p className="text-sm sm:text-base font-bold text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            Hum aapke data ki privacy aur security ko top priority dete hain. Niche janeyin ki hum aapke information ko kaise safe, secure aur encrypted rakhte hain.
+            We prioritize the privacy and security of your personal data. Read below to learn how we collect, process, and safeguard your information.
           </p>
           <p className="text-xs font-bold text-slate-400">
-            Last Updated: September 2026 • Version 2.4 (Enterprise Secured)
+            Last Updated: September 2026 • Version 2.5 (Secured)
           </p>
         </div>
 
@@ -121,21 +119,21 @@ export default function PrivacyPolicyPage() {
                 </h2>
               </div>
               <p className="text-sm font-bold text-slate-600 leading-relaxed">
-                Welcome to our platform. Aapka bharosa hamari sabse badi priority hai. Hum bilkul transparent hain ki hum kaun sa data collect karte hain aur usko kis tarah se strict security standards ke tehat store karte hain.
+                Your trust is our highest priority. We maintain absolute transparency regarding how we collect, store, and protect your data under strict security standards.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-xs font-black text-emerald-900 uppercase">100% Encrypted</h4>
-                    <p className="text-xs font-bold text-emerald-700">Database level Row Security Active</p>
+                    <h4 className="text-xs font-black text-emerald-900 uppercase">Protected Records</h4>
+                    <p className="text-xs font-bold text-emerald-700">Strict Database Security Active</p>
                   </div>
                 </div>
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="text-xs font-black text-blue-900 uppercase">Zero Data Sale</h4>
-                    <p className="text-xs font-bold text-blue-700">Hum aapka data third-party ko kabhi bechte nahi</p>
+                    <h4 className="text-xs font-black text-blue-900 uppercase">Zero Data Monetization</h4>
+                    <p className="text-xs font-bold text-blue-700">We never sell your data to third parties</p>
                   </div>
                 </div>
               </div>
@@ -149,29 +147,29 @@ export default function PrivacyPolicyPage() {
               <div className="flex items-center gap-3 text-blue-600">
                 <Database className="w-7 h-7" />
                 <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                  2. Data We Collect (Hum Kya Collect Karte Hain)
+                  2. Data We Collect
                 </h2>
               </div>
               <p className="text-sm font-bold text-slate-600 leading-relaxed">
-                Platform ki services ko smoothly chalane ke liye hum basic information collect karte hain:
+                To provide smooth application functionality, we collect minimal user details:
               </p>
               <ul className="space-y-3 text-xs sm:text-sm font-bold text-slate-600">
                 <li className="flex items-start gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
                   <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0" />
                   <span>
-                    <strong className="text-[#0F172A]">Account Credentials:</strong> Aapka Naam, Username, aur Email Address authentication ke liye.
+                    <strong className="text-[#0F172A]">Account Information:</strong> Full Name, Username, and Email Address for authentication.
                   </span>
                 </li>
                 <li className="flex items-start gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
                   <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0" />
                   <span>
-                    <strong className="text-[#0F172A]">Progress & Stats:</strong> XP points, Streaks, Challenges activity, aur Leaderboard ranking data.
+                    <strong className="text-[#0F172A]">Progress & Activity:</strong> XP points, Streaks, Challenges activity, and Leaderboard performance.
                   </span>
                 </li>
                 <li className="flex items-start gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
                   <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0" />
                   <span>
-                    <strong className="text-[#0F172A]">Image Scans & AI Input:</strong> Agar aap AI Scanner use karte hain, toh uploaded image secure AI servers par transient processing ke liye use hoti hai.
+                    <strong className="text-[#0F172A]">Scanner Data:</strong> Uploaded image inputs processed securely through temporary AI processing pipelines.
                   </span>
                 </li>
               </ul>
@@ -185,69 +183,29 @@ export default function PrivacyPolicyPage() {
               <div className="flex items-center gap-3 text-blue-600">
                 <Eye className="w-7 h-7" />
                 <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                  3. How We Use Your Data (Hum Data Ka Kya Karte Hain)
+                  3. How We Use Your Data
                 </h2>
               </div>
               <p className="text-sm font-bold text-slate-600 leading-relaxed">
-                Aapke dwara diya gaya data sirf niche diye gaye kaam ke liye upayog me laya jata hai:
+                Your information is used strictly for the operational purposes listed below:
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
                   <h4 className="text-xs font-black text-[#0F172A]">Personalized Experience</h4>
                   <p className="text-xs font-bold text-slate-500">
-                    Aapki Level, XP points aur Streak track karke gamified dashboard serve karne ke liye.
+                    Tracking Level status, XP progression, and daily streaks to present your interactive dashboard.
                   </p>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-1">
-                  <h4 className="text-xs font-black text-[#0F172A]">Leaderboard Generation</h4>
+                  <h4 className="text-xs font-black text-[#0F172A]">Public Leaderboard</h4>
                   <p className="text-xs font-bold text-slate-500">
-                    Leaderboard par aapka public username aur avatar show karne ke liye.
+                    Displaying public usernames and avatar selections across global rankings.
                   </p>
                 </div>
               </div>
             </section>
 
-            {/* Section 4: Encryption & Protection */}
-            <section
-              id="encryption"
-              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4"
-            >
-              <div className="flex items-center gap-3 text-emerald-600">
-                <Lock className="w-7 h-7" />
-                <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                  4. Enterprise Security Standards (Encrypted Environment)
-                </h2>
-              </div>
-              <p className="text-sm font-bold text-slate-600 leading-relaxed">
-                Hamari security architecture high-end protocols par based hai:
-              </p>
-              <div className="space-y-3">
-                <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2">
-                  <div className="flex items-center gap-2">
-                    <KeyRound className="w-4 h-4 text-emerald-400" />
-                    <span className="text-xs font-black text-emerald-400 uppercase">
-                      Supabase Row Level Security (RLS)
-                    </span>
-                  </div>
-                  <p className="text-xs font-medium text-slate-300">
-                    Aapke personal data ko koi doosra authenticated user access nahi kar sakta. Har record DB level par strictly policy-protected hai.
-                  </p>
-                </div>
-                <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-2">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-blue-400" />
-                    <span className="text-xs font-black text-blue-400 uppercase">
-                      TLS 1.3 & AES-256 Encryption
-                    </span>
-                  </div>
-                  <p className="text-xs font-medium text-slate-300">
-                    Network requests transport layer par end-to-end HTTPS/TLS encrypted hoti hain, jisse man-in-the-middle attacks impossible hain.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* Section 5: User Rights */}
+            {/* Section 4: User Rights */}
             <section
               id="user-rights"
               className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4"
@@ -255,20 +213,20 @@ export default function PrivacyPolicyPage() {
               <div className="flex items-center gap-3 text-blue-600">
                 <UserCheck className="w-7 h-7" />
                 <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                  5. Your Rights & Data Control
+                  4. Your Rights & Data Control
                 </h2>
               </div>
               <p className="text-sm font-bold text-slate-600 leading-relaxed">
-                Aap apne data ke poore malik hain. Aapke paas ye sabhi rights hain:
+                You maintain complete ownership of your personal profile data:
               </p>
               <ul className="list-disc list-inside text-xs sm:text-sm font-bold text-slate-600 space-y-2">
-                <li>Apna Profile Info (Name, Username, Avatar) kisi bhi time change kar sakte hain.</li>
-                <li>Apna sara logged-in data dashboard se real-time review kar sakte hain.</li>
-                <li>Apna account directly Profile Settings se permanent delete kar sakte hain.</li>
+                <li>Update profile details (Name, Username, Avatar) anytime within your account profile page.</li>
+                <li>Review all recorded activity data in real-time.</li>
+                <li>Initiate a permanent account deletion directly from the Profile Settings menu.</li>
               </ul>
             </section>
 
-            {/* Section 6: Deletion */}
+            {/* Section 5: Account Deletion */}
             <section
               id="deletion"
               className="bg-red-50/60 rounded-[2.5rem] p-6 sm:p-8 border-2 border-red-200 shadow-sm space-y-4"
@@ -276,21 +234,21 @@ export default function PrivacyPolicyPage() {
               <div className="flex items-center gap-3 text-red-600">
                 <Trash2 className="w-7 h-7" />
                 <h2 className="text-xl sm:text-2xl font-black text-red-950">
-                  6. Permanent Account & Data Deletion
+                  5. Permanent Account & Data Deletion
                 </h2>
               </div>
               <p className="text-xs sm:text-sm font-extrabold text-red-900 leading-relaxed">
-                Agar aap platform chhodna chahte hain, toh aap Profile page me <strong>"Danger Zone"</strong> me jaakar <strong>"DELETE MY ACCOUNT"</strong> button par click kar sakte hain.
+                If you wish to terminate your account, access the <strong>"Danger Zone"</strong> in Profile Settings and select <strong>"DELETE MY ACCOUNT"</strong>.
               </p>
               <div className="p-4 bg-white rounded-2xl border border-red-200 text-xs font-bold text-slate-600 space-y-1">
-                <strong className="text-red-600 font-black">Strict Deletion Guarantee:</strong>
+                <strong className="text-red-600 font-black">Deletion Guarantee:</strong>
                 <p>
-                  Delete Confirm hone ke saath hi Supabase database se aapka profile record, XP, streak history aur authentication session instantly wipe out kar diya jata hai.
+                  Upon confirmation, all database records including profile details, XP history, streak milestones, and auth sessions are permanently erased.
                 </p>
               </div>
             </section>
 
-            {/* Section 7: Contact */}
+            {/* Section 6: Contact Us */}
             <section
               id="contact"
               className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4"
@@ -298,23 +256,37 @@ export default function PrivacyPolicyPage() {
               <div className="flex items-center gap-3 text-blue-600">
                 <Mail className="w-7 h-7" />
                 <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                  7. Contact Our Security Officer
+                  6. Contact Us
                 </h2>
               </div>
               <p className="text-sm font-bold text-slate-600 leading-relaxed">
-                Agar aapke paas privacy, data security, ya vulnerability reporting ke regarding koi sawal hai, toh hamari security team se directly contact karein:
+                If you have any questions, privacy concerns, or security inquiries, please reach out directly:
               </p>
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-black text-slate-400 uppercase">Official Security Email</p>
-                  <p className="text-sm font-black text-blue-600">security@otterleo.com</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center gap-3">
+                  <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div className="overflow-hidden">
+                    <p className="text-xs font-black text-slate-400 uppercase">Support Email</p>
+                    <a href="mailto:pinkeydigga026@gmail.com" className="text-xs sm:text-sm font-black text-blue-600 truncate block hover:underline">
+                      pinkeydigga026@gmail.com
+                    </a>
+                  </div>
                 </div>
-                <a
-                  href="mailto:security@otterleo.com"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black hover:bg-blue-700 transition-all"
-                >
-                  Contact Us
-                </a>
+
+                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-black text-slate-400 uppercase">Contact Number</p>
+                    <a href="tel:9991257182" className="text-xs sm:text-sm font-black text-slate-800 hover:text-blue-600">
+                      +91 9991257182
+                    </a>
+                  </div>
+                </div>
               </div>
             </section>
           </div>
@@ -323,7 +295,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-center text-xs font-bold text-slate-400">
-        <p>© 2026 Otterleo App. All Rights Reserved. End-to-End Secured.</p>
+        <p>© 2026 Otterleo App. All Rights Reserved. Fully Secured.</p>
       </footer>
     </div>
   );
