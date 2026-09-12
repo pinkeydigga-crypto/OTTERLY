@@ -75,7 +75,7 @@ export default function ProfilePage() {
 
       if (authError || !user) {
         localStorage.clear();
-        router.push("/login");
+        router.replace("/login");
         return;
       }
 
@@ -87,19 +87,20 @@ export default function ProfilePage() {
         .single();
 
       if (error || !data) {
-        throw new Error("Unauthorized profile access or profile not found.");
+        localStorage.clear();
+        router.replace("/login");
+        return;
       }
 
       setProfile(data);
       setName(data.name || "");
       setUsername(data.username || "");
       setSelectedAvatar(data.avatar_url || AVATARS[0].url);
+      setLoading(false);
     } catch (err: any) {
       console.error("Profile security check failed:", err);
       localStorage.clear();
-      router.push("/login");
-    } finally {
-      setLoading(false);
+      router.replace("/login");
     }
   };
 
@@ -173,7 +174,7 @@ export default function ProfilePage() {
       localStorage.clear();
 
       // 3. Redirect to login page
-      router.push("/login");
+      router.replace("/login");
     } catch (err: any) {
       setMessage({
         type: "error",
@@ -188,10 +189,10 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.clear();
-    router.push("/login");
+    router.replace("/login");
   };
 
-  if (loading) {
+  if (loading || !profile) {
     return <LoadingScreen />;
   }
 

@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useMemo, ChangeEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft, Upload, Sparkles, CheckCircle2, RefreshCw, PanelLeft, X, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings, AlertTriangle, Target, Zap, Star, ShieldAlert, Flame
+  Swords, Scan, Trophy, Compass, Award, User, Settings, AlertTriangle, Target, Zap, Star, ShieldAlert, Flame, Loader2
 } from "lucide-react";
 
 interface AIAnalysisResult {
@@ -22,6 +24,9 @@ interface AIAnalysisResult {
 }
 
 export default function ScanPage() {
+  const router = useRouter();
+  const [authLoading, setAuthLoading] = useState(true);
+
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AIAnalysisResult | null>(null);
@@ -31,6 +36,21 @@ export default function ScanPage() {
 
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20scan.jpeg";
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
+
+  // 🔒 Security Check: Page load hote hi authentication verify karna
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.replace("/login");
+      } else {
+        setAuthLoading(false);
+      }
+    };
+
+    checkUser();
+  }, [router]);
 
   const clearLock = () => {
     setCountdown(null);
@@ -199,6 +219,18 @@ export default function ScanPage() {
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
+
+  // Jab tak Supabase authentication load ho raha hai
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#F6FAFF] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-[#2563eb] font-black text-base">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <span>Verifying access...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0">
