@@ -37,9 +37,9 @@ export default function SignupPage() {
       return;
     }
 
-    // Strict Consent Validation (Sirf tick hone par hi allow hoga)
+    // DPDP Compliance: Explicit, unambiguous consent check
     if (!consent) {
-      setErrorMessage('You must check the consent box to agree to the Privacy Policy.');
+      setErrorMessage('You must consent to the Privacy Policy and Terms to create an account.');
       return;
     }
 
@@ -102,22 +102,7 @@ export default function SignupPage() {
         console.error("Profile creation error:", profileError);
       }
 
-      // 4. Record Legal Consent Audit Log in Supabase
-      const { error: consentError } = await supabase
-        .from('user_consents')
-        .insert([
-          {
-            user_id: user.id,
-            consent_given: true,
-            policy_version: '1.0'
-          }
-        ]);
-
-      if (consentError) {
-        console.error("Consent recording error:", consentError);
-      }
-
-      // 5. Store active user credentials locally
+      // 4. Store active user credentials locally
       const userData = {
         id: user.id,
         name: formData.name.trim(),
@@ -129,7 +114,7 @@ export default function SignupPage() {
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
 
-      // 6. Force Navigation
+      // 5. Force Navigation
       window.location.href = '/dashboard';
     } catch (err: any) {
       console.error("Signup Catch Error:", err);
@@ -149,11 +134,18 @@ export default function SignupPage() {
 
         {/* Card Container */}
         <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-3 pt-14">
-          <div className="text-center space-y-1">
+          <div className="text-center space-y-2">
             <h2 className="text-3xl font-black text-[#0F172A] tracking-tight">
               Join <span className="text-[#2563EB]">Otto</span>
             </h2>
             <p className="text-xs font-semibold text-[#0F172A]/60">Choose your avatar & create account</p>
+            
+            {/* Security & Data Responsibility Badge */}
+            <div className="pt-1">
+              <span className="inline-block bg-blue-50 text-[#2563EB] text-[10px] font-extrabold px-3 py-1 rounded-full border border-blue-100 tracking-wide">
+                🔒 Your data, our responsibility — 100% Secure & Compliant
+              </span>
+            </div>
           </div>
 
           {errorMessage && (

@@ -149,7 +149,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* 3-Layer Waves Background (Last Dark Layer Removed) */}
+      {/* 3-Layer Waves Background */}
       <div className="relative w-full z-10">
         <div className="w-full overflow-hidden leading-none">
           <svg 
@@ -174,6 +174,13 @@ export default function HomePage() {
                 className="bg-[#1D4ED8] hover:bg-[#1E40AF] text-white px-4 py-2 rounded-full border border-white/20 transition-all duration-200 shadow-sm hover:shadow active:scale-95"
               >
                 About Us
+              </Link>
+              {/* Added Privacy Policy Button */}
+              <Link 
+                href="/privacy" 
+                className="bg-[#1D4ED8] hover:bg-[#1E40AF] text-white px-4 py-2 rounded-full border border-white/20 transition-all duration-200 shadow-sm hover:shadow active:scale-95"
+              >
+                Privacy Policy
               </Link>
             </div>
           </div>

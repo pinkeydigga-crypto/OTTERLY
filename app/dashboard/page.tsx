@@ -76,19 +76,27 @@ export default function DashboardPage() {
 
   const fetchDashboardData = useCallback(async () => {
     try {
+      // 1. Strict Auth Verification Check
       const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
+        if (typeof window !== "undefined") {
+          localStorage.clear();
+        }
         router.push("/login");
         return;
       }
 
-      // Fetch Profile Data
-      const { data: profileData } = await supabase
+      // 2. Safe Fetch Profile Data
+      const { data: profileData, error: profError } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, name, username, email, avatar_url, xp, streak, last_login")
         .eq("id", user.id)
         .single();
+
+      if (profError) {
+        console.error("Dashboard profile fetch exception occurred.");
+      }
 
       if (profileData) {
         const todayStr = getLocalDateString();
@@ -96,7 +104,7 @@ export default function DashboardPage() {
         const lastLoginStr = lastLoginRaw ? lastLoginRaw.split("T")[0] : null;
 
         if (lastLoginStr !== todayStr) {
-          const currentStreak = profileData.streak || 0;
+          const currentStreak = Number(profileData.streak) || 0;
           const newStreak = currentStreak + 1;
 
           const { data: updatedProfile } = await supabase
@@ -106,7 +114,7 @@ export default function DashboardPage() {
               last_login: todayStr
             })
             .eq("id", user.id)
-            .select()
+            .select("id, name, username, email, avatar_url, xp, streak, last_login")
             .single();
 
           setProfile(updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr });
@@ -115,10 +123,10 @@ export default function DashboardPage() {
         }
       }
 
-      // Fetch Today's Challenge
+      // 3. Fetch Today's Challenge Safely
       const { data: challengeData } = await supabase
         .from("challenges")
-        .select("*")
+        .select("id, title, description, xp_reward, image_url")
         .limit(1)
         .maybeSingle();
 
@@ -137,7 +145,7 @@ export default function DashboardPage() {
         }
       }
 
-      // Dynamic Realtime Achievements
+      // 4. Secure & Dynamic Achievements Retrieval
       const { data: userAchData, error: achError } = await supabase
         .from("user_completed_achievements")
         .select("id, achievement_id, created_at")
@@ -171,25 +179,27 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // Exact Leaderboard Logic to match Leaderboard Page
-      const { data: profiles } = await supabase
+      // 5. Sanitized Leaderboard Retrieval
+      const { data: profiles, error: leadError } = await supabase
         .from("profiles")
-        .select("*");
+        .select("id, name, username, xp, streak, avatar_url");
 
-      if (profiles) {
+      if (!leadError && profiles) {
         let mapped = profiles.map((p: any) => {
-          const totalXP = Number(p.xp_points ?? p.xp ?? 0);
-          const userStreak = Number(p.streak ?? p.current_streak ?? p.streak_count ?? p.scans_count ?? p.scans ?? 0);
+          const totalXP = Number(p.xp ?? 0);
+          const userStreak = Number(p.streak ?? 0);
+          const rawName = p.name || p.username || "Artist";
+          const cleanName = rawName.replace(/<[^>]*>?/gm, "").trim();
+
           return {
             id: p.id,
-            name: p.full_name || p.name || p.username || "User",
+            name: cleanName,
             xp: totalXP,
             streak: userStreak,
-            avatar_url: p.avatar_url || p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+            avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.id}`,
           };
         });
 
-        // Exactly match Leaderboard sorting: XP highest first, then Streak highest
         mapped.sort((a, b) => {
           if (b.xp !== a.xp) {
             return b.xp - a.xp;
@@ -197,10 +207,8 @@ export default function DashboardPage() {
           return b.streak - a.streak;
         });
 
-        // Set Top 3
         setLeaderboard(mapped.slice(0, 3));
 
-        // Get exact current user rank
         const rankIndex = mapped.findIndex((u) => u.id === user.id);
         if (rankIndex !== -1) {
           setUserRank(`#${rankIndex + 1}`);
@@ -209,8 +217,8 @@ export default function DashboardPage() {
         }
       }
 
-    } catch (error) {
-      console.error("Error loading dashboard:", error);
+    } catch (err) {
+      console.error("Dashboard error occurred while processing request.");
     } finally {
       setLoading(false);
     }
@@ -226,35 +234,39 @@ export default function DashboardPage() {
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const setupRealtime = () => {
-      if (channel) supabase.removeChannel(channel);
+      try {
+        if (channel) supabase.removeChannel(channel);
 
-      channel = supabase
-        .channel(`dashboard_realtime_${profile.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "profiles",
-            filter: `id=eq.${profile.id}`,
-          },
-          () => {
-            fetchDashboardData();
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "user_completed_achievements",
-            filter: `user_id=eq.${profile.id}`,
-          },
-          () => {
-            fetchDashboardData();
-          }
-        )
-        .subscribe();
+        channel = supabase
+          .channel(`dashboard_realtime_${profile.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "profiles",
+              filter: `id=eq.${profile.id}`,
+            },
+            () => {
+              fetchDashboardData();
+            }
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "user_completed_achievements",
+              filter: `user_id=eq.${profile.id}`,
+            },
+            () => {
+              fetchDashboardData();
+            }
+          )
+          .subscribe();
+      } catch (e) {
+        console.error("Subscription sync failure.");
+      }
     };
 
     setupRealtime();
@@ -277,9 +289,10 @@ export default function DashboardPage() {
     return <LoadingScreen />;
   }
 
-  const userXp = profile?.xp || 0;
-  const userStreak = profile?.streak || 0;
-  const userName = profile?.name || profile?.username || "Artist";
+  const userXp = Number(profile?.xp) || 0;
+  const userStreak = Number(profile?.streak) || 0;
+  const rawUserName = profile?.name || profile?.username || "Artist";
+  const userName = rawUserName.replace(/<[^>]*>?/gm, "").trim();
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", active: true, icon: LayoutDashboard },
