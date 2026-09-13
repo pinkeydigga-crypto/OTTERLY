@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+// Next.js static engine build guard
 export const dynamic = 'force-static';
 export const revalidate = false;
 
@@ -21,10 +22,8 @@ export default function NotFound() {
         </Link>
       </header>
 
-      {/* Main 404 Section */}
+      {/* Main 404 Content */}
       <main className="max-w-md w-full mx-auto px-6 py-8 flex flex-col items-center justify-center my-auto z-10">
-        
-        {/* Card Container */}
         <div className="bg-white rounded-3xl p-8 border border-slate-200/90 shadow-2xl w-full relative space-y-6 pt-12 text-center">
           
           {/* Speech Bubble */}
@@ -52,7 +51,7 @@ export default function NotFound() {
             </p>
           </div>
 
-          {/* Back Home Button */}
+          {/* Back to Home Button */}
           <Link href="/" className="block w-full">
             <button
               style={{ backgroundColor: '#2563EB', boxShadow: '0px 6px 0px #1D4ED8' }}
@@ -64,7 +63,7 @@ export default function NotFound() {
         </div>
       </main>
 
-      {/* 3-Layer Waves Background & Footer */}
+      {/* Footer Waves */}
       <div className="relative w-full z-10">
         <div className="w-full overflow-hidden leading-none">
           <svg
