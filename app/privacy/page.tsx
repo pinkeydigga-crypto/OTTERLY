@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -30,10 +30,13 @@ export default function PrivacyPolicyPage() {
 
   const scrollToSection = (id: string) => {
     setActiveSection(id);
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-    }
+    // Smooth scroll with fallback for dynamic hydration
+    setTimeout(() => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 10);
   };
 
   return (
@@ -87,6 +90,7 @@ export default function PrivacyPolicyPage() {
                 return (
                   <button
                     key={sec.id}
+                    type="button"
                     onClick={() => scrollToSection(sec.id)}
                     className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
                       isSelected
@@ -110,7 +114,7 @@ export default function PrivacyPolicyPage() {
             {/* Section 1: Overview */}
             <section
               id="overview"
-              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4"
+              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4 scroll-mt-28"
             >
               <div className="flex items-center gap-3 text-blue-600">
                 <ShieldCheck className="w-7 h-7" />
@@ -142,7 +146,7 @@ export default function PrivacyPolicyPage() {
             {/* Section 2: Data We Collect */}
             <section
               id="data-collection"
-              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4"
+              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4 scroll-mt-28"
             >
               <div className="flex items-center gap-3 text-blue-600">
                 <Database className="w-7 h-7" />
@@ -178,7 +182,7 @@ export default function PrivacyPolicyPage() {
             {/* Section 3: Data Usage */}
             <section
               id="data-usage"
-              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4"
+              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4 scroll-mt-28"
             >
               <div className="flex items-center gap-3 text-blue-600">
                 <Eye className="w-7 h-7" />
@@ -208,7 +212,7 @@ export default function PrivacyPolicyPage() {
             {/* Section 4: User Rights */}
             <section
               id="user-rights"
-              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4"
+              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4 scroll-mt-28"
             >
               <div className="flex items-center gap-3 text-blue-600">
                 <UserCheck className="w-7 h-7" />
@@ -229,7 +233,7 @@ export default function PrivacyPolicyPage() {
             {/* Section 5: Account Deletion */}
             <section
               id="deletion"
-              className="bg-red-50/60 rounded-[2.5rem] p-6 sm:p-8 border-2 border-red-200 shadow-sm space-y-4"
+              className="bg-red-50/60 rounded-[2.5rem] p-6 sm:p-8 border-2 border-red-200 shadow-sm space-y-4 scroll-mt-28"
             >
               <div className="flex items-center gap-3 text-red-600">
                 <Trash2 className="w-7 h-7" />
@@ -251,7 +255,7 @@ export default function PrivacyPolicyPage() {
             {/* Section 6: Contact Us */}
             <section
               id="contact"
-              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4"
+              className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4 scroll-mt-28"
             >
               <div className="flex items-center gap-3 text-blue-600">
                 <Mail className="w-7 h-7" />
