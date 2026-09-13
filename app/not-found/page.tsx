@@ -1,10 +1,6 @@
 import Link from 'next/link';
 
-// Next.js static engine build guard
-export const dynamic = 'force-static';
-export const revalidate = false;
-
-export default function NotFound() {
+export default function NotFoundPage() {
   const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png';
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png';
 
@@ -22,7 +18,7 @@ export default function NotFound() {
         </Link>
       </header>
 
-      {/* Main 404 Content */}
+      {/* Main 404 Section */}
       <main className="max-w-md w-full mx-auto px-6 py-8 flex flex-col items-center justify-center my-auto z-10">
         <div className="bg-white rounded-3xl p-8 border border-slate-200/90 shadow-2xl w-full relative space-y-6 pt-12 text-center">
           
@@ -51,7 +47,7 @@ export default function NotFound() {
             </p>
           </div>
 
-          {/* Back to Home Button */}
+          {/* Back Home Button */}
           <Link href="/" className="block w-full">
             <button
               style={{ backgroundColor: '#2563EB', boxShadow: '0px 6px 0px #1D4ED8' }}
@@ -63,7 +59,7 @@ export default function NotFound() {
         </div>
       </main>
 
-      {/* Footer Waves */}
+      {/* 3-Layer Waves Background & Footer */}
       <div className="relative w-full z-10">
         <div className="w-full overflow-hidden leading-none">
           <svg
