@@ -1,28 +1,62 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_TIME_MS = 60 * 1000;
 
 export default function LoginPage() {
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
 
+  useEffect(() => {
+    const checkLockout = () => {
+      const lockUntil = localStorage.getItem('login_lockout_until');
+      if (lockUntil) {
+        const remainingTime = Math.ceil((parseInt(lockUntil, 10) - Date.now()) / 1000);
+        if (remainingTime > 0) {
+          setLockoutSeconds(remainingTime);
+        } else {
+          localStorage.removeItem('login_lockout_until');
+          localStorage.removeItem('login_attempts');
+          setLockoutSeconds(0);
+        }
+      }
+    };
+
+    checkLockout();
+    const timer = setInterval(checkLockout, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    // URL me input parameters na jayein aur page reload bilkul rokne ke liye
     e.preventDefault();
     e.stopPropagation();
+
+    if (lockoutSeconds > 0) return;
+
+    const attempts = parseInt(localStorage.getItem('login_attempts') || '0', 10);
+    if (attempts >= MAX_ATTEMPTS) {
+      const lockUntil = Date.now() + LOCKOUT_TIME_MS;
+      localStorage.setItem('login_lockout_until', lockUntil.toString());
+      setLockoutSeconds(60);
+      setErrorMessage('Too many attempts. Please try again after 60 seconds.');
+      return;
+    }
 
     setLoading(true);
     setErrorMessage('');
@@ -30,7 +64,6 @@ export default function LoginPage() {
     const cleanEmail = formData.email.trim().toLowerCase();
 
     try {
-      // 1. Supabase Auth Login
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: formData.password,
@@ -39,7 +72,9 @@ export default function LoginPage() {
       if (authError) throw authError;
 
       if (authData.user) {
-        // 2. Fetch User Profile
+        localStorage.removeItem('login_attempts');
+        localStorage.removeItem('login_lockout_until');
+
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -54,16 +89,27 @@ export default function LoginPage() {
           avatar: profile?.avatar_url || `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
         };
 
-        // 3. LocalStorage Sync
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('isLoggedIn', 'true');
-
-        // 4. Force Hard Redirect to Dashboard
         window.location.assign('/dashboard');
       }
     } catch (err: any) {
-      console.error("Login Error:", err);
-      setErrorMessage(err.message || 'Invalid email or password.');
+      console.error("Internal Auth Debug:", err);
+
+      const newAttempts = attempts + 1;
+      localStorage.setItem('login_attempts', newAttempts.toString());
+
+      if (newAttempts >= MAX_ATTEMPTS) {
+        const lockUntil = Date.now() + LOCKOUT_TIME_MS;
+        localStorage.setItem('login_lockout_until', lockUntil.toString());
+        setLockoutSeconds(60);
+        setErrorMessage('Too many failed attempts. Login locked for 60 seconds.');
+      } else {
+        // GENERIC ERROR: Internal error leak rokne ke liye single secure message
+        const remaining = MAX_ATTEMPTS - newAttempts;
+        setErrorMessage(`Invalid email or password. (${remaining} attempt${remaining > 1 ? 's' : ''} left)`);
+      }
+
       setLoading(false);
     }
   };
@@ -72,12 +118,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
       <div className="relative max-w-md w-full pt-16">
         
-        {/* Mascot */}
         <div className="absolute -top-6 left-6 z-20 w-28 h-28 sm:w-32 sm:h-32 drop-shadow-md pointer-events-none">
           <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
         </div>
 
-        {/* Form Card */}
         <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4 pt-14">
           <div className="text-center space-y-1">
             <h2 className="text-3xl font-black text-[#0F172A] tracking-tight">
@@ -99,11 +143,12 @@ export default function LoginPage() {
                 type="email"
                 name="email"
                 required
+                disabled={lockoutSeconds > 0}
                 autoComplete="off"
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="youremail@gmail.com"
-                className="w-full px-4 py-2.5 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A]"
+                className="w-full px-4 py-2.5 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50"
               />
             </div>
 
@@ -113,21 +158,26 @@ export default function LoginPage() {
                 type="password"
                 name="password"
                 required
+                disabled={lockoutSeconds > 0}
                 autoComplete="current-password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className="w-full px-4 py-2.5 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A]"
+                className="w-full px-4 py-2.5 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50"
               />
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || lockoutSeconds > 0}
               style={{ backgroundColor: '#2563EB', boxShadow: '0px 4px 0px #1D4ED8' }}
               className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-0.5 transition-all mt-2 disabled:opacity-50"
             >
-              {loading ? 'LOGGING IN...' : 'LOG IN'}
+              {lockoutSeconds > 0 
+                ? `LOCKED (${lockoutSeconds}s)` 
+                : loading 
+                ? 'LOGGING IN...' 
+                : 'LOG IN'}
             </button>
           </form>
 

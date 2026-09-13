@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_TIME_MS = 60 * 1000;
 
 // SVG Dicebear Avatars
 const AVATARS = [
@@ -18,7 +21,8 @@ export default function SignupPage() {
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [consent, setConsent] = useState(false); // DPDP explicit consent state
+  const [consent, setConsent] = useState(false);
+  const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -27,23 +31,54 @@ export default function SignupPage() {
     password: '',
   });
 
+  // Check Rate Limit state on initial load & tick down timer
+  useEffect(() => {
+    const checkLockout = () => {
+      const lockUntil = localStorage.getItem('signup_lockout_until');
+      if (lockUntil) {
+        const remainingTime = Math.ceil((parseInt(lockUntil, 10) - Date.now()) / 1000);
+        if (remainingTime > 0) {
+          setLockoutSeconds(remainingTime);
+        } else {
+          localStorage.removeItem('signup_lockout_until');
+          localStorage.removeItem('signup_attempts');
+          setLockoutSeconds(0);
+        }
+      }
+    };
+
+    checkLockout();
+    const timer = setInterval(checkLockout, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSignup = async () => {
+    if (lockoutSeconds > 0) return;
+
+    // Check rate limit attempts
+    const attempts = parseInt(localStorage.getItem('signup_attempts') || '0', 10);
+    if (attempts >= MAX_ATTEMPTS) {
+      const lockUntil = Date.now() + LOCKOUT_TIME_MS;
+      localStorage.setItem('signup_lockout_until', lockUntil.toString());
+      setLockoutSeconds(60);
+      setErrorMessage('Too many registration attempts. Please wait 60 seconds.');
+      return;
+    }
+
     if (!formData.name || !formData.username || !formData.email || !formData.password) {
       setErrorMessage('Please fill in all fields.');
       return;
     }
 
-    // Strict Consent Validation (Sirf tick hone par hi allow hoga)
     if (!consent) {
       setErrorMessage('You must check the consent box to agree to the Privacy Policy.');
       return;
     }
 
-    // Security: Strict Email Format Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const cleanEmail = formData.email.trim().toLowerCase();
     if (!emailRegex.test(cleanEmail)) {
@@ -51,7 +86,6 @@ export default function SignupPage() {
       return;
     }
 
-    // Security: Username Sanitization & Validation (Alphanumeric and underscores only, 3-20 chars)
     const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
     const cleanUsername = formData.username.trim();
     if (!usernameRegex.test(cleanUsername)) {
@@ -68,11 +102,9 @@ export default function SignupPage() {
     setErrorMessage('');
 
     try {
-      // 1. HARD LOGOUT & CLEAR LOCAL STORAGE
       await supabase.auth.signOut();
       localStorage.clear();
 
-      // 2. Supabase Auth Create User
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: formData.password,
@@ -83,7 +115,6 @@ export default function SignupPage() {
       const user = authData.user;
       if (!user) throw new Error("Could not create authentication session.");
 
-      // 3. Directly Insert Unique Profile record into Supabase Table
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert([
@@ -102,7 +133,6 @@ export default function SignupPage() {
         console.error("Profile creation error:", profileError);
       }
 
-      // 4. Record Legal Consent Audit Log in Supabase
       const { error: consentError } = await supabase
         .from('user_consents')
         .insert([
@@ -117,7 +147,10 @@ export default function SignupPage() {
         console.error("Consent recording error:", consentError);
       }
 
-      // 5. Store active user credentials locally
+      // Success: Clear rate limit state
+      localStorage.removeItem('signup_attempts');
+      localStorage.removeItem('signup_lockout_until');
+
       const userData = {
         id: user.id,
         name: formData.name.trim(),
@@ -129,11 +162,24 @@ export default function SignupPage() {
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
 
-      // 6. Force Navigation
       window.location.href = '/dashboard';
     } catch (err: any) {
-      console.error("Signup Catch Error:", err);
-      setErrorMessage(err.message || 'Signup failed. Please try again.');
+      console.error("Signup Internal Debug:", err);
+
+      const newAttempts = attempts + 1;
+      localStorage.setItem('signup_attempts', newAttempts.toString());
+
+      if (newAttempts >= MAX_ATTEMPTS) {
+        const lockUntil = Date.now() + LOCKOUT_TIME_MS;
+        localStorage.setItem('signup_lockout_until', lockUntil.toString());
+        setLockoutSeconds(60);
+        setErrorMessage('Too many failed attempts. Registration locked for 60 seconds.');
+      } else {
+        const remaining = MAX_ATTEMPTS - newAttempts;
+        // Generic Error Message for Security
+        setErrorMessage(`Unable to create account. Please try again. (${remaining} attempt${remaining > 1 ? 's' : ''} left)`);
+      }
+
       setLoading(false);
     }
   };
@@ -172,12 +218,13 @@ export default function SignupPage() {
                   <button
                     key={avatar.id}
                     type="button"
+                    disabled={lockoutSeconds > 0}
                     onClick={() => setSelectedAvatar(avatar.url)}
                     className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl p-1 overflow-hidden transition-all duration-200 cursor-pointer ${
                       selectedAvatar === avatar.url
                         ? 'ring-4 ring-[#2563EB] scale-110 shadow-md bg-blue-50'
                         : 'opacity-70 hover:opacity-100 border border-slate-200 hover:scale-105'
-                    }`}
+                    } ${lockoutSeconds > 0 ? 'opacity-40 pointer-events-none' : ''}`}
                   >
                     <img
                       src={avatar.url}
@@ -194,10 +241,11 @@ export default function SignupPage() {
               <input
                 type="text"
                 name="name"
+                disabled={lockoutSeconds > 0}
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Name"
-                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A]"
+                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50"
               />
             </div>
 
@@ -206,10 +254,11 @@ export default function SignupPage() {
               <input
                 type="text"
                 name="username"
+                disabled={lockoutSeconds > 0}
                 value={formData.username}
                 onChange={handleChange}
                 placeholder="Username"
-                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A]"
+                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50"
               />
             </div>
 
@@ -218,10 +267,11 @@ export default function SignupPage() {
               <input
                 type="email"
                 name="email"
+                disabled={lockoutSeconds > 0}
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="youremail@gmail.com"
-                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A]"
+                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50"
               />
             </div>
 
@@ -230,21 +280,23 @@ export default function SignupPage() {
               <input
                 type="password"
                 name="password"
+                disabled={lockoutSeconds > 0}
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A]"
+                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50"
               />
             </div>
 
-            {/* DPDP Compliance: Explicit Consent Checkbox */}
+            {/* Consent Checkbox */}
             <div className="flex items-start gap-2 pt-1">
               <input
                 type="checkbox"
                 id="consent"
+                disabled={lockoutSeconds > 0}
                 checked={consent}
                 onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer"
+                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
               />
               <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
                 I consent to the collection and processing of my personal data in accordance with the{' '}
@@ -257,11 +309,15 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={handleSignup}
-              disabled={loading}
+              disabled={loading || lockoutSeconds > 0}
               style={{ backgroundColor: '#2563EB', boxShadow: '0px 4px 0px #1D4ED8' }}
               className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-0.5 transition-all mt-2 disabled:opacity-50"
             >
-              {loading ? 'CREATING...' : 'CREATE ACCOUNT'}
+              {lockoutSeconds > 0 
+                ? `LOCKED (${lockoutSeconds}s)` 
+                : loading 
+                ? 'CREATING...' 
+                : 'CREATE ACCOUNT'}
             </button>
           </div>
 
