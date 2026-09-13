@@ -125,7 +125,7 @@ export default function TermsPage() {
                 <span>+91 9991257182</span>
               </a>
               <a
-                href="mailto:support@otterleo.com"
+                href="mailto:support@Otterleo.com"
                 className="inline-flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-blue-200 text-slate-700 font-black text-sm shadow-sm hover:bg-slate-100 transition-all"
               >
                 <Mail className="w-4 h-4 text-slate-500" />

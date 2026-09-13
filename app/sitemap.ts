@@ -2,7 +2,7 @@
 import { MetadataRoute } from 'next';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://otterleo.in/about';
+  const baseUrl = 'https://Otterleo.in/about';
 
   return [
     {

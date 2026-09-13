@@ -53,10 +53,10 @@ const nextConfig = {
         has: [
           {
             type: 'host',
-            value: 'otterleo.in',
+            value: 'Otterleo.in',
           },
         ],
-        destination: 'https://otterleo.in/:path*',
+        destination: 'https://Otterleo.in/:path*',
         permanent: true,
       },
     ];

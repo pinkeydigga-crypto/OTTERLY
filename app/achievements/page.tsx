@@ -254,7 +254,7 @@ function AchievementsContent() {
             <PanelLeft className="w-5 h-5" />
           </button>
           
-          <img src={logoUrl} alt="otterleo Logo" className="h-14 w-auto object-contain max-h-16" />
+          <img src={logoUrl} alt="Otterleo Logo" className="h-14 w-auto object-contain max-h-16" />
         </div>
 
         <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-full text-amber-600 font-black text-xs">
@@ -274,7 +274,7 @@ function AchievementsContent() {
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="otterleo Logo" className="h-14 w-auto object-contain" />
+                <img src={logoUrl} alt="Otterleo Logo" className="h-14 w-auto object-contain" />
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
                   <X className="w-5 h-5" />
                 </button>
@@ -309,7 +309,7 @@ function AchievementsContent() {
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="otterleo Logo" className="h-16 sm:h-20 w-auto object-contain" />
+            <img src={logoUrl} alt="Otterleo Logo" className="h-16 sm:h-20 w-auto object-contain" />
           </div>
 
           <nav className="space-y-1.5">
@@ -365,7 +365,7 @@ function AchievementsContent() {
           <div className="w-28 sm:w-36 h-auto shrink-0 z-10 -mr-1 flex items-center justify-center">
             <img 
               src={mascotImageUrl} 
-              alt="otterleo Mascot" 
+              alt="Otterleo Mascot" 
               className="w-full h-auto object-contain block"
             />
           </div>

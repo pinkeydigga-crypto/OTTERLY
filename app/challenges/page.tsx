@@ -197,7 +197,7 @@ export default function ChallengesPage() {
   const [currentStep, setCurrentStep] = useState<number>(0);
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
-  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otterleo.%20Take%20the%20Challenge%20(1)%20(2).png";
+  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterleo.%20Take%20the%20Challenge%20(1)%20(2).png";
 
   useEffect(() => {
     setMounted(true);
