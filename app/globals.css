@@ -1,23 +1,24 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-:root {
-  --font-sans: var(--font-nunito), system-ui, -apple-system, sans-serif;
-}
+@import "tailwindcss";
 
 @layer base {
   body {
-    background-color: #F6FAFF;
+    background-color: #F6FAFF !important;
     color: #0F172A;
-    font-family: var(--font-nunito), system-ui, -apple-system, sans-serif;
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 0;
   }
 }
 
+/* Hard Fallbacks so Vercel build never turns text flat/black */
+h1, h2, h3, p, span, div, a {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
 .bubble-container {
-  background-color: #FFFFFF;
-  border: 2px solid #0F172A;
-  box-shadow: 2px 2px 0px #0F172A;
+  background-color: #FFFFFF !important;
+  border: 2px solid #0F172A !important;
+  box-shadow: 2px 2px 0px #0F172A !important;
 }
 
 .bubble-tail {
@@ -40,17 +41,4 @@
   border-left: 5px solid transparent;
   border-right: 5px solid transparent;
   border-top: 5px solid #FFFFFF;
-}
-
-@keyframes scanAnimation {
-  0%, 100% {
-    top: 0%;
-  }
-  50% {
-    top: 100%;
-  }
-}
-
-.animate-scan {
-  animation: scanAnimation 2.2s ease-in-out infinite;
 }
