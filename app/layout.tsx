@@ -11,8 +11,8 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Otterly",
-  description: "Learn to draw easily",
+  title: "otterleo - Learn to Draw",
+  description: "Learn to draw with AI-powered feedback and challenges. Improve your drawing skills with personalized guidance from Otto, your AI drawing coach.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
