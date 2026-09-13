@@ -16,6 +16,9 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+// Server ko force karein ki ise statically serve kare (Zero Loading Delay)
+export const dynamic = "force-static";
+
 export default function PrivacyPolicyPage() {
   const [activeSection, setActiveSection] = useState("overview");
 
@@ -32,7 +35,7 @@ export default function PrivacyPolicyPage() {
     setActiveSection(id);
     const element = document.getElementById(id);
     if (element) {
-      element.scrollIntoView({ behavior: "auto", block: "start" });
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
