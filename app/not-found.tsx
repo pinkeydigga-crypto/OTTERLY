@@ -14,48 +14,36 @@ export default function NotFound() {
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        color: '#0F172A'
+        color: '#0F172A',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
       }}
-      className="relative overflow-hidden antialiased"
     >
-      
       {/* Header */}
-      <header className="max-w-7xl w-full mx-auto px-6 pt-8 pb-4 flex justify-center items-center z-10">
+      <header style={{ maxWidth: '80rem', width: '100%', margin: '0 auto', padding: '32px 24px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <Link href="/">
           <img
             src={logoUrl}
             alt="Otterleo Logo"
-            className="h-16 sm:h-20 object-contain cursor-pointer"
-            style={{ height: '70px', objectFit: 'contain' }}
+            style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }}
           />
         </Link>
       </header>
 
       {/* Main 404 Card */}
-      <main className="max-w-md w-full mx-auto px-6 py-8 flex flex-col items-center justify-center my-auto z-10">
+      <main style={{ maxWidth: '28rem', width: '100%', margin: 'auto', padding: '32px 24px' }}>
         <div 
           style={{
             backgroundColor: '#ffffff',
             borderRadius: '1.5rem',
             padding: '2rem',
             border: '1px solid rgba(226, 232, 240, 0.9)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
             width: '100%',
             position: 'relative',
             paddingTop: '3rem',
             textAlign: 'center'
           }}
         >
-          
-          {/* Speech Bubble */}
-          <div className="absolute -top-7 right-1/2 translate-x-1/2 z-30" style={{ position: 'absolute', top: '-20px', left: '50%', transform: 'translateX(-50%)' }}>
-            <div className="bubble-container px-4 py-1.5 rounded-full text-xs font-black text-[#0F172A]" style={{ padding: '6px 16px', borderRadius: '9999px', fontSize: '12px', fontWeight: 900 }}>
-              Oops! Page not found <span style={{ color: '#2563EB' }}>404</span>
-              <div className="bubble-tail"></div>
-              <div className="bubble-tail-inner"></div>
-            </div>
-          </div>
-
           {/* Mascot Image */}
           <div style={{ width: '96px', height: '96px', margin: '0 auto 16px auto' }}>
             <img
@@ -79,8 +67,7 @@ export default function NotFound() {
                 backgroundColor: '#2563EB',
                 boxShadow: '0px 6px 0px #1D4ED8',
                 width: '100%',
-                paddingTop: '1rem',
-                paddingBottom: '1rem',
+                padding: '16px 0',
                 borderRadius: '1rem',
                 fontWeight: 800,
                 fontSize: '1rem',
@@ -97,43 +84,16 @@ export default function NotFound() {
         </div>
       </main>
 
-      {/* Waves Footer */}
-      <div className="relative w-full z-10">
-        <div className="w-full overflow-hidden leading-none">
-          <svg
-            className="relative block w-full h-24 sm:h-32"
-            viewBox="0 0 1200 120"
-            preserveAspectRatio="none"
-            style={{ width: '100%', height: '100px' }}
-          >
-            <path d="M0,15 C200,85 400,90 600,65 C800,40 1000,10 1200,30 L1200,120 L0,120 Z" fill="#BFDBFE" opacity="0.45"></path>
-            <path d="M0,35 C180,90 420,95 620,70 C820,45 980,20 1200,40 L1200,120 L0,120 Z" fill="#93C5FD" opacity="0.75"></path>
-            <path d="M0,60 C160,95 450,100 650,80 C850,60 1020,35 1200,50 L1200,120 L0,120 Z" fill="#60A5FA"></path>
-          </svg>
-        </div>
-
-        <footer style={{ backgroundColor: '#2563EB', width: '100%', padding: '20px 32px' }}>
-          <div style={{ maxWidth: '80rem', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#ffffff' }}>
-            <p style={{ margin: 0, color: '#ffffff' }}>© 2026 Otterleo. All rights reserved.</p>
-
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <Link
-                href="/about"
-                style={{ backgroundColor: '#1D4ED8', color: '#ffffff', padding: '8px 16px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none' }}
-              >
-                About Us
-              </Link>
-              <Link
-                href="/privacy"
-                style={{ backgroundColor: '#1D4ED8', color: '#ffffff', padding: '8px 16px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none' }}
-              >
-                Privacy Policy
-              </Link>
-            </div>
+      {/* Footer */}
+      <footer style={{ backgroundColor: '#2563EB', width: '100%', padding: '20px 32px' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#ffffff' }}>
+          <p style={{ margin: 0, color: '#ffffff' }}>© 2026 Otterleo. All rights reserved.</p>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <Link href="/about" style={{ backgroundColor: '#1D4ED8', color: '#ffffff', padding: '8px 16px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none' }}>About Us</Link>
+            <Link href="/privacy" style={{ backgroundColor: '#1D4ED8', color: '#ffffff', padding: '8px 16px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none' }}>Privacy Policy</Link>
           </div>
-        </footer>
-      </div>
-
+        </div>
+      </footer>
     </div>
   );
 }
