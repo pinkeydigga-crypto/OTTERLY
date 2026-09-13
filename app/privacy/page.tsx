@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -30,19 +30,16 @@ export default function PrivacyPolicyPage() {
 
   const scrollToSection = (id: string) => {
     setActiveSection(id);
-    // Smooth scroll with fallback for dynamic hydration
-    setTimeout(() => {
-      const element = document.getElementById(id);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }, 10);
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "auto", block: "start" });
+    }
   };
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] text-[#0F172A] font-sans">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <Link
           href="/"
           className="flex items-center gap-2 text-sm font-black text-slate-600 hover:text-blue-600 transition-all"
@@ -53,7 +50,7 @@ export default function PrivacyPolicyPage() {
 
         {/* SECURED BADGE */}
         <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3.5 py-1.5 rounded-full text-emerald-700 font-extrabold text-xs shadow-sm">
-          <ShieldCheck className="w-4 h-4 text-emerald-600 animate-pulse" />
+          <ShieldCheck className="w-4 h-4 text-emerald-600" />
           <span>Encrypted & Secured</span>
         </div>
       </header>
