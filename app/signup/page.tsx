@@ -75,7 +75,7 @@ export default function SignupPage() {
     }
 
     if (!consent) {
-      setErrorMessage('You must check the consent box to agree to the Privacy Policy.');
+      setErrorMessage('You must check the consent box to agree to the Terms & Privacy Policy.');
       return;
     }
 
@@ -176,7 +176,6 @@ export default function SignupPage() {
         setErrorMessage('Too many failed attempts. Registration locked for 60 seconds.');
       } else {
         const remaining = MAX_ATTEMPTS - newAttempts;
-        // Generic Error Message for Security
         setErrorMessage(`Unable to create account. Please try again. (${remaining} attempt${remaining > 1 ? 's' : ''} left)`);
       }
 
@@ -288,7 +287,7 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Consent Checkbox */}
+            {/* Consent Checkbox with Terms & Privacy Policy Links */}
             <div className="flex items-start gap-2 pt-1">
               <input
                 type="checkbox"
@@ -299,7 +298,11 @@ export default function SignupPage() {
                 className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
               />
               <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
-                I consent to the collection and processing of my personal data in accordance with the{' '}
+                I consent to the collection and processing of my personal data in accordance with our{' '}
+                <Link href="/terms" className="text-[#2563EB] font-bold hover:underline">
+                  Terms & Conditions
+                </Link>{' '}
+                and{' '}
                 <Link href="/privacy" className="text-[#2563EB] font-bold hover:underline">
                   Privacy Policy
                 </Link>.

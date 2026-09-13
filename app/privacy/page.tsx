@@ -41,11 +41,11 @@ export default function PrivacyPolicyPage() {
       {/* Top Header */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <Link
-          href="/dashboard"
+          href="/"
           className="flex items-center gap-2 text-sm font-black text-slate-600 hover:text-blue-600 transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to App</span>
+          <span>Back to Home</span>
         </Link>
 
         {/* SECURED BADGE */}

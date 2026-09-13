@@ -17,7 +17,7 @@ export default function HomePage() {
         color: '#0F172A',
         fontFamily: 'system-ui, -apple-system, sans-serif'
       }}
-      className="relative overflow-hidden selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased"
+      className="relative overflow-hidden selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased min-h-screen flex flex-col justify-between"
     >
 
       {/* High-Performance Text Animations */}
@@ -153,7 +153,14 @@ export default function HomePage() {
                 Free to start · Ready in 10 seconds
               </p>
               <p className="text-[11px] text-[#475569] font-semibold">
-                By continuing you agree to our Terms & Privacy Policy.
+                By continuing you agree to our{' '}
+                <Link href="/terms" className="underline hover:text-[#2563EB]">
+                  Terms
+                </Link>{' '}
+                &{' '}
+                <Link href="/privacy" className="underline hover:text-[#2563EB]">
+                  Privacy Policy
+                </Link>.
               </p>
             </div>
           </div>
@@ -186,6 +193,12 @@ export default function HomePage() {
                 className="bg-[#1D4ED8] hover:bg-[#1E40AF] text-white px-4 py-2 rounded-full border border-white/20 transition-all duration-200 shadow-sm hover:shadow active:scale-95"
               >
                 About Us
+              </Link>
+              <Link
+                href="/terms"
+                className="bg-[#1D4ED8] hover:bg-[#1E40AF] text-white px-4 py-2 rounded-full border border-white/20 transition-all duration-200 shadow-sm hover:shadow active:scale-95"
+              >
+                Terms & Conditions
               </Link>
               <Link
                 href="/privacy"
