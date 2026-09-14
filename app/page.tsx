@@ -32,17 +32,18 @@ export default function HomePage() {
       style={{
         background: 'linear-gradient(to bottom, #ffffff, #f8fafc, rgba(241, 245, 249, 0.8))',
         minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        color: '#0F172A',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
       }}
-      className="relative overflow-hidden selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased min-h-screen flex flex-col justify-between"
+      className="relative overflow-hidden selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased min-h-screen flex flex-col justify-between text-[#0F172A]"
     >
 
-      {/* High-Performance Text Animations */}
+      {/* Font & Animations Style */}
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900;1000&display=swap');
+
+        .font-rounded {
+          font-family: 'Nunito', 'Fredoka', system-ui, -apple-system, sans-serif !important;
+        }
+
         /* Text Slide In Animation */
         @keyframes slideInStrongShadow {
           0% {
@@ -106,7 +107,7 @@ export default function HomePage() {
 
         {/* Left Column: Headline & Subheading Animations */}
         <div className="lg:col-span-7 space-y-6">
-          <h1 className="text-6xl sm:text-7xl font-black text-[#0F172A] leading-[1.08] tracking-tight flex flex-col items-start font-sans">
+          <h1 className="font-rounded text-6xl sm:text-7xl font-black text-[#0F172A] leading-[1.05] tracking-tight flex flex-col items-start">
             <span className="animate-line delay-1 inline-block">
               Learn
             </span>
@@ -119,7 +120,7 @@ export default function HomePage() {
           </h1>
 
           {/* Animated Subheading */}
-          <p className="animate-subheading text-lg sm:text-xl text-[#334155] font-semibold max-w-lg leading-relaxed">
+          <p className="animate-subheading text-lg sm:text-xl text-[#334155] font-bold max-w-lg leading-relaxed">
             Get AI feedback, complete challenges, earn XP, and improve your drawing skills every day.
           </p>
         </div>
@@ -129,14 +130,14 @@ export default function HomePage() {
 
           {/* Speech Bubble */}
           <div className="absolute top-1 right-24 z-30">
-            <div className="relative bubble-container px-4 py-1.5 rounded-full text-xs font-black text-[#0F172A]">
+            <div className="relative bubble-container px-4 py-1.5 rounded-full text-xs font-black text-[#0F172A] font-rounded">
               Hi, I'm <span className="text-[#2563EB]">Otto</span>
               <div className="bubble-tail"></div>
               <div className="bubble-tail-inner"></div>
             </div>
           </div>
 
-          {/* Mascot Image (Static) */}
+          {/* Mascot Image */}
           <div className="absolute top-6 right-3 z-20 w-24 h-24 pointer-events-none">
             <Image
               src={mascotUrl}
@@ -154,7 +155,7 @@ export default function HomePage() {
             <Link href="/signup" className="block w-full">
               <button
                 style={{ backgroundColor: '#2563EB', boxShadow: '0px 6px 0px #1D4ED8' }}
-                className="w-full py-4 rounded-2xl font-extrabold text-base sm:text-lg text-white uppercase tracking-wider cursor-pointer transition-transform active:translate-y-1 active:shadow-none"
+                className="font-rounded w-full py-4 rounded-2xl font-black text-base sm:text-lg text-white uppercase tracking-wider cursor-pointer transition-transform active:translate-y-1 active:shadow-none"
               >
                 GET STARTED
               </button>
@@ -163,14 +164,14 @@ export default function HomePage() {
             <Link href="/login" className="block w-full">
               <button
                 style={{ backgroundColor: '#FFFFFF', color: '#2563EB', border: '2.5px solid #CBD5E1', boxShadow: '0px 6px 0px #94A3B8' }}
-                className="w-full py-4 rounded-2xl font-extrabold text-base sm:text-lg uppercase tracking-wider cursor-pointer transition-transform active:translate-y-1 active:shadow-none"
+                className="font-rounded w-full py-4 rounded-2xl font-black text-base sm:text-lg uppercase tracking-wider cursor-pointer transition-transform active:translate-y-1 active:shadow-none"
               >
                 I ALREADY HAVE AN ACCOUNT
               </button>
             </Link>
 
             <div className="text-center pt-2 space-y-1">
-              <p className="text-xs text-[#0D9488] font-extrabold tracking-wide">
+              <p className="text-xs text-[#0D9488] font-extrabold tracking-wide font-rounded">
                 Free to start · Ready in 10 seconds
               </p>
               <p className="text-[11px] text-[#475569] font-semibold">
@@ -192,7 +193,7 @@ export default function HomePage() {
       {/* AI COACH IN YOUR POCKET - Features Section */}
       <section className="max-w-5xl mx-auto px-6 py-10 my-4 z-10 text-center space-y-8">
         <div className="space-y-2">
-          <h2 className="text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight">
+          <h2 className="font-rounded text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight uppercase">
             AI COACH IN YOUR POCKET
           </h2>
           <p className="text-slate-500 font-bold text-sm sm:text-base">
@@ -211,10 +212,10 @@ export default function HomePage() {
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#2563EB] flex items-center justify-center font-black">
                   <IconComponent className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-black text-[#2563EB] uppercase tracking-wider">
+                <span className="font-rounded text-xs font-black text-[#2563EB] uppercase tracking-wider">
                   {item.step}
                 </span>
-                <h3 className="text-lg font-black text-[#0F172A]">
+                <h3 className="font-rounded text-xl font-black text-[#0F172A]">
                   {item.title}
                 </h3>
                 <p className="text-[#475569] font-medium text-xs leading-relaxed">
