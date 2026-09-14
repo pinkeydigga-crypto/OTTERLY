@@ -1,0 +1,15 @@
+# Otterleo AI - Gamified Drawing Platform
+
+> Otterleo AI is an interactive, gamified AI drawing mentor created by Harjas Digga. It helps users learn to draw through daily challenges, XP tracking, streaks, and instant AI sketch feedback powered by computer vision.
+
+## Core Pages
+- https://www.otterleo.in : Homepage and core features overview.
+- https://www.otterleo.in/about : Mission, Otto Mascot, Founder Harjas Digga, and FAQs.
+- https://www.otterleo.in/login : User authentication and account login.
+- https://www.otterleo.in/signup : Account creation page.
+
+## Key Features
+- Gamified Learning: XP, daily streaks, level progression, and skill badges.
+- AI Sketch Feedback: Instant computer vision feedback on hand-drawn paper sketches.
+- Mascot Otto: Step-by-step guidance by Otto the otter.
+- Founders: Founded by 15-year-old tech founder Harjas Digga.
