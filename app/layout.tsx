@@ -10,24 +10,37 @@ const nunito = Nunito({
   display: "swap",
 });
 
-const LOGO_FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
+const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
 
 export const metadata: Metadata = {
   title: "Otterleo - Learn to Draw",
   description: "Learn to draw with AI-powered feedback and challenges. Improve your drawing skills with personalized guidance from Otto, your AI drawing coach.",
   icons: {
-    icon: LOGO_FAVICON_URL,
-    shortcut: LOGO_FAVICON_URL,
-    apple: LOGO_FAVICON_URL,
+    icon: [
+      { url: FAVICON_URL, type: 'image/png' },
+    ],
+    shortcut: FAVICON_URL,
+    apple: FAVICON_URL,
   },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "url": "https://www.otterleo.in",
+    "logo": FAVICON_URL
+  };
+
   return (
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
       <head>
-        <link rel="icon" href={LOGO_FAVICON_URL} />
-        <link rel="apple-touch-icon" href={LOGO_FAVICON_URL} />
+        <link rel="icon" href={FAVICON_URL} type="image/png" />
+        <link rel="apple-touch-icon" href={FAVICON_URL} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body className="min-h-full flex flex-col font-sans">
         {children}
