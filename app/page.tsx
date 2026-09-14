@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Scan, Swords, Compass } from 'lucide-react';
+import { Scan, Pencil, GraduationCap, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png';
@@ -8,20 +8,29 @@ export default function HomePage() {
 
   const features = [
     {
-      step: '1. Instant AI Scan',
+      num: '1',
+      badgeBg: 'bg-[#2563EB]',
+      iconBg: 'bg-blue-100 text-[#2563EB]',
+      cardBorder: 'border-blue-100',
       icon: Scan,
       title: 'Scan & Feedback',
       description: 'Apni paper sketch scan karein aur proportions, lines aur shading par real-time AI feedback paayein.',
     },
     {
-      step: '2. Daily Practice',
-      icon: Swords,
+      num: '2',
+      badgeBg: 'bg-[#FFB800]',
+      iconBg: 'bg-amber-100 text-[#D97706]',
+      cardBorder: 'border-amber-100',
+      icon: Pencil,
       title: 'Challenges & Canvas',
       description: 'Daily challenges complete karein aur Otterleo Canvas par directly practice karke apni drawing skills build karein.',
     },
     {
-      step: '3. Fun Courses & Certificates',
-      icon: Compass,
+      num: '3',
+      badgeBg: 'bg-[#3B82F6]',
+      iconBg: 'bg-sky-100 text-[#0284C7]',
+      cardBorder: 'border-sky-100',
+      icon: GraduationCap,
       title: 'Learning Path',
       description: 'Engaging step-by-step courses follow karein, XP earn karein aur course complete karke certificates paayein.',
     },
@@ -41,7 +50,7 @@ export default function HomePage() {
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900;1000&display=swap');
 
         .font-rounded {
-          font-family: 'Nunito', 'Fredoka', system-ui, -apple-system, sans-serif !important;
+          font-family: 'Nunito', system-ui, -apple-system, sans-serif !important;
         }
 
         /* Text Slide In Animation */
@@ -105,7 +114,7 @@ export default function HomePage() {
       {/* Main Hero Section */}
       <main className="max-w-6xl w-full mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center my-auto z-10 pb-12">
 
-        {/* Left Column: Headline & Subheading Animations */}
+        {/* Left Column */}
         <div className="lg:col-span-7 space-y-6">
           <h1 className="font-rounded text-6xl sm:text-7xl font-black text-[#0F172A] leading-[1.05] tracking-tight flex flex-col items-start">
             <span className="animate-line delay-1 inline-block">
@@ -119,13 +128,12 @@ export default function HomePage() {
             </span>
           </h1>
 
-          {/* Animated Subheading */}
-          <p className="animate-subheading text-lg sm:text-xl text-[#334155] font-bold max-w-lg leading-relaxed">
+          <p className="animate-subheading font-rounded text-lg sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
             Get AI feedback, complete challenges, earn XP, and improve your drawing skills every day.
           </p>
         </div>
 
-        {/* Right Column: Card with Mascot & Speech Bubble */}
+        {/* Right Column */}
         <div className="lg:col-span-5 relative pt-14">
 
           {/* Speech Bubble */}
@@ -151,7 +159,7 @@ export default function HomePage() {
           </div>
 
           {/* White Card */}
-          <div className="bg-white rounded-3xl p-8 border border-slate-200/90 shadow-2xl relative z-10 space-y-5 pt-12">
+          <div className="bg-white rounded-3xl p-8 border-2 border-slate-200/90 shadow-2xl relative z-10 space-y-5 pt-12">
             <Link href="/signup" className="block w-full">
               <button
                 style={{ backgroundColor: '#2563EB', boxShadow: '0px 6px 0px #1D4ED8' }}
@@ -171,10 +179,10 @@ export default function HomePage() {
             </Link>
 
             <div className="text-center pt-2 space-y-1">
-              <p className="text-xs text-[#0D9488] font-extrabold tracking-wide font-rounded">
+              <p className="text-xs text-[#0D9488] font-black tracking-wide font-rounded">
                 Free to start · Ready in 10 seconds
               </p>
-              <p className="text-[11px] text-[#475569] font-semibold">
+              <p className="text-[11px] text-[#475569] font-bold">
                 By continuing you agree to our{' '}
                 <Link href="/terms" className="underline hover:text-[#2563EB]">
                   Terms
@@ -190,37 +198,50 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* AI COACH IN YOUR POCKET - Features Section */}
-      <section className="max-w-5xl mx-auto px-6 py-10 my-4 z-10 text-center space-y-8">
+      {/* AI COACH IN YOUR POCKET - OTTERLEO GAMIFIED AESTHETIC SECTION */}
+      <section className="max-w-5xl mx-auto px-6 py-12 my-4 z-10 text-center space-y-10">
         <div className="space-y-2">
           <h2 className="font-rounded text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight uppercase">
             AI COACH IN YOUR POCKET
           </h2>
-          <p className="text-slate-500 font-bold text-sm sm:text-base">
+          <p className="font-rounded text-slate-500 font-bold text-sm sm:text-base">
             Master drawing with smart AI feedback, practice canvas, and structured learning paths.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+        {/* 3 Gamified Otterleo Style Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
           {features.map((item, index) => {
             const IconComponent = item.icon;
             return (
               <div
                 key={index}
-                className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center space-y-3"
+                className={`bg-white rounded-[32px] p-6 border-2 ${item.cardBorder} shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 relative overflow-hidden`}
               >
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#2563EB] flex items-center justify-center font-black">
-                  <IconComponent className="w-6 h-6" />
+                {/* Header: Circle Icon + Badge Number */}
+                <div className="flex items-center gap-3">
+                  <div className={`w-14 h-14 rounded-full ${item.iconBg} flex items-center justify-center font-black shadow-inner`}>
+                    <IconComponent className="w-7 h-7" />
+                  </div>
+                  <span className={`w-7 h-7 rounded-full ${item.badgeBg} text-white font-rounded font-black text-xs flex items-center justify-center shadow-sm`}>
+                    {item.num}
+                  </span>
                 </div>
-                <span className="font-rounded text-xs font-black text-[#2563EB] uppercase tracking-wider">
-                  {item.step}
-                </span>
-                <h3 className="font-rounded text-xl font-black text-[#0F172A]">
-                  {item.title}
-                </h3>
-                <p className="text-[#475569] font-medium text-xs leading-relaxed">
-                  {item.description}
-                </p>
+
+                {/* Content */}
+                <div className="space-y-2">
+                  <h3 className="font-rounded text-xl font-black text-[#0F172A]">
+                    {item.title}
+                  </h3>
+                  <p className="font-rounded text-[#64748B] font-bold text-xs sm:text-sm leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
+
+                {/* Bottom Arrow */}
+                <div className="pt-1">
+                  <ArrowRight className="w-5 h-5 text-[#2563EB] font-bold" />
+                </div>
               </div>
             );
           })}
@@ -242,8 +263,8 @@ export default function HomePage() {
         </div>
 
         {/* Dark Blue Footer */}
-        <footer className="bg-[#2563EB] w-full py-5 px-8">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-white">
+        <footer className="bg-[#2563EB] w-full py-5 px-8 font-rounded">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold text-white">
             <p className="text-white">© 2026 Otterleo. All rights reserved.</p>
 
             <div className="flex items-center gap-3">
