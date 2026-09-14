@@ -26,13 +26,21 @@ export const metadata: Metadata = {
     "Otto Mascot",
     "Instant Sketch Feedback"
   ],
+  
+  // FIX 1: Exact sizes definition for Googlebot-Image crawler
   icons: {
     icon: [
-      { url: FAVICON_URL, type: 'image/png' },
+      { url: FAVICON_URL, sizes: '48x48', type: 'image/png' },
+      { url: FAVICON_URL, sizes: '96x96', type: 'image/png' },
+      { url: FAVICON_URL, sizes: '192x192', type: 'image/png' },
+      { url: FAVICON_URL, sizes: '512x512', type: 'image/png' },
     ],
-    shortcut: FAVICON_URL,
-    apple: FAVICON_URL,
+    shortcut: [FAVICON_URL],
+    apple: [
+      { url: FAVICON_URL, sizes: '180x180', type: 'image/png' }
+    ],
   },
+  
   openGraph: {
     title: "Otterleo - Learn to Draw with AI",
     description: "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
@@ -90,8 +98,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
       <head>
-        <link rel="icon" href={FAVICON_URL} type="image/png" />
+        {/* FIX 2: Google Search Engine Specific Favicon Meta Tags */}
+        <link rel="icon" href={FAVICON_URL} sizes="48x48" type="image/png" />
+        <link rel="icon" href={FAVICON_URL} sizes="192x192" type="image/png" />
         <link rel="apple-touch-icon" href={FAVICON_URL} />
+        
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
