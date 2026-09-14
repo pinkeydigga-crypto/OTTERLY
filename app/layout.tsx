@@ -11,10 +11,21 @@ const nunito = Nunito({
 });
 
 const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
+const SITE_URL = "https://www.otterleo.in";
 
 export const metadata: Metadata = {
-  title: "Otterleo - Learn to Draw",
-  description: "Learn to draw with AI-powered feedback and challenges. Improve your drawing skills with personalized guidance from Otto, your AI drawing coach.",
+  metadataBase: new URL(SITE_URL),
+  title: "Otterleo - Learn to Draw with AI Feedback & Challenges",
+  description: "Learn to draw with AI-powered feedback, gamified daily challenges, and instant sketch analysis. Master drawing step-by-step with Otto, your AI drawing coach.",
+  keywords: [
+    "Otterleo",
+    "Otterleo AI",
+    "Learn Drawing AI",
+    "AI Drawing Coach",
+    "Gamified Drawing Practice",
+    "Otto Mascot",
+    "Instant Sketch Feedback"
+  ],
   icons: {
     icon: [
       { url: FAVICON_URL, type: 'image/png' },
@@ -22,14 +33,58 @@ export const metadata: Metadata = {
     shortcut: FAVICON_URL,
     apple: FAVICON_URL,
   },
+  openGraph: {
+    title: "Otterleo - Learn to Draw with AI",
+    description: "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
+    url: SITE_URL,
+    siteName: "Otterleo AI",
+    images: [
+      {
+        url: FAVICON_URL,
+        width: 1200,
+        height: 630,
+        alt: "Otterleo AI Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Otterleo - Learn to Draw with AI",
+    description: "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
+    images: [FAVICON_URL],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    "url": "https://www.otterleo.in",
-    "logo": FAVICON_URL
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        "name": "Otterleo AI",
+        "url": SITE_URL,
+        "logo": FAVICON_URL,
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${SITE_URL}/#application`,
+        "name": "Otterleo AI",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
+      }
+    ]
   };
 
   return (

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function HomePage() {
-
   const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png';
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png';
 
@@ -81,7 +80,7 @@ export default function HomePage() {
       </header>
 
       {/* Main Hero Section */}
-      <main className="max-w-6xl w-full mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center my-auto z-10 pb-16">
+      <main className="max-w-6xl w-full mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center my-auto z-10 pb-12">
 
         {/* Left Column: Headline & Subheading Animations */}
         <div className="lg:col-span-7 space-y-6">
@@ -119,7 +118,7 @@ export default function HomePage() {
           <div className="absolute top-6 right-3 z-20 w-24 h-24 pointer-events-none">
             <Image
               src={mascotUrl}
-              alt="Otto Mascot"
+              alt="Otto Mascot - Otterleo AI Drawing Coach"
               width={96}
               height={96}
               priority
@@ -167,6 +166,33 @@ export default function HomePage() {
 
         </div>
       </main>
+
+      {/* AI SEO Content Section - Boosts Citation Likelihood & Signal-to-Noise Ratio */}
+      <section className="max-w-5xl mx-auto px-6 py-6 border-t border-slate-200/60 my-4 z-10">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] text-center mb-6">
+          How Otterleo AI Helps You Master Drawing
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <div className="bg-white/80 p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="text-xl font-black text-[#2563EB] mb-1">1. Choose Prompt</div>
+            <p className="text-xs text-[#475569] font-medium leading-relaxed">
+              Pick a bite-sized daily sketching challenge guided by Otto, your AI mentor.
+            </p>
+          </div>
+          <div className="bg-white/80 p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="text-xl font-black text-[#2563EB] mb-1">2. Scan Sketch</div>
+            <p className="text-xs text-[#475569] font-medium leading-relaxed">
+              Upload or scan a photo of your paper sketch directly on the web app.
+            </p>
+          </div>
+          <div className="bg-white/80 p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="text-xl font-black text-[#2563EB] mb-1">3. Get AI Critique</div>
+            <p className="text-xs text-[#475569] font-medium leading-relaxed">
+              Receive real-time feedback on proportions, lines, and earn XP to build streaks.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* 3-Layer Waves Background */}
       <div className="relative w-full z-10">
