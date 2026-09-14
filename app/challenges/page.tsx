@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, Timer, ChevronRight,
+  Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, ChevronRight,
   Sparkles, Check
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
+import PracticeCanvas from "@/components/PracticeCanvas";
 
 interface TutorialStep {
   step: number;
@@ -22,50 +23,11 @@ interface LocalChallenge {
   id: string;
   title: string;
   description: string;
-  difficulty: "beginner" | "intermediate" | "advanced";
+  difficulty: "intermediate";
   xp: number;
-  timeLimit: string;
   previewImage: string;
   steps: TutorialStep[];
 }
-
-const CUBE_STEPS: TutorialStep[] = [
-  {
-    step: 1,
-    title: "Step 1: Front Face Rectangle",
-    instruction: "Start by drawing the first front face of the cube as a clean rectangular shape.",
-    tips: ["Keep lines straight", "Use light pencil pressure"],
-    imageUrl: "https://cdn.corenexis.com/f/J69T9C2Epdj.png"
-  },
-  {
-    step: 2,
-    title: "Step 2: Second Offset Rectangle",
-    instruction: "Draw a second overlapping rectangle slightly shifted to create the back perspective volume.",
-    tips: ["Align placement carefully", "Maintain shape proportions"],
-    imageUrl: "https://cdn.corenexis.com/f/RfiyhPQrml9.png"
-  },
-  {
-    step: 3,
-    title: "Step 3: Connect Corner Edges",
-    instruction: "Connect the corresponding corners of both rectangles with lines to structure the 3D box framework.",
-    tips: ["Check parallel alignment", "Make sure all four corners connect properly"],
-    imageUrl: "https://cdn.corenexis.com/f/HMfzzecOfLR.png"
-  },
-  {
-    step: 4,
-    title: "Step 4: Clean Wireframe Cube",
-    instruction: "Review your perspective lines to form a solid, clean transparent wireframe cube outline.",
-    tips: ["Darken main structural lines", "Double-check proportions"],
-    imageUrl: "https://cdn.corenexis.com/f/JSaqa601U5F.png"
-  },
-  {
-    step: 5,
-    title: "Step 5: Shading & Solid Finish",
-    instruction: "Complete your 3D cube by adding flat shading or dark gradients to define the side faces.",
-    tips: ["Use different tones for contrast", "Keep shading smooth and clean"],
-    imageUrl: "https://cdn.corenexis.com/f/19vvmZ50jZt.png"
-  }
-];
 
 const EYE_STEPS: TutorialStep[] = [
   {
@@ -91,99 +53,27 @@ const EYE_STEPS: TutorialStep[] = [
   },
   {
     step: 4,
-    title: "Step 4: Scan Your Drawing & Improve",
-    instruction: "Awesome work reaching the final stage! Now, use the AI Scan feature to analyze your drawing, get instant feedback, and level up your skills.",
-    tips: ["Upload a clear photo of your sketch", "Check proportions & shading feedback"],
+    title: "Step 4: Practice Drawing Canvas",
+    instruction: "Awesome work! Practice drawing your eye outline directly on the interactive canvas below.",
+    tips: ["Focus on smooth curve lines", "Use line thickness settings"],
     imageUrl: ""
   }
 ];
 
-const PORTRAIT_STEPS: TutorialStep[] = [
-  {
-    step: 1,
-    title: "Step 1: The Base Sphere & Cranial Mass",
-    instruction: "Start with a light, organic circle representing the cranium. Keep your initial lines loose and feathery to establish overall volume.",
-    tips: ["Keep strokes feather-light", "Establish center axis early"],
-    imageUrl: "https://cdn.corenexis.com/f/I29zoTSWeLE.png"
-  },
-  {
-    step: 2,
-    title: "Step 2: Slicing the Sides & Establishing Planes",
-    instruction: "Slice off the sides of the sphere to create the temporal/side planes where the cranium meets the jaw and cheekbone structure.",
-    tips: ["Measure proportions carefully", "Keep side planes balanced"],
-    imageUrl: "https://cdn.corenexis.com/f/uQX5AsXbFcD.png"
-  },
-  {
-    step: 3,
-    title: "Step 3: The Three Equal Divisions & Brow Line",
-    instruction: "Project the brow line and centerline forward. Divide the face vertically into three equal sections (1/3 ratio): hairline-to-brow, brow-to-nose, and nose-to-chin.",
-    tips: ["Maintain dynamic flow", "Account for tilt perspective"],
-    imageUrl: "https://cdn.corenexis.com/f/qi4ja3E9OWf.png"
-  },
-  {
-    step: 4,
-    title: "Step 4: Jaw Structure, Ear Placement & Neck",
-    instruction: "Outline the jawline extending down from the temporal plane. Position the ear between the brow line and nose base, then anchor the neck structure securely.",
-    tips: ["Avoid stiff neck lines", "Let trapezius muscles slope naturally"],
-    imageUrl: "https://cdn.corenexis.com/f/F07fBpQIzDQ.png"
-  },
-  {
-    step: 5,
-    title: "Step 5: Facial Mapping & Contour Construction",
-    instruction: "Map out sockets for the eyes, nose bridge, cheekbones, and lips. Pay attention to foreshortening so the far eye appears narrower.",
-    tips: ["Foreshorten the far eye", "Define shadow core edges"],
-    imageUrl: "https://cdn.corenexis.com/f/8nRov0zsnTT.png"
-  },
-  {
-    step: 6,
-    title: "Step 6: Final Rendering, Shading & Hair Flow",
-    instruction: "Refine contours and apply directional shading following muscle structure and hair flow. Add deep shadow cores and highlights for a 3D finish.",
-    tips: ["Deepen shadows under jaw & chin", "Keep highlights sharp"],
-    imageUrl: "https://cdn.corenexis.com/f/MHi11ZdQQSz.png"
-  }
-];
-
 const LOCAL_CHALLENGES: LocalChallenge[] = [
-  {
-    id: "beginner-cube-drawing",
-    title: "Mission: Perfect 3D Cube",
-    description: "Prove your perspective skills! Can you sketch a perfect 3D cube to claim your XP?",
-    difficulty: "beginner",
-    xp: 50,
-    timeLimit: "5 Min Time Attack",
-    previewImage: "https://cdn.corenexis.com/f/19vvmZ50jZt.png",
-    steps: CUBE_STEPS
-  },
   {
     id: "eye-drawing-1min",
     title: "Challenge: The Realistic Eye",
     description: "Time to step up! Render a hyper-realistic eye and secure your spot on the leaderboard.",
     difficulty: "intermediate",
     xp: 60,
-    timeLimit: "10 Min Time Attack",
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144810_chatgpt.com.jpeg",
     steps: EYE_STEPS
-  },
-  {
-    id: "advanced-portrait-loomis",
-    title: "Boss Level: Loomis Portrait",
-    description: "The ultimate test! Construct a flawless 3/4 portrait using the Loomis method to earn massive XP.",
-    difficulty: "advanced",
-    xp: 70,
-    timeLimit: "20 Min Epic Run",
-    previewImage: "https://cdn.corenexis.com/f/MHi11ZdQQSz.png",
-    steps: PORTRAIT_STEPS
   }
 ];
 
-const GAMIFIED_TABS = {
-  beginner: "Rookie",
-  intermediate: "Pro",
-  advanced: "Master"
-};
-
 export default function ChallengesPage() {
-  const [selectedTab, setSelectedTab] = useState<"beginner" | "intermediate" | "advanced">("beginner");
+  const [selectedTab] = useState<"intermediate">("intermediate");
   const [userXp, setUserXp] = useState<number>(0);
   const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -193,11 +83,11 @@ export default function ChallengesPage() {
 
   // Active Flow State
   const [activeView, setActiveView] = useState<'hub' | 'challenge-flow'>('hub');
-  const [activeChallengeId, setActiveChallengeId] = useState<string>("beginner-cube-drawing");
+  const [activeChallengeId, setActiveChallengeId] = useState<string>("eye-drawing-1min");
   const [currentStep, setCurrentStep] = useState<number>(0);
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
-  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterleo.%20Take%20the%20Challenge%20(1)%20(2).png";
+  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
 
   useEffect(() => {
     setMounted(true);
@@ -351,7 +241,7 @@ export default function ChallengesPage() {
   const activeStepList = currentChallenge.steps;
   const isCurrentDone = completedChallenges.includes(currentChallenge.id);
 
-  const activeTabChallenge = LOCAL_CHALLENGES.find(c => c.difficulty === selectedTab) || LOCAL_CHALLENGES[0];
+  const activeTabChallenge = LOCAL_CHALLENGES[0];
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -482,7 +372,7 @@ export default function ChallengesPage() {
 
         {activeView === 'hub' ? (
           <>
-            {/* Top Banner Header with Enlarged Mascot */}
+            {/* Top Banner Header with Mascot */}
             <div className="bg-white p-5 rounded-[2rem] border border-slate-200/80 shadow-2xs flex items-center justify-between relative overflow-hidden">
               <div className="space-y-1 pr-3">
                 <h1 className="text-2xl font-black text-[#0F172A]">Challenges</h1>
@@ -493,27 +383,10 @@ export default function ChallengesPage() {
               <img src={mascotImageUrl} alt="Mascot" className="w-32 sm:w-36 h-auto object-contain shrink-0" />
             </div>
 
-            {/* Gamified Filter Tabs */}
-            <div className="flex bg-slate-100 p-1 rounded-2xl text-xs font-black text-slate-500 justify-between">
-              {(["beginner", "intermediate", "advanced"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setSelectedTab(tab)}
-                  className={`flex-1 py-2 rounded-xl transition-all uppercase tracking-wider text-[11px] ${
-                    selectedTab === tab
-                      ? "bg-[#2563EB] text-white shadow-2xs"
-                      : "hover:text-slate-900"
-                  }`}
-                >
-                  {GAMIFIED_TABS[tab]}
-                </button>
-              ))}
-            </div>
-
             {/* Challenge Card */}
             <div className="bg-white rounded-[2rem] p-5 border border-slate-200/80 shadow-2xs space-y-4">
               
-              {/* Completed Badge Only */}
+              {/* Completed Badge */}
               {completedChallenges.includes(activeTabChallenge.id) && (
                 <div className="flex justify-end w-full">
                   <span className="text-[11px] font-black bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-xl flex items-center gap-1">
@@ -544,21 +417,9 @@ export default function ChallengesPage() {
                     <Zap className="w-3.5 h-3.5 fill-amber-500" />
                     +{activeTabChallenge.xp} XP
                   </span>
-                  
-                  {/* Timer Pill */}
-                  <span className="flex items-center gap-1 text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200/50">
-                    <Timer className="w-3.5 h-3.5" />
-                    {activeTabChallenge.timeLimit}
-                  </span>
 
-                  <span className={`px-2.5 py-0.5 rounded-lg text-[11px] uppercase ${
-                    activeTabChallenge.difficulty === "beginner"
-                      ? "bg-emerald-50 text-emerald-600"
-                      : activeTabChallenge.difficulty === "intermediate"
-                      ? "bg-amber-50 text-amber-600"
-                      : "bg-purple-50 text-purple-600"
-                  }`}>
-                    {GAMIFIED_TABS[activeTabChallenge.difficulty]}
+                  <span className="px-2.5 py-0.5 rounded-lg text-[11px] uppercase bg-amber-50 text-amber-600">
+                    Pro
                   </span>
                 </div>
 
@@ -602,7 +463,7 @@ export default function ChallengesPage() {
               </p>
             </div>
 
-            {/* Container for Tutorial Image or Party Pooper Scan Card */}
+            {/* Step Content: Image Reference OR Practice Drawing Canvas Component */}
             {activeStepList[currentStep].imageUrl ? (
               <div className="w-full h-56 sm:h-64 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-3 overflow-hidden shadow-inner">
                 {mounted && (
@@ -614,15 +475,7 @@ export default function ChallengesPage() {
                 )}
               </div>
             ) : (
-              <div className="w-full py-12 bg-gradient-to-r from-indigo-500/10 via-purple-500/15 to-pink-500/10 border border-indigo-500/30 rounded-2xl flex flex-col items-center justify-center text-center p-6 space-y-3 animate-pulse shadow-inner">
-                <div className="w-14 h-14 rounded-full bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-2xl shadow-lg">
-                  🎉
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-bold text-lg text-slate-900">Scan Your Drawing & Improve</h3>
-                  <p className="text-sm text-slate-600 max-w-sm">Use our AI scan feature to review your masterpiece, get instant feedback, and sharpen your skills.</p>
-                </div>
-              </div>
+              <PracticeCanvas />
             )}
 
             {/* Tips Section */}
