@@ -14,7 +14,7 @@ export default function HomePage() {
       cardBorder: 'border-blue-100',
       icon: Scan,
       title: 'Scan & Feedback',
-      description: 'Apni paper sketch scan karein aur proportions, lines aur shading par real-time AI feedback paayein.',
+      description: 'Scan your paper sketches and get instant AI feedback on proportions, line work, and shading.',
     },
     {
       num: '2',
@@ -23,7 +23,7 @@ export default function HomePage() {
       cardBorder: 'border-amber-100',
       icon: Pencil,
       title: 'Challenges & Canvas',
-      description: 'Daily challenges complete karein aur Otterleo Canvas par directly practice karke apni drawing skills build karein.',
+      description: 'Complete daily challenges and build your drawing skills directly on the Otterleo Canvas.',
     },
     {
       num: '3',
@@ -32,7 +32,7 @@ export default function HomePage() {
       cardBorder: 'border-sky-100',
       icon: GraduationCap,
       title: 'Learning Path',
-      description: 'Engaging step-by-step courses follow karein, XP earn karein aur course complete karke certificates paayein.',
+      description: 'Follow engaging step-by-step courses, earn XP, and unlock certificates upon completion.',
     },
   ];
 
@@ -198,11 +198,11 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* AI COACH IN YOUR POCKET - OTTERLEO GAMIFIED AESTHETIC SECTION */}
+      {/* DRAWING COACH IN YOUR POCKET - OTTERLEO GAMIFIED AESTHETIC SECTION */}
       <section className="max-w-5xl mx-auto px-6 py-12 my-4 z-10 text-center space-y-10">
         <div className="space-y-2">
           <h2 className="font-rounded text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight uppercase">
-            AI COACH IN YOUR POCKET
+            DRAWING COACH IN YOUR POCKET
           </h2>
           <p className="font-rounded text-slate-500 font-bold text-sm sm:text-base">
             Master drawing with smart AI feedback, practice canvas, and structured learning paths.
