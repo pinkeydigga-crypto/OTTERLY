@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { ArrowLeft } from 'lucide-react';
 
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_TIME_MS = 60 * 1000;
+// Updated: 4 attempts max
+const MAX_ATTEMPTS = 4;
+// Updated: 5 minutes lockout (5 * 60 * 1000 ms)
+const LOCKOUT_TIME_MS = 5 * 60 * 1000;
 
 export default function LoginPage() {
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
@@ -43,6 +46,13 @@ export default function LoginPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Helper function to format remaining seconds into M:SS
+  const formatTime = (totalSeconds: number) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -53,8 +63,8 @@ export default function LoginPage() {
     if (attempts >= MAX_ATTEMPTS) {
       const lockUntil = Date.now() + LOCKOUT_TIME_MS;
       localStorage.setItem('login_lockout_until', lockUntil.toString());
-      setLockoutSeconds(60);
-      setErrorMessage('Too many attempts. Please try again after 60 seconds.');
+      setLockoutSeconds(LOCKOUT_TIME_MS / 1000);
+      setErrorMessage('Too many failed attempts. Login locked for 5 minutes.');
       return;
     }
 
@@ -102,10 +112,9 @@ export default function LoginPage() {
       if (newAttempts >= MAX_ATTEMPTS) {
         const lockUntil = Date.now() + LOCKOUT_TIME_MS;
         localStorage.setItem('login_lockout_until', lockUntil.toString());
-        setLockoutSeconds(60);
-        setErrorMessage('Too many failed attempts. Login locked for 60 seconds.');
+        setLockoutSeconds(LOCKOUT_TIME_MS / 1000);
+        setErrorMessage('Too many failed attempts. Login locked for 5 minutes.');
       } else {
-        // GENERIC ERROR: Internal error leak rokne ke liye single secure message
         const remaining = MAX_ATTEMPTS - newAttempts;
         setErrorMessage(`Invalid email or password. (${remaining} attempt${remaining > 1 ? 's' : ''} left)`);
       }
@@ -116,6 +125,18 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
+      
+      {/* BACK TO HOME BUTTON */}
+      <div className="absolute top-6 left-6 z-30">
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-sm transition-all active:scale-95"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#2563EB]" />
+          <span>Back to Home</span>
+        </Link>
+      </div>
+
       <div className="relative max-w-md w-full pt-16">
         
         <div className="absolute -top-6 left-6 z-20 w-28 h-28 sm:w-32 sm:h-32 drop-shadow-md pointer-events-none">
@@ -174,7 +195,7 @@ export default function LoginPage() {
               className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-0.5 transition-all mt-2 disabled:opacity-50"
             >
               {lockoutSeconds > 0 
-                ? `LOCKED (${lockoutSeconds}s)` 
+                ? `LOCKED (${formatTime(lockoutSeconds)})` 
                 : loading 
                 ? 'LOGGING IN...' 
                 : 'LOG IN'}

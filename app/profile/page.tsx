@@ -67,7 +67,6 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      // 1. Strict Security Check: Verify authenticated session
       const {
         data: { user },
         error: authError,
@@ -79,7 +78,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // 2. Fetch logged-in user profile ONLY using user.id
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -161,24 +159,26 @@ export default function ProfilePage() {
     setDeleting(true);
 
     try {
-      // 1. Delete user row from Supabase 'profiles' table
+      const { data: { user }, error: authUserError } = await supabase.auth.getUser();
+      if (authUserError || !user) {
+        throw new Error("User session expired. Please log in again.");
+      }
+
       const { error: dbError } = await supabase
         .from("profiles")
         .delete()
-        .eq("id", profile.id);
+        .eq("id", user.id);
 
       if (dbError) throw dbError;
 
-      // 2. Sign out & clear session
       await supabase.auth.signOut();
       localStorage.clear();
-
-      // 3. Redirect to login page
       router.replace("/login");
     } catch (err: any) {
+      console.error("Delete Account Error:", err);
       setMessage({
         type: "error",
-        text: err.message || "Failed to delete account. Please try again.",
+        text: err.message || "Failed to delete account. Please check Supabase RLS policies.",
       });
       setShowDeleteModal(false);
     } finally {
@@ -485,7 +485,7 @@ export default function ProfilePage() {
           </div>
 
           <p className="text-xs font-extrabold text-red-900 leading-relaxed">
-            Warning: Deleting your account is permanent. Your entire profile, XP points, streak progress, and saved data will be permanently erased .
+            Warning: Deleting your account is permanent. Your entire profile, XP points, streak progress, and saved data will be permanently erased.
           </p>
 
           <button

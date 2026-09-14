@@ -1,6 +1,8 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 const SITE_URL = "https://Otterleo.in";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
@@ -187,10 +189,21 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
       />
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
+      <main className="max-w-5xl mx-auto px-6 py-8">
         
+        {/* BACK TO HOME BUTTON */}
+        <div className="mb-6">
+          <Link 
+            href="/dashboard" 
+            className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-sm transition-all active:scale-95"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#2563EB]" />
+            <span>Back to Home</span>
+          </Link>
+        </div>
+
         {/* HERO SECTION */}
-        <section className="text-center py-10">
+        <section className="text-center pb-10 pt-2">
           <div className="flex justify-center mb-6">
             <Image 
               src={LOGO_URL} 
