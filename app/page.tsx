@@ -46,15 +46,17 @@ export default function HomePage() {
     >
       {/* Header */}
       <header className="max-w-7xl w-full mx-auto px-6 pt-8 pb-4 flex justify-center items-center z-10">
-        <Image
-          src={logoUrl}
-          alt="Otterleo Logo"
-          width={192}
-          height={80}
-          priority
-          style={{ width: 'auto' }}
-          className="h-16 sm:h-20 object-contain"
-        />
+        {/* FIX: Explicit aspect ratio container preventing layout shift */}
+        <div className="relative w-48 h-16 sm:h-20 flex items-center justify-center">
+          <Image
+            src={logoUrl}
+            alt="Otterleo Logo"
+            fill
+            priority
+            sizes="(max-width: 640px) 192px, 240px"
+            className="object-contain"
+          />
+        </div>
       </header>
 
       {/* Main Hero Section */}
@@ -85,7 +87,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Mascot Image */}
+          {/* Mascot Image - FIX: Fixed dimensions specified directly */}
           <div className="absolute top-6 right-3 z-20 w-24 h-24 pointer-events-none">
             <Image
               src={mascotUrl}
@@ -93,15 +95,13 @@ export default function HomePage() {
               width={96}
               height={96}
               priority
-              style={{ height: 'auto' }}
-              className="w-full object-contain"
+              className="w-24 h-24 object-contain"
             />
           </div>
 
           {/* White Card */}
           <div className="bg-white rounded-3xl p-8 border-2 border-slate-200/95 shadow-[0_10px_30px_rgba(0,0,0,0.04)] relative z-10 space-y-5 pt-12">
             
-            {/* FIX: Link Component acts directly as a Button (No Nested Button) */}
             <Link 
               href="/signup" 
               className="font-sans block w-full text-center py-4 rounded-2xl font-black text-base sm:text-lg text-white uppercase tracking-wider transition-all active:translate-y-1 bg-[#2563EB] shadow-[0px_6px_0px_#1D4ED8] active:shadow-none"
