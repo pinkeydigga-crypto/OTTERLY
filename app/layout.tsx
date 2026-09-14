@@ -20,14 +20,17 @@ export const metadata: Metadata = {
   keywords: [
     "Otterleo",
     "Otterleo AI",
+    "otterleo.in",
     "Learn Drawing AI",
     "AI Drawing Coach",
     "Gamified Drawing Practice",
     "Otto Mascot",
-    "Instant Sketch Feedback"
+    "Instant Sketch Feedback",
+    "Learn drawing the fun way"
   ],
-  
-  // FIX 1: Exact sizes definition for Googlebot-Image crawler
+  alternates: {
+    canonical: SITE_URL,
+  },
   icons: {
     icon: [
       { url: FAVICON_URL, sizes: '48x48', type: 'image/png' },
@@ -40,7 +43,6 @@ export const metadata: Metadata = {
       { url: FAVICON_URL, sizes: '180x180', type: 'image/png' }
     ],
   },
-  
   openGraph: {
     title: "Otterleo - Learn to Draw with AI",
     description: "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
@@ -66,6 +68,13 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 
@@ -73,6 +82,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        "url": SITE_URL,
+        "name": "Otterleo",
+        "description": "Learn drawing the fun way with AI feedback and gamified challenges.",
+        "inLanguage": "en-US"
+      },
       {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
@@ -98,7 +115,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
       <head>
-        {/* FIX 2: Google Search Engine Specific Favicon Meta Tags */}
         <link rel="icon" href={FAVICON_URL} sizes="48x48" type="image/png" />
         <link rel="icon" href={FAVICON_URL} sizes="192x192" type="image/png" />
         <link rel="apple-touch-icon" href={FAVICON_URL} />
