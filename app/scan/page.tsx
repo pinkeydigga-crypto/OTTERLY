@@ -123,35 +123,72 @@ export default function ScanPage() {
     }
 
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const img = new Image();
-        img.src = reader.result as string;
-        img.onload = () => {
-          const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 700;
-          const scaleFactor = MAX_WIDTH / img.width;
+    if (!file) return;
 
-          if (scaleFactor < 1) {
-            canvas.width = MAX_WIDTH;
-            canvas.height = img.height * scaleFactor;
-          } else {
-            canvas.width = img.width;
-            canvas.height = img.height;
-          }
+    // Strict File Validation
+    const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
+    const MAX_FILE_SIZE_MB = 5;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-          const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-          setSelectedImage(compressedBase64);
-          setAnalysis(null);
-          setErrorMessage(null);
-        };
-      };
-      reader.readAsDataURL(file);
+    const extension = file.name.split(".").pop()?.toLowerCase() || "";
+    if (!ALLOWED_EXTENSIONS.includes(extension) || !ALLOWED_MIME_TYPES.includes(file.type)) {
+      setErrorMessage(
+        "Invalid file format! Only valid JPG, JPEG, PNG, and WEBP image files are allowed."
+      );
+      e.target.value = "";
+      return;
     }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setErrorMessage(
+        `File size is too large! Maximum allowed size is ${MAX_FILE_SIZE_MB}MB.`
+      );
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => {
+      setErrorMessage("Failed to read the file. Please try uploading again.");
+      e.target.value = "";
+    };
+
+    reader.onloadend = () => {
+      const img = new Image();
+      img.onerror = () => {
+        setErrorMessage(
+          "Invalid or corrupted image file! Please choose a valid drawing."
+        );
+        setSelectedImage(null);
+        e.target.value = "";
+      };
+
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 700;
+        const scaleFactor = MAX_WIDTH / img.width;
+
+        if (scaleFactor < 1) {
+          canvas.width = MAX_WIDTH;
+          canvas.height = img.height * scaleFactor;
+        } else {
+          canvas.width = img.width;
+          canvas.height = img.height;
+        }
+
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+        setSelectedImage(compressedBase64);
+        setAnalysis(null);
+        setErrorMessage(null);
+      };
+
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleAnalyze = async () => {
@@ -480,7 +517,7 @@ export default function ScanPage() {
                 >
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg, image/jpg, image/webp"
                     onChange={handleImageUpload}
                     className="hidden"
                     disabled={!!countdown}
@@ -500,7 +537,7 @@ export default function ScanPage() {
                       : "Click or drag artwork here to scan"}
                   </p>
                   <p className="text-xs font-bold text-slate-400 mt-1">
-                    Supports PNG, JPG, JPEG (Drawings & Sketches ONLY)
+                    Supports PNG, JPG, JPEG, WEBP (Max 5MB • Drawings ONLY)
                   </p>
                 </label>
               ) : (

@@ -1,19 +1,23 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { cookies } from "next/headers";
 
-// Force maximum route execution time (Vercel Serverless Config)
 export const maxDuration = 60;
 
 const apiKey = process.env.GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(apiKey);
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+
+const MODELS_TO_TRY = [
+  "gemini-2.5-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
+];
 
 export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
     const lastScanCookie = cookieStore.get("otto_last_scan_time");
 
-    // 1. STRICT 24-HOUR SCAN LOCK CHECK (Via HTTP-Only Cookie)
+    // 1. 24-HOUR SCAN LOCK CHECK
     if (lastScanCookie) {
       const lastScanTime = new Date(lastScanCookie.value).getTime();
       const currentTime = new Date().getTime();
@@ -26,119 +30,181 @@ export async function POST(req: Request) {
             isDrawing: false,
             lockActive: true,
             nextAllowedTime: nextAllowed.toISOString(),
-            message:
-              "Daily scan limit reached. You can only perform 1 scan every 24 hours.",
+            message: "Daily scan limit reached. You can only perform 1 scan every 24 hours.",
+            errorCode: "ERR_101", // Code 101: 24h Lock Active
           },
-          { status: 423 } // HTTP 423 Locked
+          { status: 423 }
         );
       }
     }
 
-    // 2. INPUT VALIDATION
+    // 2. SERVER & API KEY VALIDATION
     if (!apiKey) {
+      console.error("[Otto AI Internal Log]: GEMINI_API_KEY is missing in env.");
       return NextResponse.json(
         {
           isDrawing: false,
-          message:
-            "API Key missing in .env environment variables. Please check configuration.",
+          message: "Otto AI is temporarily busy. Please try again later. (Error 102)",
+          errorCode: "ERR_102", // Code 102: Missing Server API Key
         },
         { status: 500 }
       );
     }
 
-    const { image } = await req.json();
-
-    if (!image) {
+    const body = await req.json().catch(() => null);
+    if (!body || !body.image || typeof body.image !== "string") {
       return NextResponse.json(
-        { isDrawing: false, message: "No image provided for analysis." },
+        { 
+          isDrawing: false, 
+          message: "Invalid image upload. Please try uploading again. (Error 103)",
+          errorCode: "ERR_103", // Code 103: Bad Request / Empty Payload
+        },
         { status: 400 }
       );
     }
 
-    const base64Data = image.split(",")[1] || image;
-    const mimeType = image.split(";")[0]?.split(":")[1] || "image/jpeg";
+    const imageStr = body.image;
 
-    // 3. GEMINI AI ANALYSIS SETUP
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-      },
-    });
+    if (imageStr.length > 7 * 1024 * 1024) {
+      return NextResponse.json(
+        { 
+          isDrawing: false, 
+          message: "File size is too large. Maximum limit is 5MB. (Error 104)",
+          errorCode: "ERR_104", // Code 104: Image Size Exceeded
+        },
+        { status: 400 }
+      );
+    }
 
-    const prompt = `
-      You are "Otto", a world-class professional art mentor, master illustrator, and compassionate drawing coach.
-      Your task is to perform a rigorous, structured, and constructive visual audit on the provided image.
+    let mimeType = "image/jpeg";
+    let base64Data = imageStr;
+
+    if (imageStr.includes(";base64,")) {
+      const parts = imageStr.split(";base64,");
+      const mimeHeader = parts[0].replace("data:", "");
+      mimeType = mimeHeader.toLowerCase();
+      base64Data = parts[1];
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+      return NextResponse.json(
+        {
+          isDrawing: false,
+          message: "Unsupported file format. Please upload JPG, PNG, or WEBP. (Error 105)",
+          errorCode: "ERR_105", // Code 105: Unsupported Mime Type
+        },
+        { status: 400 }
+      );
+    }
+
+    const promptText = `
+      You are "Otto", an expert visual art mentor. Inspect the artwork image carefully in full detail.
+      Provide a comprehensive, highly insightful evaluation written in clear, simple Indian English.
 
       FIRST STEP - IMAGE VALIDATION:
-      Determine if the uploaded image is genuinely a hand-drawn sketch, pencil drawing, digital artwork, painting, doodle, or creative illustration.
-      - If the image is a real-life photo of a human face, person, object, scene, document, textbook page, screenshot, meme, or non-artistic content:
-        Set "isDrawing": false and set "message": "Please upload a drawing, sketch, or painting. Otto AI can only evaluate hand-drawn or digital artwork."
-      - If the image IS a drawing or artwork:
-        Set "isDrawing": true and proceed with full evaluation below.
+      Verify if image is a drawing, sketch, painting, digital art, or illustration.
+      If it is a real photo (face, person, object, document page, screenshot):
+        Return {"isDrawing": false, "message": "Please upload a drawing, sketch, or digital art. Otto AI can only check artwork."}
 
-      EVALUATION METRICS & SCORING GUIDELINES:
-      Analyze the artwork across these foundational art pillars:
-      1. Line Quality & Control (Confidence, line weight, stroke consistency)
-      2. Proportion & Anatomy/Geometry (Scale accuracy, spatial alignment, structural balance)
-      3. Shading, Contrast & Form (Value range, light source consistency, 3D volume depth)
-      4. Perspective & Composition (Vanishing points, placement, framing, depth)
-      5. Creativity & Technical Execution (Details, clean rendering, artistic effort)
-
-      SKILL LEVEL CLASSIFICATION:
-      - "Beginner": Raw shapes, basic line work, limited shading, developing proportions.
-      - "Intermediate": Good line confidence, clear structure, decent value range, minor proportional errors.
-      - "Advanced": Strong anatomy/perspective, masterful shading, polished details, refined technique.
-
-      OUTPUT INSTRUCTIONS:
-      Return ONLY a JSON object with this exact JSON schema:
+      If artwork, evaluate lines, proportions, shading, depth, and technique. Return ONLY valid JSON:
       {
-        "isDrawing": boolean,
-        "score": number, // Overall rating out of 100 based on technical quality
+        "isDrawing": true,
+        "score": number,
         "skillLevel": "Beginner" | "Intermediate" | "Advanced",
         "strengths": [
-          "Detailed, specific praise about line quality, technique, or proportions",
-          "Another specific strength observed in the artwork",
-          "At least 3 clear strengths"
+          "Detailed observation about what was executed well",
+          "Second clear strength point regarding line control or shading",
+          "Third praise point highlighting artistic effort"
         ],
         "areasToImprove": [
-          "Constructive criticism on shading, proportions, or perspective",
-          "Specific technical flaw that needs refinement",
-          "At least 2-3 detailed areas"
+          "Detailed explanation of what needs refinement",
+          "Second specific area to improve",
+          "Third specific improvement point"
         ],
         "actionableImprovements": [
-          "Step 1: Concrete technique or exercise to practice next",
-          "Step 2: Specific advice on tools, light source, or line weight",
-          "At least 3 practical action steps"
+          "Step 1: Concrete guidance on how to fix line control or shading",
+          "Step 2: Practical technique exercise",
+          "Step 3: Tool or measurement tip"
         ],
-        "practiceRecommendation": "A tailored 10 to 15 minute daily drawing drill designed specifically for this artist's current stage.",
-        "motivationalFeedback": "An inspiring, warm, and highly encouraging 2-sentence closing quote from Otto the Art Coach to keep the artist motivated.",
+        "practiceRecommendation": "A detailed 15-minute daily practice drill tailored to fix observed flaws.",
+        "motivationalFeedback": "An encouraging closing note from Otto.",
         "message": ""
       }
     `;
 
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: mimeType,
+    // 3. INTERNAL API CALL WITH RETRIES
+    let jsonResult = null;
+    let internalErrorLog = "";
+
+    for (const modelName of MODELS_TO_TRY) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+        const apiResponse = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+          {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    { text: promptText },
+                    {
+                      inlineData: {
+                        mimeType: mimeType,
+                        data: base64Data,
+                      },
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                responseMimeType: "application/json",
+                maxOutputTokens: 1200,
+                temperature: 0.2,
+              },
+            }),
+          }
+        ).finally(() => clearTimeout(timeoutId));
+
+        if (apiResponse.ok) {
+          const data = await apiResponse.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (rawText) {
+            const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
+            jsonResult = JSON.parse(cleanJsonText);
+            break;
+          }
+        } else {
+          internalErrorLog = await apiResponse.text();
+          console.error(`[Otto AI Model ${modelName} Failure]:`, internalErrorLog);
+        }
+      } catch (err) {
+        console.error(`[Otto AI Internal Catch]: Model ${modelName} failed`, err);
+      }
+    }
+
+    if (!jsonResult) {
+      return NextResponse.json(
+        {
+          isDrawing: false,
+          message: "Otto AI is temporarily busy. Please try again in a few seconds. (Error 106)",
+          errorCode: "ERR_106", // Code 106: All Backend Model Attempts Failed / Auth Failure
         },
-      },
-    ]);
+        { status: 502 }
+      );
+    }
 
-    const text = result.response.text();
-
-    // Clean potential markdown wrappers if returned by AI
-    const cleanJsonText = text.replace(/```json\n?|\n?```/g, "").trim();
-    const parsedData = JSON.parse(cleanJsonText);
-
-    // 4. SET 24-HOUR COOKIE ONLY IF ARTWORK IS VALID
-    if (parsedData.isDrawing === true) {
+    // 4. SET COOKIE IF VALID ARTWORK
+    if (jsonResult.isDrawing === true) {
       const now = new Date();
       const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-      // Set cookie for 24 hours (86400 seconds)
       cookieStore.set("otto_last_scan_time", now.toISOString(), {
         maxAge: 86400,
         path: "/",
@@ -146,21 +212,17 @@ export async function POST(req: Request) {
         sameSite: "strict",
       });
 
-      parsedData.nextAllowedTime = nextAllowed.toISOString();
+      jsonResult.nextAllowedTime = nextAllowed.toISOString();
     }
 
-    return NextResponse.json(parsedData);
+    return NextResponse.json(jsonResult);
   } catch (error: unknown) {
-    console.error("AI Analysis Detailed Error:", error);
-    const errMessage =
-      error instanceof Error
-        ? error.message
-        : "Failed to analyze artwork. Please try again.";
-
+    console.error("[Otto AI Server Execution Error]:", error);
     return NextResponse.json(
       {
         isDrawing: false,
-        message: errMessage,
+        message: "Otto AI service connection timed out. Please try again. (Error 107)",
+        errorCode: "ERR_107", // Code 107: General Runtime Catch / Network Timeout
       },
       { status: 500 }
     );

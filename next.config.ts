@@ -40,7 +40,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://otsiwrtnkzhrztlpcdjx.supabase.co https://api.dicebear.com https://ui-avatars.com; connect-src 'self' https://otsiwrtnkzhrztlpcdjx.supabase.co https://*.supabase.co wss://*.supabase.co; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://otsiwrtnkzhrztlpcdjx.supabase.co https://api.dicebear.com https://ui-avatars.com; connect-src 'self' https://otsiwrtnkzhrztlpcdjx.supabase.co https://*.supabase.co wss://*.supabase.co; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
           },
         ],
       },
