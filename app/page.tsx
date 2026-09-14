@@ -1,3 +1,6 @@
+'use client';
+
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Scan, Pencil, GraduationCap, ArrowRight } from 'lucide-react';
@@ -8,31 +11,28 @@ export default function HomePage() {
 
   const features = [
     {
-      num: '1',
-      badgeBg: 'bg-[#2563EB]',
       iconBg: 'bg-blue-100 text-[#2563EB]',
-      cardBorder: 'border-blue-100',
+      cardBorder: 'border-blue-100/60',
       icon: Scan,
       title: 'Scan & Feedback',
       description: 'Scan your paper sketches and get instant AI feedback on proportions, line work, and shading.',
+      animationClass: 'float-card-1',
     },
     {
-      num: '2',
-      badgeBg: 'bg-[#FFB800]',
       iconBg: 'bg-amber-100 text-[#D97706]',
-      cardBorder: 'border-amber-100',
+      cardBorder: 'border-amber-100/60',
       icon: Pencil,
       title: 'Challenges & Canvas',
       description: 'Complete daily challenges and build your drawing skills directly on the Otterleo Canvas.',
+      animationClass: 'float-card-2',
     },
     {
-      num: '3',
-      badgeBg: 'bg-[#3B82F6]',
       iconBg: 'bg-sky-100 text-[#0284C7]',
-      cardBorder: 'border-sky-100',
+      cardBorder: 'border-sky-100/60',
       icon: GraduationCap,
       title: 'Learning Path',
       description: 'Follow engaging step-by-step courses, earn XP, and unlock certificates upon completion.',
+      animationClass: 'float-card-3',
     },
   ];
 
@@ -42,10 +42,10 @@ export default function HomePage() {
         background: 'linear-gradient(to bottom, #ffffff, #f8fafc, rgba(241, 245, 249, 0.8))',
         minHeight: '100vh',
       }}
-      className="relative overflow-hidden selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased min-h-screen flex flex-col justify-between text-[#0F172A]"
+      className="relative selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased flex flex-col justify-between text-[#0F172A] overflow-x-hidden"
     >
 
-      {/* Font & Animations Style */}
+      {/* Font & Floating Animations Style */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900;1000&display=swap');
 
@@ -53,49 +53,29 @@ export default function HomePage() {
           font-family: 'Nunito', system-ui, -apple-system, sans-serif !important;
         }
 
-        /* Text Slide In Animation */
-        @keyframes slideInStrongShadow {
-          0% {
-            opacity: 0;
-            transform: translate3d(-120px, 0, 0);
-            filter: drop-shadow(-35px 0px 20px rgba(37, 99, 235, 0.65));
+        /* Minimal Floating Animation */
+        @keyframes minimalFloat {
+          0%, 100% {
+            transform: translateY(0px);
           }
-          60% {
-            filter: drop-shadow(-15px 0px 10px rgba(37, 99, 235, 0.35));
-          }
-          100% {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-            filter: drop-shadow(0px 0px 0px transparent);
+          50% {
+            transform: translateY(-8px);
           }
         }
 
-        /* Subheading Soft Fade Up */
-        @keyframes fadeInUp {
-          0% {
-            opacity: 0;
-            transform: translate3d(0, 20px, 0);
-          }
-          100% {
-            opacity: 1;
-            transform: translate3d(0, 0, 0);
-          }
+        .float-card-1 {
+          animation: minimalFloat 5s ease-in-out infinite;
         }
 
-        .animate-line {
-          opacity: 0;
-          will-change: transform, opacity, filter;
-          animation: slideInStrongShadow 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .float-card-2 {
+          animation: minimalFloat 6s ease-in-out infinite;
+          animation-delay: 1s;
         }
 
-        .animate-subheading {
-          opacity: 0;
-          animation: fadeInUp 0.8s ease-out 1s forwards;
+        .float-card-3 {
+          animation: minimalFloat 5.5s ease-in-out infinite;
+          animation-delay: 2s;
         }
-
-        .delay-1 { animation-delay: 0s; }
-        .delay-2 { animation-delay: 0.35s; }
-        .delay-3 { animation-delay: 0.7s; }
       `}</style>
 
       {/* Header */}
@@ -117,18 +97,12 @@ export default function HomePage() {
         {/* Left Column */}
         <div className="lg:col-span-7 space-y-6">
           <h1 className="font-rounded text-6xl sm:text-7xl font-black text-[#0F172A] leading-[1.05] tracking-tight flex flex-col items-start">
-            <span className="animate-line delay-1 inline-block">
-              Learn
-            </span>
-            <span className="animate-line delay-2 inline-block">
-              drawing
-            </span>
-            <span className="animate-line delay-3 text-[#2563EB] inline-block">
-              the fun way.
-            </span>
+            <span className="inline-block">Learn</span>
+            <span className="inline-block">drawing</span>
+            <span className="text-[#2563EB] inline-block">the fun way.</span>
           </h1>
 
-          <p className="animate-subheading font-rounded text-lg sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
+          <p className="font-rounded text-lg sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
             Get AI feedback, complete challenges, earn XP, and improve your drawing skills every day.
           </p>
         </div>
@@ -159,7 +133,7 @@ export default function HomePage() {
           </div>
 
           {/* White Card */}
-          <div className="bg-white rounded-3xl p-8 border-2 border-slate-200/90 shadow-2xl relative z-10 space-y-5 pt-12">
+          <div className="bg-white rounded-3xl p-8 border-2 border-slate-200/95 shadow-[0_10px_30px_rgba(0,0,0,0.04)] relative z-10 space-y-5 pt-12">
             <Link href="/signup" className="block w-full">
               <button
                 style={{ backgroundColor: '#2563EB', boxShadow: '0px 6px 0px #1D4ED8' }}
@@ -202,33 +176,28 @@ export default function HomePage() {
       <section className="max-w-5xl mx-auto px-6 py-12 my-4 z-10 text-center space-y-10">
         <div className="space-y-2">
           <h2 className="font-rounded text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight uppercase">
-            DRAWING COACH IN YOUR POCKET
+            DRAWING COACH IN YOUR <span className="text-[#2563EB]">POCKET</span>
           </h2>
           <p className="font-rounded text-slate-500 font-bold text-sm sm:text-base">
             Master drawing with smart AI feedback, practice canvas, and structured learning paths.
           </p>
         </div>
 
-        {/* 3 Gamified Otterleo Style Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+        {/* 3 Floating Cards with Minimal Shadows */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left pt-4 pb-4">
           {features.map((item, index) => {
             const IconComponent = item.icon;
             return (
               <div
                 key={index}
-                className={`bg-white rounded-[32px] p-6 border-2 ${item.cardBorder} shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-6 relative overflow-hidden`}
+                className={`bg-white rounded-[32px] p-6 border ${item.cardBorder} shadow-[0_8px_30px_rgb(0,0,0,0.03)] hover:shadow-[0_12px_35px_rgb(37,99,235,0.08)] transition-all duration-300 flex flex-col justify-between space-y-6 relative overflow-hidden ${item.animationClass}`}
               >
-                {/* Header: Circle Icon + Badge Number */}
                 <div className="flex items-center gap-3">
                   <div className={`w-14 h-14 rounded-full ${item.iconBg} flex items-center justify-center font-black shadow-inner`}>
                     <IconComponent className="w-7 h-7" />
                   </div>
-                  <span className={`w-7 h-7 rounded-full ${item.badgeBg} text-white font-rounded font-black text-xs flex items-center justify-center shadow-sm`}>
-                    {item.num}
-                  </span>
                 </div>
 
-                {/* Content */}
                 <div className="space-y-2">
                   <h3 className="font-rounded text-xl font-black text-[#0F172A]">
                     {item.title}
@@ -238,7 +207,6 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                {/* Bottom Arrow */}
                 <div className="pt-1">
                   <ArrowRight className="w-5 h-5 text-[#2563EB] font-bold" />
                 </div>
@@ -248,7 +216,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3-Layer Waves Background */}
+      {/* 3-Layer Waves Background & Footer */}
       <div className="relative w-full z-10">
         <div className="w-full overflow-hidden leading-none">
           <svg
