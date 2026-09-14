@@ -9,7 +9,7 @@ import {
   Crown, Star, Heart
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { toPng } from "html-to-image";
+import html2canvas from "html2canvas";
 
 interface ProfileUser {
   id: string;
@@ -135,22 +135,116 @@ export default function LeaderboardPage() {
   const rank2 = leaderboardData.find((u) => u.rank === 2);
   const rank3 = leaderboardData.find((u) => u.rank === 3);
 
+  // SAFE CANVAS GENERATOR WITH CORS & COLOR ERROR PREVENTION
+  const generateCanvas = async (): Promise<HTMLCanvasElement | null> => {
+    if (!cardRef.current) return null;
+
+    try {
+      return await html2canvas(cardRef.current, {
+        useCORS: true,
+        allowTaint: false,
+        scale: 3,
+        backgroundColor: "#ffffff",
+        logging: false,
+        imageTimeout: 15000,
+        onclone: (clonedDoc) => {
+          const images = clonedDoc.getElementsByTagName("img");
+          for (let i = 0; i < images.length; i++) {
+            images[i].setAttribute("crossorigin", "anonymous");
+          }
+        },
+      });
+    } catch (canvasErr) {
+      console.warn("html2canvas fallback trigger due to:", canvasErr);
+      return generateFallbackCanvas();
+    }
+  };
+
+  // Pure Native Fallback Canvas Generator
+  const generateFallbackCanvas = async (): Promise<HTMLCanvasElement | null> => {
+    if (!currentUser) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = 720;
+    canvas.height = 960;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    // Fill Card Background
+    ctx.fillStyle = "#ffffff";
+    ctx.roundRect(0, 0, 720, 960, 40);
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = "#3b82f6";
+    ctx.lineWidth = 12;
+    ctx.stroke();
+
+    // Corner Accents
+    ctx.fillStyle = "#3b82f6";
+    ctx.beginPath();
+    ctx.arc(0, 0, 100, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(720, 960, 100, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Title Block
+    ctx.fillStyle = "#1e293b";
+    ctx.font = "900 32px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("MY LEADERBOARD RANK", 360, 160);
+
+    // Rank Badge
+    ctx.fillStyle = "#2563eb";
+    ctx.roundRect(260, 190, 200, 50, 25);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 24px sans-serif";
+    ctx.fillText(`Top #${currentUser.rank || "N/A"}`, 360, 224);
+
+    // Name
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "900 40px sans-serif";
+    ctx.fillText(currentUser.full_name, 360, 520);
+
+    // Stats Box
+    ctx.fillStyle = "#f0f6ff";
+    ctx.roundRect(100, 580, 520, 140, 20);
+    ctx.fill();
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "900 28px sans-serif";
+    ctx.fillText(`XP: ${currentUser.xp_points} XP`, 240, 660);
+    ctx.fillText(`Streak: ${currentUser.streak} Days`, 480, 660);
+
+    // Footer Text
+    ctx.fillStyle = "#2563eb";
+    ctx.font = "italic bold 24px sans-serif";
+    ctx.fillText("Keep drawing, keep growing!", 360, 820);
+
+    return canvas;
+  };
+
   const handleDownloadImage = async () => {
     if (!cardRef.current) return;
     setIsDownloading(true);
 
     try {
-      const dataUrl = await toPng(cardRef.current, {
-        cacheBust: true,
-        pixelRatio: 3,
-      });
+      const canvas = await generateCanvas();
+      if (!canvas) throw new Error("Canvas generation failed");
 
+      const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
-      link.download = `${currentUser?.full_name}_Leaderboard_Rank.png`;
+      link.download = `${currentUser?.full_name || "User"}_Leaderboard_Rank.png`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     } catch (err) {
       console.error("Error downloading image:", err);
+      alert("Image download failed. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -161,29 +255,32 @@ export default function LeaderboardPage() {
     setIsSharing(true);
 
     try {
-      const dataUrl = await toPng(cardRef.current, {
-        cacheBust: true,
-        pixelRatio: 3,
-      });
+      const canvas = await generateCanvas();
+      if (!canvas) throw new Error("Canvas generation failed");
 
-      const blobFetch = await fetch(dataUrl);
-      const imageBlob = await blobFetch.blob();
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          handleDownloadImage();
+          return;
+        }
 
-      const file = new File([imageBlob], `${currentUser?.full_name}_Leaderboard_Rank.png`, {
-        type: "image/png",
-      });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: "My Leaderboard Rank",
-          text: `Check out my rank on the Leaderboard! 🎨`,
+        const file = new File([blob], `${currentUser?.full_name || "User"}_Leaderboard_Rank.png`, {
+          type: "image/png",
         });
-      } else {
-        alert("Native sharing is not supported on this browser. Use the Download option instead.");
-      }
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: "My Leaderboard Rank",
+            text: `Check out my rank on Otterleo Leaderboard! 🎨`,
+          });
+        } else {
+          handleDownloadImage();
+        }
+      }, "image/png");
     } catch (err) {
       console.error("Error sharing image:", err);
+      handleDownloadImage();
     } finally {
       setIsSharing(false);
     }
@@ -201,7 +298,7 @@ export default function LeaderboardPage() {
   ];
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0">
 
       {/* Mobile Top Header */}
       <header className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
@@ -214,7 +311,7 @@ export default function LeaderboardPage() {
             <PanelLeft className="w-5 h-5" />
           </button>
 
-          <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
+          <img src={logoUrl} alt="Logo" className="h-9 w-auto object-contain" />
         </div>
       </header>
 
@@ -229,7 +326,7 @@ export default function LeaderboardPage() {
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
+                <img src={logoUrl} alt="Logo" className="h-9 w-auto object-contain" />
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
                   <X className="w-5 h-5" />
                 </button>
@@ -290,22 +387,23 @@ export default function LeaderboardPage() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-8 max-w-5xl mx-auto w-full min-w-0 space-y-6 overflow-y-auto">
+      <main className="flex-1 p-3 sm:p-6 md:p-8 max-w-5xl mx-auto w-full min-w-0 space-y-5 overflow-y-auto">
 
         {/* Top Navigation */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between gap-2">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border-2 border-slate-100 text-slate-700 font-black text-sm hover:bg-slate-50 transition-all shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-white border-2 border-slate-100 text-slate-700 font-black text-xs sm:text-sm hover:bg-slate-50 transition-all shadow-xs shrink-0"
           >
             <ArrowLeft className="w-4 h-4 stroke-[3]" />
-            Back to Dashboard
+            <span className="hidden sm:inline">Back to Dashboard</span>
+            <span className="sm:hidden">Back</span>
           </Link>
 
           {currentUser && (
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs md:text-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-xs"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs sm:text-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-xs shrink-0 cursor-pointer"
             >
               <Share2 className="w-4 h-4" />
               <span>Share Rank Card</span>
@@ -314,25 +412,28 @@ export default function LeaderboardPage() {
         </div>
 
         {/* Banner Section */}
-        <div className="bg-white pt-6 pb-6 px-6 sm:px-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden">
-          <div className="flex items-center justify-center shrink-0">
+        <div className="bg-white py-5 px-5 sm:px-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs flex flex-col items-center text-center space-y-2 relative overflow-hidden">
+          <div className="w-24 sm:w-32 h-auto shrink-0 flex items-center justify-center">
             <img
               src={mascotImageUrl}
               alt="Mascot"
-              className="w-28 sm:w-36 h-auto object-contain drop-shadow-md"
+              className="w-full h-auto object-contain drop-shadow-md"
+              crossOrigin="anonymous"
             />
           </div>
 
-          <div className="space-y-1.5 text-center sm:text-right">
-            <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A]">Leaderboard Standings</h1>
-            <p className="text-xs sm:text-sm font-bold text-slate-500">
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-3xl font-black text-[#0F172A] leading-tight">
+              Leaderboard Standings
+            </h1>
+            <p className="text-xs sm:text-sm font-bold text-slate-500 max-w-md mx-auto">
               Compete with fellow learners and climb the global rankings!
             </p>
           </div>
         </div>
 
         {loading ? (
-          <div className="min-h-[250px] flex items-center justify-center bg-white rounded-[2.5rem] border-2 border-slate-100 p-8">
+          <div className="min-h-[220px] flex items-center justify-center bg-white rounded-[2.5rem] border-2 border-slate-100 p-8">
             <div className="flex items-center gap-3 text-[#2563eb] font-black text-base">
               <Loader2 className="w-6 h-6 animate-spin" />
               <span>Loading rankings...</span>
@@ -342,26 +443,27 @@ export default function LeaderboardPage() {
           <>
             {/* Podium Section */}
             {leaderboardData.length > 0 ? (
-              <div className="pt-4 grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 items-end w-full">
+              <div className="pt-2 grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 items-end w-full">
                 {/* RANK 2 */}
                 {rank2 ? (
-                  <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-3 sm:p-4 text-center relative flex flex-col items-center shadow-xs">
-                    <div className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-black text-xs text-slate-700 mb-1">
+                  <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-2.5 sm:p-4 text-center relative flex flex-col items-center shadow-xs">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-black text-[10px] sm:text-xs text-slate-700 mb-1">
                       #2
                     </div>
                     <img
                       src={rank2.avatar_url}
                       alt={rank2.full_name}
-                      className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-slate-100 my-1"
+                      className="w-10 h-10 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-slate-100 my-1"
+                      crossOrigin="anonymous"
                     />
-                    <h3 className="font-black text-slate-800 text-xs sm:text-sm truncate w-full">
+                    <h3 className="font-black text-slate-800 text-[11px] sm:text-sm truncate w-full">
                       {rank2.full_name}
                     </h3>
-                    <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 mt-1">
-                      <span className="text-[11px] sm:text-xs font-black text-[#2563eb]">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-1 mt-1">
+                      <span className="text-[10px] sm:text-xs font-black text-[#2563eb]">
                         {rank2.xp_points} XP
                       </span>
-                      <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-[11px] font-black text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-md border border-orange-100">
+                      <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[11px] font-black text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-md border border-orange-100">
                         {rank2.streak} <Flame className="w-3 h-3 fill-orange-500 stroke-none" />
                       </span>
                     </div>
@@ -370,19 +472,20 @@ export default function LeaderboardPage() {
 
                 {/* RANK 1 */}
                 {rank1 ? (
-                  <div className="bg-amber-50/80 border-2 border-amber-200 rounded-[2.5rem] p-4 sm:p-5 text-center relative flex flex-col items-center shadow-xs">
-                    <div className="w-8 h-8 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center font-black text-xs text-white shadow-xs mb-1">
+                  <div className="bg-amber-50/80 border-2 border-amber-200 rounded-[2.2rem] p-3 sm:p-5 text-center relative flex flex-col items-center shadow-xs">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center font-black text-xs text-white shadow-xs mb-1">
                       #1
                     </div>
                     <img
                       src={rank1.avatar_url}
                       alt={rank1.full_name}
-                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-amber-200 my-1"
+                      className="w-12 h-12 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-amber-200 my-1"
+                      crossOrigin="anonymous"
                     />
                     <h3 className="font-black text-slate-900 text-xs sm:text-base truncate w-full">
                       {rank1.full_name}
                     </h3>
-                    <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 mt-1">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-1 mt-1">
                       <span className="text-xs sm:text-sm font-black text-amber-600">
                         {rank1.xp_points} XP
                       </span>
@@ -395,23 +498,24 @@ export default function LeaderboardPage() {
 
                 {/* RANK 3 */}
                 {rank3 ? (
-                  <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-3 sm:p-4 text-center relative flex flex-col items-center shadow-xs">
-                    <div className="w-7 h-7 rounded-full bg-orange-200 border-2 border-white flex items-center justify-center font-black text-xs text-orange-800 mb-1">
+                  <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-2.5 sm:p-4 text-center relative flex flex-col items-center shadow-xs">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-orange-200 border-2 border-white flex items-center justify-center font-black text-[10px] sm:text-xs text-orange-800 mb-1">
                       #3
                     </div>
                     <img
                       src={rank3.avatar_url}
                       alt={rank3.full_name}
-                      className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-slate-100 my-1"
+                      className="w-10 h-10 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-slate-100 my-1"
+                      crossOrigin="anonymous"
                     />
-                    <h3 className="font-black text-slate-800 text-xs sm:text-sm truncate w-full">
+                    <h3 className="font-black text-slate-800 text-[11px] sm:text-sm truncate w-full">
                       {rank3.full_name}
                     </h3>
-                    <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 mt-1">
-                      <span className="text-[11px] sm:text-xs font-black text-[#2563eb]">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-1 mt-1">
+                      <span className="text-[10px] sm:text-xs font-black text-[#2563eb]">
                         {rank3.xp_points} XP
                       </span>
-                      <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-[11px] font-black text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-md border border-orange-100">
+                      <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[11px] font-black text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-md border border-orange-100">
                         {rank3.streak} <Flame className="w-3 h-3 fill-orange-500 stroke-none" />
                       </span>
                     </div>
@@ -435,34 +539,35 @@ export default function LeaderboardPage() {
                     return (
                       <div
                         key={user.id}
-                        className={`flex items-center justify-between p-3.5 rounded-2xl transition-all ${
+                        className={`flex items-center justify-between p-3 rounded-2xl transition-all ${
                           isSelf
                             ? "bg-blue-50/80 border-2 border-blue-200 shadow-2xs"
                             : "bg-[#f8fafc] border border-slate-100"
                         }`}
                       >
-                        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0">
                           <span className={`text-xs font-black w-5 shrink-0 text-center ${isSelf ? "text-[#2563eb]" : "text-slate-400"}`}>
                             #{user.rank}
                           </span>
-                          <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex items-center gap-2.5 min-w-0">
                             <img
                               src={user.avatar_url}
                               alt={user.full_name}
                               className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
+                              crossOrigin="anonymous"
                             />
-                            <span className={`font-black text-sm truncate ${isSelf ? "text-[#2563eb]" : "text-slate-800"}`}>
-                              {user.full_name} {isSelf && <span className="text-xs font-bold">(You)</span>}
+                            <span className={`font-black text-xs sm:text-sm truncate ${isSelf ? "text-[#2563eb]" : "text-slate-800"}`}>
+                              {user.full_name} {isSelf && <span className="text-[10px] font-bold">(You)</span>}
                             </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span className={`font-black text-sm ${isSelf ? "text-[#2563eb]" : "text-slate-800"}`}>
+                        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                          <span className={`font-black text-xs sm:text-sm ${isSelf ? "text-[#2563eb]" : "text-slate-800"}`}>
                             {user.xp_points} XP
                           </span>
-                          <span className="inline-flex items-center gap-0.5 text-xs font-black text-orange-500 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">
-                            {user.streak} <Flame className="w-3.5 h-3.5 fill-orange-500 stroke-none" />
+                          <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs font-black text-orange-500 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">
+                            {user.streak} <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-orange-500 stroke-none" />
                           </span>
                         </div>
                       </div>
@@ -494,118 +599,117 @@ export default function LeaderboardPage() {
         })}
       </nav>
 
-      {/* Share Card Modal (Updated exact design matching image) */}
+      {/* Share Card Modal */}
       {isShareModalOpen && currentUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-[2.5rem] max-w-sm w-full p-6 shadow-2xl relative border-2 border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-[360px] p-4 sm:p-6 shadow-2xl relative border-2 border-slate-100 my-auto">
             <button
               onClick={() => setIsShareModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 z-10"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 z-10 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            {/* Target Card for Image Export */}
+            {/* Target Proportional Card for Download & Share */}
             <div
               ref={cardRef}
-              className="bg-white rounded-[2.5rem] p-6 text-center shadow-lg relative overflow-hidden mb-6 border-4 border-blue-400 flex flex-col items-center"
+              className="w-full bg-white rounded-[2rem] p-5 text-center shadow-lg relative overflow-hidden mb-5 border-4 border-blue-500 flex flex-col items-center"
             >
-              {/* Decorative Corner Background Shapes */}
-              <div className="absolute -top-10 -left-10 w-24 h-24 bg-blue-500 rounded-full" />
-              <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-blue-500 rounded-full" />
+              {/* Corner Accents */}
+              <div className="absolute -top-8 -left-8 w-20 h-20 bg-blue-500 rounded-full pointer-events-none" />
+              <div className="absolute -bottom-8 -right-8 w-20 h-20 bg-blue-500 rounded-full pointer-events-none" />
 
-              {/* Header Logo */}
-              <div className="relative z-10 flex flex-col items-center mb-3">
+              {/* Logo */}
+              <div className="relative z-10 flex flex-col items-center mb-2">
                 <img
                   src={logoUrl}
                   alt="Logo"
-                  className="h-10 w-auto object-contain mb-1"
+                  className="h-9 w-auto object-contain mb-1"
                   crossOrigin="anonymous"
                 />
               </div>
 
               {/* Title Section */}
-              <div className="relative z-10 space-y-1 mb-4">
+              <div className="relative z-10 space-y-1 mb-3">
                 <div className="flex items-center justify-center gap-1">
                   <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
                 </div>
-                <h2 className="text-lg font-black text-[#1E293B] tracking-wide uppercase">
+                <h2 className="text-sm font-black text-[#1e293b] tracking-wide uppercase">
                   MY LEADERBOARD RANK
                 </h2>
 
-                {/* Rank Badge Pill */}
-                <div className="inline-flex items-center gap-1 bg-[#3B82F6] text-white font-black text-xs px-4 py-1.5 rounded-full shadow-xs mt-1">
+                <div className="inline-flex items-center gap-1 bg-[#2563eb] text-white font-black text-xs px-3.5 py-1 rounded-full shadow-xs">
                   Top #{currentUser.rank || "N/A"}
                 </div>
               </div>
 
-              {/* Profile Frame with Rank Badge */}
-              <div className="relative z-10 my-2">
-                <div className="relative inline-block bg-gradient-to-b from-blue-400 to-blue-600 p-2 rounded-3xl shadow-md">
+              {/* Avatar Box */}
+              <div className="relative z-10 my-1">
+                <div className="relative inline-block bg-blue-500 p-1.5 rounded-2xl shadow-md">
                   <img
                     src={currentUser.avatar_url}
                     alt={currentUser.full_name}
-                    className="w-24 h-24 rounded-2xl object-cover bg-white"
+                    className="w-20 h-20 rounded-xl object-cover bg-white"
                     crossOrigin="anonymous"
                   />
-                  <span className="absolute -bottom-2 -right-2 bg-white text-[#2563EB] font-black text-xs px-2.5 py-1 rounded-full shadow-md border border-blue-100">
+                  <span className="absolute -bottom-2 -right-2 bg-white text-[#2563eb] font-black text-[10px] px-2 py-0.5 rounded-full shadow-md border border-blue-100">
                     #{currentUser.rank || "N/A"}
                   </span>
                 </div>
               </div>
 
-              {/* Username */}
-              <h3 className="relative z-10 font-black text-xl text-[#0F172A] mt-2 mb-4">
+              {/* Full Name */}
+              <h3 className="relative z-10 font-black text-lg text-[#0f172a] mt-2 mb-3 truncate w-full px-2">
                 {currentUser.full_name}
               </h3>
 
-              {/* Stats Box Container */}
-              <div className="relative z-10 w-full bg-[#F0F6FF] rounded-2xl p-4 border border-blue-100 flex items-center justify-around mb-4">
+              {/* Stats Container */}
+              <div className="relative z-10 w-full bg-[#f0f6ff] rounded-xl p-3 border border-blue-100 flex items-center justify-around mb-3">
                 <div className="flex items-center gap-2 text-left">
-                  <Star className="w-5 h-5 text-blue-600 fill-blue-600 shrink-0" />
+                  <Star className="w-4 h-4 text-blue-600 fill-blue-600 shrink-0" />
                   <div>
-                    <p className="text-[10px] text-slate-400 font-extrabold uppercase">TOTAL XP</p>
-                    <p className="text-base font-black text-[#0F172A]">{currentUser.xp_points} XP</p>
+                    <p className="text-[9px] text-slate-400 font-extrabold uppercase">TOTAL XP</p>
+                    <p className="text-sm font-black text-[#0f172a]">{currentUser.xp_points} XP</p>
                   </div>
                 </div>
 
-                <div className="h-8 w-px bg-blue-200" />
+                <div className="h-7 w-px bg-blue-200" />
 
                 <div className="flex items-center gap-2 text-left">
-                  <Flame className="w-5 h-5 text-blue-600 fill-blue-600 shrink-0" />
+                  <Flame className="w-4 h-4 text-blue-600 fill-blue-600 shrink-0" />
                   <div>
-                    <p className="text-[10px] text-slate-400 font-extrabold uppercase">STREAK</p>
-                    <p className="text-base font-black text-[#0F172A] flex items-center gap-1">
+                    <p className="text-[9px] text-slate-400 font-extrabold uppercase">STREAK</p>
+                    <p className="text-sm font-black text-[#0f172a] flex items-center gap-1">
                       {currentUser.streak} <span className="text-amber-500">🔥</span>
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Footer Subtitle */}
-              <div className="relative z-10 text-xs font-bold text-blue-600 italic flex items-center justify-center gap-1">
+              {/* Footer text */}
+              <div className="relative z-10 text-[11px] font-bold text-[#2563eb] italic flex items-center justify-center gap-1">
                 <span>Keep drawing, keep growing!</span>
-                <Heart className="w-3.5 h-3.5 fill-blue-600 stroke-none" />
+                <Heart className="w-3 h-3 fill-blue-600 stroke-none" />
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               <button
                 onClick={handleShareImage}
                 disabled={isSharing || isDownloading}
-                className="flex items-center justify-center gap-2 py-3 px-4 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs sm:text-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-md disabled:opacity-70"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-md disabled:opacity-70 cursor-pointer"
               >
-                {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+                {isSharing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
                 <span>Share Image</span>
               </button>
 
               <button
                 onClick={handleDownloadImage}
                 disabled={isDownloading || isSharing}
-                className="flex items-center justify-center gap-2 py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl font-black text-xs sm:text-sm border-b-4 border-slate-950 active:border-b-0 active:translate-y-1 transition-all shadow-md disabled:opacity-70"
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl font-black text-xs border-b-4 border-slate-950 active:border-b-0 active:translate-y-1 transition-all shadow-md disabled:opacity-70 cursor-pointer"
               >
-                {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                 <span>Download</span>
               </button>
             </div>
