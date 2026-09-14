@@ -1,9 +1,31 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Scan, Swords, Compass } from 'lucide-react';
 
 export default function HomePage() {
   const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png';
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png';
+
+  const features = [
+    {
+      step: '1. Instant AI Scan',
+      icon: Scan,
+      title: 'Scan & Feedback',
+      description: 'Apni paper sketch scan karein aur proportions, lines aur shading par real-time AI feedback paayein.',
+    },
+    {
+      step: '2. Daily Practice',
+      icon: Swords,
+      title: 'Challenges & Canvas',
+      description: 'Daily challenges complete karein aur Otterleo Canvas par directly practice karke apni drawing skills build karein.',
+    },
+    {
+      step: '3. Fun Courses & Certificates',
+      icon: Compass,
+      title: 'Learning Path',
+      description: 'Engaging step-by-step courses follow karein, XP earn karein aur course complete karke certificates paayein.',
+    },
+  ];
 
   return (
     <div 
@@ -167,30 +189,40 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* AI SEO Content Section - Boosts Citation Likelihood & Signal-to-Noise Ratio */}
-      <section className="max-w-5xl mx-auto px-6 py-6 border-t border-slate-200/60 my-4 z-10">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-[#0F172A] text-center mb-6">
-          How Otterleo AI Helps You Master Drawing
-        </h2>
+      {/* AI COACH IN YOUR POCKET - Features Section */}
+      <section className="max-w-5xl mx-auto px-6 py-10 my-4 z-10 text-center space-y-8">
+        <div className="space-y-2">
+          <h2 className="text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight">
+            AI COACH IN YOUR POCKET
+          </h2>
+          <p className="text-slate-500 font-bold text-sm sm:text-base">
+            Master drawing with smart AI feedback, practice canvas, and structured learning paths.
+          </p>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-          <div className="bg-white/80 p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xl font-black text-[#2563EB] mb-1">1. Choose Prompt</div>
-            <p className="text-xs text-[#475569] font-medium leading-relaxed">
-              Pick a bite-sized daily sketching challenge guided by Otto, your AI mentor.
-            </p>
-          </div>
-          <div className="bg-white/80 p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xl font-black text-[#2563EB] mb-1">2. Scan Sketch</div>
-            <p className="text-xs text-[#475569] font-medium leading-relaxed">
-              Upload or scan a photo of your paper sketch directly on the web app.
-            </p>
-          </div>
-          <div className="bg-white/80 p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="text-xl font-black text-[#2563EB] mb-1">3. Get AI Critique</div>
-            <p className="text-xs text-[#475569] font-medium leading-relaxed">
-              Receive real-time feedback on proportions, lines, and earn XP to build streaks.
-            </p>
-          </div>
+          {features.map((item, index) => {
+            const IconComponent = item.icon;
+            return (
+              <div
+                key={index}
+                className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center space-y-3"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#2563EB] flex items-center justify-center font-black">
+                  <IconComponent className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-black text-[#2563EB] uppercase tracking-wider">
+                  {item.step}
+                </span>
+                <h3 className="text-lg font-black text-[#0F172A]">
+                  {item.title}
+                </h3>
+                <p className="text-[#475569] font-medium text-xs leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
