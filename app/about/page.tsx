@@ -194,7 +194,7 @@ export default function AboutPage() {
         {/* BACK TO HOME BUTTON */}
         <div className="mb-6">
           <Link 
-            href="/dashboard" 
+            href="/" 
             className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-sm transition-all active:scale-95"
           >
             <ArrowLeft className="w-4 h-4 text-[#2563EB]" />
