@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, Share2, Download, X, Loader2, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings, Flame, PanelLeft
+  Swords, Scan, Trophy, Compass, Award, User, Settings, Flame, PanelLeft,
+  Crown, Star, Heart
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toPng } from "html-to-image";
@@ -493,7 +494,7 @@ export default function LeaderboardPage() {
         })}
       </nav>
 
-      {/* Share Card Modal */}
+      {/* Share Card Modal (Updated exact design matching image) */}
       {isShareModalOpen && currentUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-[2.5rem] max-w-sm w-full p-6 shadow-2xl relative border-2 border-slate-100">
@@ -504,48 +505,91 @@ export default function LeaderboardPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Card Preview Container */}
+            {/* Target Card for Image Export */}
             <div
               ref={cardRef}
-              className="bg-gradient-to-b from-[#2563eb] to-[#1d4ed8] rounded-[2rem] p-6 text-white text-center shadow-lg relative overflow-hidden mb-6 mt-2 border-4 border-blue-300"
+              className="bg-white rounded-[2.5rem] p-6 text-center shadow-lg relative overflow-hidden mb-6 border-4 border-blue-400 flex flex-col items-center"
             >
-              <div className="flex items-center justify-between mb-4 border-b border-white/20 pb-3">
-                <span className="text-xs font-black tracking-widest text-blue-100 uppercase">LEADERBOARD RANK</span>
-                <span className="text-xs font-black bg-white/20 px-2.5 py-0.5 rounded-full text-white">
-                  Otterleo
-                </span>
-              </div>
+              {/* Decorative Corner Background Shapes */}
+              <div className="absolute -top-10 -left-10 w-24 h-24 bg-blue-500 rounded-full" />
+              <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-blue-500 rounded-full" />
 
-              <div className="relative inline-block mb-3">
+              {/* Header Logo */}
+              <div className="relative z-10 flex flex-col items-center mb-3">
                 <img
-                  src={currentUser.avatar_url}
-                  alt={currentUser.full_name}
-                  className="w-20 h-20 rounded-2xl object-cover border-4 border-white/30 shadow-md"
+                  src={logoUrl}
+                  alt="Logo"
+                  className="h-10 w-auto object-contain mb-1"
                   crossOrigin="anonymous"
                 />
-                <span className="absolute -bottom-1 -right-1 bg-amber-400 text-slate-900 font-black text-xs px-2.5 py-0.5 rounded-full shadow-xs">
-                  #{currentUser.rank || "N/A"}
-                </span>
               </div>
 
-              <h2 className="font-black text-lg text-white">{currentUser.full_name}</h2>
+              {/* Title Section */}
+              <div className="relative z-10 space-y-1 mb-4">
+                <div className="flex items-center justify-center gap-1">
+                  <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
+                </div>
+                <h2 className="text-lg font-black text-[#1E293B] tracking-wide uppercase">
+                  MY LEADERBOARD RANK
+                </h2>
 
-              <div className="mt-4 bg-white/10 rounded-2xl p-3.5 backdrop-blur-md border border-white/20 flex items-center justify-around">
-                <div className="text-center">
-                  <p className="text-[10px] text-blue-100 font-black uppercase">Total XP</p>
-                  <p className="text-base font-black text-white">{currentUser.xp_points} XP</p>
+                {/* Rank Badge Pill */}
+                <div className="inline-flex items-center gap-1 bg-[#3B82F6] text-white font-black text-xs px-4 py-1.5 rounded-full shadow-xs mt-1">
+                  Top #{currentUser.rank || "N/A"}
                 </div>
-                <div className="h-8 w-px bg-white/20" />
-                <div className="text-center">
-                  <p className="text-[10px] text-blue-100 font-black uppercase">Streak</p>
-                  <p className="text-base font-black text-amber-300 inline-flex items-center gap-1">
-                    {currentUser.streak} <Flame className="w-4 h-4 fill-amber-300 stroke-none" />
-                  </p>
+              </div>
+
+              {/* Profile Frame with Rank Badge */}
+              <div className="relative z-10 my-2">
+                <div className="relative inline-block bg-gradient-to-b from-blue-400 to-blue-600 p-2 rounded-3xl shadow-md">
+                  <img
+                    src={currentUser.avatar_url}
+                    alt={currentUser.full_name}
+                    className="w-24 h-24 rounded-2xl object-cover bg-white"
+                    crossOrigin="anonymous"
+                  />
+                  <span className="absolute -bottom-2 -right-2 bg-white text-[#2563EB] font-black text-xs px-2.5 py-1 rounded-full shadow-md border border-blue-100">
+                    #{currentUser.rank || "N/A"}
+                  </span>
                 </div>
+              </div>
+
+              {/* Username */}
+              <h3 className="relative z-10 font-black text-xl text-[#0F172A] mt-2 mb-4">
+                {currentUser.full_name}
+              </h3>
+
+              {/* Stats Box Container */}
+              <div className="relative z-10 w-full bg-[#F0F6FF] rounded-2xl p-4 border border-blue-100 flex items-center justify-around mb-4">
+                <div className="flex items-center gap-2 text-left">
+                  <Star className="w-5 h-5 text-blue-600 fill-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-extrabold uppercase">TOTAL XP</p>
+                    <p className="text-base font-black text-[#0F172A]">{currentUser.xp_points} XP</p>
+                  </div>
+                </div>
+
+                <div className="h-8 w-px bg-blue-200" />
+
+                <div className="flex items-center gap-2 text-left">
+                  <Flame className="w-5 h-5 text-blue-600 fill-blue-600 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-extrabold uppercase">STREAK</p>
+                    <p className="text-base font-black text-[#0F172A] flex items-center gap-1">
+                      {currentUser.streak} <span className="text-amber-500">🔥</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Subtitle */}
+              <div className="relative z-10 text-xs font-bold text-blue-600 italic flex items-center justify-center gap-1">
+                <span>Keep drawing, keep growing!</span>
+                <Heart className="w-3.5 h-3.5 fill-blue-600 stroke-none" />
               </div>
             </div>
 
-            {/* Action Buttons: Share & Download */}
+            {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={handleShareImage}
