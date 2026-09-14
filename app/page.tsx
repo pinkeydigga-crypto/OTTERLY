@@ -16,7 +16,7 @@ export default function HomePage() {
       icon: Scan,
       title: 'Scan & Feedback',
       description: 'Scan your paper sketches and get instant AI feedback on proportions, line work, and shading.',
-      animationClass: 'float-card-1',
+      animationClass: 'animate-bounce-slow-1',
     },
     {
       iconBg: 'bg-amber-100 text-[#D97706]',
@@ -24,7 +24,7 @@ export default function HomePage() {
       icon: Pencil,
       title: 'Challenges & Canvas',
       description: 'Complete daily challenges and build your drawing skills directly on the Otterleo Canvas.',
-      animationClass: 'float-card-2',
+      animationClass: 'animate-bounce-slow-2',
     },
     {
       iconBg: 'bg-sky-100 text-[#0284C7]',
@@ -32,7 +32,7 @@ export default function HomePage() {
       icon: GraduationCap,
       title: 'Learning Path',
       description: 'Follow engaging step-by-step courses, earn XP, and unlock certificates upon completion.',
-      animationClass: 'float-card-3',
+      animationClass: 'animate-bounce-slow-3',
     },
   ];
 
@@ -44,40 +44,6 @@ export default function HomePage() {
       }}
       className="relative selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased flex flex-col justify-between text-[#0F172A] overflow-x-hidden"
     >
-
-      {/* Font & Floating Animations Style */}
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900;1000&display=swap');
-
-        .font-rounded {
-          font-family: 'Nunito', system-ui, -apple-system, sans-serif !important;
-        }
-
-        /* Minimal Floating Animation */
-        @keyframes minimalFloat {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-8px);
-          }
-        }
-
-        .float-card-1 {
-          animation: minimalFloat 5s ease-in-out infinite;
-        }
-
-        .float-card-2 {
-          animation: minimalFloat 6s ease-in-out infinite;
-          animation-delay: 1s;
-        }
-
-        .float-card-3 {
-          animation: minimalFloat 5.5s ease-in-out infinite;
-          animation-delay: 2s;
-        }
-      `}</style>
-
       {/* Header */}
       <header className="max-w-7xl w-full mx-auto px-6 pt-8 pb-4 flex justify-center items-center z-10">
         <Image
@@ -96,13 +62,13 @@ export default function HomePage() {
 
         {/* Left Column */}
         <div className="lg:col-span-7 space-y-6">
-          <h1 className="font-rounded text-6xl sm:text-7xl font-black text-[#0F172A] leading-[1.05] tracking-tight flex flex-col items-start">
+          <h1 className="font-sans text-6xl sm:text-7xl font-black text-[#0F172A] leading-[1.05] tracking-tight flex flex-col items-start">
             <span className="inline-block">Learn</span>
             <span className="inline-block">drawing</span>
             <span className="text-[#2563EB] inline-block">the fun way.</span>
           </h1>
 
-          <p className="font-rounded text-lg sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
+          <p className="font-sans text-lg sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
             Get AI feedback, complete challenges, earn XP, and improve your drawing skills every day.
           </p>
         </div>
@@ -112,7 +78,7 @@ export default function HomePage() {
 
           {/* Speech Bubble */}
           <div className="absolute top-1 right-24 z-30">
-            <div className="relative bubble-container px-4 py-1.5 rounded-full text-xs font-black text-[#0F172A] font-rounded">
+            <div className="relative bubble-container px-4 py-1.5 rounded-full text-xs font-black text-[#0F172A] font-sans">
               Hi, I'm <span className="text-[#2563EB]">Otto</span>
               <div className="bubble-tail"></div>
               <div className="bubble-tail-inner"></div>
@@ -134,26 +100,24 @@ export default function HomePage() {
 
           {/* White Card */}
           <div className="bg-white rounded-3xl p-8 border-2 border-slate-200/95 shadow-[0_10px_30px_rgba(0,0,0,0.04)] relative z-10 space-y-5 pt-12">
-            <Link href="/signup" className="block w-full">
-              <button
-                style={{ backgroundColor: '#2563EB', boxShadow: '0px 6px 0px #1D4ED8' }}
-                className="font-rounded w-full py-4 rounded-2xl font-black text-base sm:text-lg text-white uppercase tracking-wider cursor-pointer transition-transform active:translate-y-1 active:shadow-none"
-              >
-                GET STARTED
-              </button>
+            
+            {/* FIX: Link Component acts directly as a Button (No Nested Button) */}
+            <Link 
+              href="/signup" 
+              className="font-sans block w-full text-center py-4 rounded-2xl font-black text-base sm:text-lg text-white uppercase tracking-wider transition-all active:translate-y-1 bg-[#2563EB] shadow-[0px_6px_0px_#1D4ED8] active:shadow-none"
+            >
+              GET STARTED
             </Link>
 
-            <Link href="/login" className="block w-full">
-              <button
-                style={{ backgroundColor: '#FFFFFF', color: '#2563EB', border: '2.5px solid #CBD5E1', boxShadow: '0px 6px 0px #94A3B8' }}
-                className="font-rounded w-full py-4 rounded-2xl font-black text-base sm:text-lg uppercase tracking-wider cursor-pointer transition-transform active:translate-y-1 active:shadow-none"
-              >
-                I ALREADY HAVE AN ACCOUNT
-              </button>
+            <Link 
+              href="/login" 
+              className="font-sans block w-full text-center py-4 rounded-2xl font-black text-base sm:text-lg uppercase tracking-wider transition-all active:translate-y-1 bg-white text-[#2563EB] border-[2.5px] border-[#CBD5E1] shadow-[0px_6px_0px_#94A3B8] active:shadow-none"
+            >
+              I ALREADY HAVE AN ACCOUNT
             </Link>
 
             <div className="text-center pt-2 space-y-1">
-              <p className="text-xs text-[#0D9488] font-black tracking-wide font-rounded">
+              <p className="text-xs text-[#0D9488] font-black tracking-wide font-sans">
                 Free to start · Ready in 10 seconds
               </p>
               <p className="text-[11px] text-[#475569] font-bold">
@@ -172,18 +136,18 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* DRAWING COACH IN YOUR POCKET - OTTERLEO GAMIFIED AESTHETIC SECTION */}
+      {/* DRAWING COACH IN YOUR POCKET SECTION */}
       <section className="max-w-5xl mx-auto px-6 py-12 my-4 z-10 text-center space-y-10">
         <div className="space-y-2">
-          <h2 className="font-rounded text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight uppercase">
+          <h2 className="font-sans text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight uppercase">
             DRAWING COACH IN YOUR <span className="text-[#2563EB]">POCKET</span>
           </h2>
-          <p className="font-rounded text-slate-500 font-bold text-sm sm:text-base">
+          <p className="font-sans text-slate-500 font-bold text-sm sm:text-base">
             Master drawing with smart AI feedback, practice canvas, and structured learning paths.
           </p>
         </div>
 
-        {/* 3 Floating Cards with Minimal Shadows */}
+        {/* 3 Floating Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left pt-4 pb-4">
           {features.map((item, index) => {
             const IconComponent = item.icon;
@@ -199,10 +163,10 @@ export default function HomePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="font-rounded text-xl font-black text-[#0F172A]">
+                  <h3 className="font-sans text-xl font-black text-[#0F172A]">
                     {item.title}
                   </h3>
-                  <p className="font-rounded text-[#64748B] font-bold text-xs sm:text-sm leading-relaxed">
+                  <p className="font-sans text-[#64748B] font-bold text-xs sm:text-sm leading-relaxed">
                     {item.description}
                   </p>
                 </div>
@@ -231,7 +195,7 @@ export default function HomePage() {
         </div>
 
         {/* Dark Blue Footer */}
-        <footer className="bg-[#2563EB] w-full py-5 px-8 font-rounded">
+        <footer className="bg-[#2563EB] w-full py-5 px-8 font-sans">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-bold text-white">
             <p className="text-white">© 2026 Otterleo. All rights reserved.</p>
 
