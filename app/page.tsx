@@ -5,6 +5,7 @@ import { Scan, Pencil, GraduationCap, ArrowRight } from 'lucide-react';
 export default function HomePage() {
   const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png';
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png';
+  const learningPathImageUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_14-9-2026_203411_chatgpt.com.png';
 
   const features = [
     {
@@ -245,6 +246,19 @@ export default function HomePage() {
               </div>
             );
           })}
+        </div>
+
+        {/* Screenshot Image Below Learning Path */}
+        <div className="pt-6 w-full flex justify-center">
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-3xl border-2 border-slate-200/80 shadow-lg bg-white">
+            <Image
+              src={learningPathImageUrl}
+              alt="Otterleo Learning Path Feature Showcase"
+              width={1200}
+              height={675}
+              className="w-full h-auto object-cover"
+            />
+          </div>
         </div>
       </section>
 
