@@ -9,7 +9,8 @@ export default function PracticePage() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Provided Mascot Image URL
+  // Asset URLs
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_15-9-2026_185944_chatgpt.com-removebg-preview.png";
 
   // Function to capture and download the canvas image safely
@@ -58,7 +59,7 @@ export default function PracticePage() {
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
 
-        {/* 1. Subse Upar Top Navigation (Dashboard/Home Button) */}
+        {/* 1. Dashboard / Home Navigation */}
         <div className="flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -69,35 +70,50 @@ export default function PracticePage() {
           </Link>
         </div>
 
-        {/* 2. Top Header & Mascot Image Card */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center text-center space-y-3">
-          <div className="w-28 sm:w-36 h-auto shrink-0 flex items-center justify-center">
+        {/* 2. Top Header Card (Logo on Top, Text Left, Mascot Right) */}
+        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center space-y-6">
+          
+          {/* Top Logo */}
+          <div className="flex justify-center w-full">
             <img
-              src={mascotImageUrl}
-              alt="Mascot"
-              className="w-full h-auto object-contain drop-shadow-md"
-              crossOrigin="anonymous"
+              src={logoUrl}
+              alt="Otterleo Logo"
+              className="h-10 sm:h-12 w-auto object-contain"
             />
           </div>
 
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black text-slate-900">
-              Practice Canvas
-            </h1>
-            <p className="text-slate-500 font-medium text-sm mt-1">
-              Draw whatever you like and download your artwork directly.
-            </p>
+          {/* Text Left & Mascot Right Layout */}
+          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-6">
+            {/* Text on Left */}
+            <div className="text-center sm:text-left flex-1 space-y-1">
+              <h1 className="text-2xl md:text-3xl font-black text-slate-900">
+                Practice Canvas
+              </h1>
+              <p className="text-slate-500 font-medium text-sm max-w-md">
+                Draw whatever you like and download your artwork directly.
+              </p>
+            </div>
+
+            {/* Mascot on Right */}
+            <div className="w-24 sm:w-32 h-auto shrink-0 flex items-center justify-center">
+              <img
+                src={mascotImageUrl}
+                alt="Mascot"
+                className="w-full h-auto object-contain drop-shadow-md"
+                crossOrigin="anonymous"
+              />
+            </div>
           </div>
+
         </div>
 
-        {/* 3. Main Practice Canvas Element */}
+        {/* 3. Main Practice Canvas */}
         <div ref={containerRef} className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <PracticeCanvas />
         </div>
 
-        {/* 4. Canvas ke Niche Download & Reset Buttons */}
+        {/* 4. Action Controls Below Canvas (Reset & Download) */}
         <div className="flex items-center justify-end gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          {/* Reset Button */}
           <button
             onClick={handleClearDrawing}
             type="button"
@@ -107,7 +123,6 @@ export default function PracticePage() {
             Reset
           </button>
 
-          {/* Download Button */}
           <button
             onClick={handleSaveDrawing}
             disabled={isSaving}
