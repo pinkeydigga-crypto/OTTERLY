@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Otterleo - Learn to Draw with AI",
-    description: "Improve your drawing skills daily in fun way.",
+    description: "Improve your drawing skills daily in fun way through interactive challenges, step-by-step tutorials, and gamified online courses that make practice enjoyable and creative..",
     images: [FAVICON_URL],
   },
   robots: {
