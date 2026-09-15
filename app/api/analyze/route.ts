@@ -1,27 +1,35 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { createClient } from "@supabase/supabase-js";
 
 export const maxDuration = 60;
 
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
+// Cost-effective models priority list
 const MODELS_TO_TRY = [
-  "gemini-2.5-flash",
   "gemini-1.5-flash",
-  "gemini-1.5-pro",
+  "gemini-2.5-flash",
 ];
+
+// Supabase Service Role Client (RLS Bypass karne ke liye Server-side Client)
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+);
 
 export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
     const lastScanCookie = cookieStore.get("otto_last_scan_time");
 
-    // 1. 24-HOUR SCAN LOCK CHECK
+    // ==========================================
+    // 1. COOKIE-BASED 24-HOUR CHECK
+    // ==========================================
     if (lastScanCookie) {
       const lastScanTime = new Date(lastScanCookie.value).getTime();
-      const currentTime = new Date().getTime();
-      const hoursPassed = (currentTime - lastScanTime) / (1000 * 60 * 60);
+      const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
 
       if (hoursPassed < 24) {
         const nextAllowed = new Date(lastScanTime + 24 * 60 * 60 * 1000);
@@ -30,48 +38,68 @@ export async function POST(req: Request) {
             isDrawing: false,
             lockActive: true,
             nextAllowedTime: nextAllowed.toISOString(),
-            message: "Daily scan limit reached. You can only perform 1 scan every 24 hours.",
-            errorCode: "ERR_101", // Code 101: 24h Lock Active
+            message: "Daily limit reached. You can scan only 1 drawing every 24 hours.",
+            errorCode: "ERR_101",
           },
           { status: 423 }
         );
       }
     }
 
-    // 2. SERVER & API KEY VALIDATION
+    // ==========================================
+    // 2. USER ID / DB CHECK (RLS Bypassed via Service Role)
+    // ==========================================
+    const body = await req.json().catch(() => null);
+    const userId = body?.userId; // Client se userId optional pass ho sakti hai
+
+    if (userId) {
+      const { data: user, error: dbError } = await supabaseAdmin
+        .from("users")
+        .select("last_scan_at")
+        .eq("id", userId)
+        .single();
+
+      if (!dbError && user?.last_scan_at) {
+        const lastScanTime = new Date(user.last_scan_at).getTime();
+        const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
+
+        if (hoursPassed < 24) {
+          const nextAllowed = new Date(lastScanTime + 24 * 60 * 60 * 1000);
+          return NextResponse.json(
+            {
+              isDrawing: false,
+              lockActive: true,
+              nextAllowedTime: nextAllowed.toISOString(),
+              message: "Daily scan limit reached for your account.",
+              errorCode: "ERR_101",
+            },
+            { status: 423 }
+          );
+        }
+      }
+    }
+
+    // ==========================================
+    // 3. INPUT VALIDATIONS
+    // ==========================================
     if (!apiKey) {
-      console.error("[Otto AI Internal Log]: GEMINI_API_KEY is missing in env.");
       return NextResponse.json(
-        {
-          isDrawing: false,
-          message: "Otto AI is temporarily busy. Please try again later. (Error 102)",
-          errorCode: "ERR_102", // Code 102: Missing Server API Key
-        },
+        { isDrawing: false, message: "Server configuration issue. (Error 102)", errorCode: "ERR_102" },
         { status: 500 }
       );
     }
 
-    const body = await req.json().catch(() => null);
     if (!body || !body.image || typeof body.image !== "string") {
       return NextResponse.json(
-        { 
-          isDrawing: false, 
-          message: "Invalid image upload. Please try uploading again. (Error 103)",
-          errorCode: "ERR_103", // Code 103: Bad Request / Empty Payload
-        },
+        { isDrawing: false, message: "Please upload a valid image file. (Error 103)", errorCode: "ERR_103" },
         { status: 400 }
       );
     }
 
     const imageStr = body.image;
-
     if (imageStr.length > 7 * 1024 * 1024) {
       return NextResponse.json(
-        { 
-          isDrawing: false, 
-          message: "File size is too large. Maximum limit is 5MB. (Error 104)",
-          errorCode: "ERR_104", // Code 104: Image Size Exceeded
-        },
+        { isDrawing: false, message: "Image size is too large. Max limit is 5MB. (Error 104)", errorCode: "ERR_104" },
         { status: 400 }
       );
     }
@@ -81,91 +109,81 @@ export async function POST(req: Request) {
 
     if (imageStr.includes(";base64,")) {
       const parts = imageStr.split(";base64,");
-      const mimeHeader = parts[0].replace("data:", "");
-      mimeType = mimeHeader.toLowerCase();
+      mimeType = parts[0].replace("data:", "").toLowerCase();
       base64Data = parts[1];
     }
 
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       return NextResponse.json(
-        {
-          isDrawing: false,
-          message: "Unsupported file format. Please upload JPG, PNG, or WEBP. (Error 105)",
-          errorCode: "ERR_105", // Code 105: Unsupported Mime Type
-        },
+        { isDrawing: false, message: "Format not supported. Upload JPG, PNG, or WEBP.", errorCode: "ERR_105" },
         { status: 400 }
       );
     }
 
+    // ==========================================
+    // 4. COST-OPTIMIZED HIGH-TRAINED PROMPT
+    // ==========================================
     const promptText = `
-      You are "Otto", an expert visual art mentor. Inspect the artwork image carefully in full detail.
-      Provide a comprehensive, highly insightful evaluation written in clear, simple Indian English.
+      You are "Otto", a friendly expert drawing mentor.
+      Examine the uploaded image closely.
 
-      FIRST STEP - IMAGE VALIDATION:
-      Verify if image is a drawing, sketch, painting, digital art, or illustration.
-      If it is a real photo (face, person, object, document page, screenshot):
-        Return {"isDrawing": false, "message": "Please upload a drawing, sketch, or digital art. Otto AI can only check artwork."}
+      VALIDATION:
+      If NOT a handmade drawing/sketch/painting (e.g. real photo, document, face):
+      Return ONLY: {"isDrawing": false, "message": "Please upload a real artwork or sketch. Otto AI only reviews drawings."}
 
-      If artwork, evaluate lines, proportions, shading, depth, and technique. Return ONLY valid JSON:
+      IF VALID DRAWING:
+      Give actionable critique in simple, clear Hinglish/Indian English.
+      Return strictly valid JSON format:
       {
         "isDrawing": true,
-        "score": number,
+        "score": number_between_1_to_100,
         "skillLevel": "Beginner" | "Intermediate" | "Advanced",
         "strengths": [
-          "Detailed observation about what was executed well",
-          "Second clear strength point regarding line control or shading",
-          "Third praise point highlighting artistic effort"
+          "Short point on good line control or proportions",
+          "Short point on shading or details"
         ],
         "areasToImprove": [
-          "Detailed explanation of what needs refinement",
-          "Second specific area to improve",
-          "Third specific improvement point"
+          "Short point on what is weak or misaligned",
+          "Short point on shading or perspective fix"
         ],
         "actionableImprovements": [
-          "Step 1: Concrete guidance on how to fix line control or shading",
-          "Step 2: Practical technique exercise",
-          "Step 3: Tool or measurement tip"
+          "Step 1: Simple fix technique",
+          "Step 2: Practical daily drill"
         ],
-        "practiceRecommendation": "A detailed 15-minute daily practice drill tailored to fix observed flaws.",
-        "motivationalFeedback": "An encouraging closing note from Otto.",
+        "practiceRecommendation": "1-line daily 10-minute exercise tip.",
+        "motivationalFeedback": "Warm 1-line encouraging note.",
         "message": ""
       }
     `;
 
-    // 3. INTERNAL API CALL WITH RETRIES
+    // ==========================================
+    // 5. GEMINI API CALL WITH TOKEN CAPS
+    // ==========================================
     let jsonResult = null;
-    let internalErrorLog = "";
 
     for (const modelName of MODELS_TO_TRY) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         const apiResponse = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
           {
             method: "POST",
             signal: controller.signal,
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               contents: [
                 {
                   parts: [
                     { text: promptText },
-                    {
-                      inlineData: {
-                        mimeType: mimeType,
-                        data: base64Data,
-                      },
-                    },
+                    { inlineData: { mimeType: mimeType, data: base64Data } },
                   ],
                 },
               ],
               generationConfig: {
                 responseMimeType: "application/json",
-                maxOutputTokens: 1200,
+                maxOutputTokens: 600, // Token budget limit to save costs
                 temperature: 0.2,
               },
             }),
@@ -180,50 +198,50 @@ export async function POST(req: Request) {
             jsonResult = JSON.parse(cleanJsonText);
             break;
           }
-        } else {
-          internalErrorLog = await apiResponse.text();
-          console.error(`[Otto AI Model ${modelName} Failure]:`, internalErrorLog);
         }
       } catch (err) {
-        console.error(`[Otto AI Internal Catch]: Model ${modelName} failed`, err);
+        console.error(`[Otto AI Error]: Model ${modelName} failed`, err);
       }
     }
 
     if (!jsonResult) {
       return NextResponse.json(
-        {
-          isDrawing: false,
-          message: "Otto AI is temporarily busy. Please try again in a few seconds. (Error 106)",
-          errorCode: "ERR_106", // Code 106: All Backend Model Attempts Failed / Auth Failure
-        },
+        { isDrawing: false, message: "Otto AI is busy. Please try again.", errorCode: "ERR_106" },
         { status: 502 }
       );
     }
 
-    // 4. SET COOKIE IF VALID ARTWORK
+    // ==========================================
+    // 6. DB UPDATE & COOKIE SETTING ON SUCCESS
+    // ==========================================
     if (jsonResult.isDrawing === true) {
       const now = new Date();
       const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
+      // Set Cookie
       cookieStore.set("otto_last_scan_time", now.toISOString(), {
         maxAge: 86400,
         path: "/",
         httpOnly: true,
         sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
       });
+
+      // DB update bypassing RLS using Service Role Key
+      if (userId) {
+        await supabaseAdmin
+          .from("users")
+          .update({ last_scan_at: now.toISOString() })
+          .eq("id", userId);
+      }
 
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
     }
 
     return NextResponse.json(jsonResult);
   } catch (error: unknown) {
-    console.error("[Otto AI Server Execution Error]:", error);
     return NextResponse.json(
-      {
-        isDrawing: false,
-        message: "Otto AI service connection timed out. Please try again. (Error 107)",
-        errorCode: "ERR_107", // Code 107: General Runtime Catch / Network Timeout
-      },
+      { isDrawing: false, message: "Service connection error. Try again.", errorCode: "ERR_107" },
       { status: 500 }
     );
   }
