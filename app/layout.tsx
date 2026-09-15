@@ -21,11 +21,11 @@ export const metadata: Metadata = {
     "Otterleo",
     "Otterleo AI",
     "otterleo.in",
-    "Learn Drawing AI",
-    "AI Drawing Coach",
-    "Gamified Drawing Practice",
-    "Otto Mascot",
-    "Instant Sketch Feedback",
+    "Learn Drawing ",
+    " Drawing classes",
+    " Drawing Practice",
+    "Learn Drawing with AI",
+    " Sketching Feedback",
     "Learn drawing the fun way"
   ],
   alternates: {
@@ -87,7 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         "@id": `${SITE_URL}/#website`,
         "url": SITE_URL,
         "name": "Otterleo",
-        "description": "Learn drawing the fun way with AI feedback and gamified challenges.",
+        "description": "Learn drawing the fun way .",
         "inLanguage": "en-US"
       },
       {
