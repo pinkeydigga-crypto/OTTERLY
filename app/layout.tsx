@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Otterleo - Learn to Draw with AI",
+    title: "Otterleo - Learn to Draw ",
     description: "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
     url: SITE_URL,
     siteName: "Otterleo AI",
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Otterleo - Learn to Draw with AI",
-    description: "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
+    description: "Improve your drawing skills daily in fun way.",
     images: [FAVICON_URL],
   },
   robots: {
