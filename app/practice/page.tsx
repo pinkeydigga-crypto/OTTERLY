@@ -1,18 +1,23 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
-import PracticeCanvas from  "@/components/PracticeCanvas";
-import { Download, RotateCcw } from "lucide-react";
+import React, { useRef, useState } from "react";
+import Link from "next/link";
+import PracticeCanvas from "@/components/PracticeCanvas";
+import { Download, RotateCcw, Home } from "lucide-react";
 
 export default function PracticePage() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Function to capture and download the canvas image
+  // Provided Mascot Image URL
+  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_15-9-2026_185944_chatgpt.com-removebg-preview.png";
+
+  // Function to capture and download the canvas image safely
   const handleSaveDrawing = () => {
+    if (isSaving) return;
+
     setIsSaving(true);
     try {
-      // Container ke andar real <canvas> element ko find karein
       const canvas = containerRef.current?.querySelector("canvas");
 
       if (!canvas) {
@@ -21,10 +26,7 @@ export default function PracticePage() {
         return;
       }
 
-      // High quality PNG image URL extract karein
       const dataUrl = canvas.toDataURL("image/png");
-
-      // Download link trigger karein
       const link = document.createElement("a");
       link.href = dataUrl;
       link.download = `practice-drawing-${Date.now()}.png`;
@@ -39,14 +41,13 @@ export default function PracticePage() {
     }
   };
 
-  // Canvas clear karne ke liye optional function
+  // Canvas clear karne ke liye function
   const handleClearDrawing = () => {
     const canvas = containerRef.current?.querySelector("canvas");
     if (canvas) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // Agar white background fill rakhna ho:
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
@@ -56,8 +57,29 @@ export default function PracticePage() {
   return (
     <main className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header Section with Title & Action Buttons */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+
+        {/* 1. Subse Upar Top Navigation (Dashboard/Home Button) */}
+        <div className="flex items-center justify-between">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-slate-800 font-black text-sm hover:bg-slate-100 transition-all shadow-xs"
+          >
+            <Home className="w-4 h-4 text-blue-600" />
+            <span>Dashboard</span>
+          </Link>
+        </div>
+
+        {/* 2. Top Header & Mascot Image Card */}
+        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center text-center space-y-3">
+          <div className="w-28 sm:w-36 h-auto shrink-0 flex items-center justify-center">
+            <img
+              src={mascotImageUrl}
+              alt="Mascot"
+              className="w-full h-auto object-contain drop-shadow-md"
+              crossOrigin="anonymous"
+            />
+          </div>
+
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-slate-900">
               Practice Canvas
@@ -66,35 +88,37 @@ export default function PracticePage() {
               Draw whatever you like and download your artwork directly.
             </p>
           </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            {/* Clear Button */}
-            <button
-              onClick={handleClearDrawing}
-              type="button"
-              className="flex items-center gap-2 px-4 py-2.5 text-slate-600 hover:bg-slate-100 border border-slate-200 font-bold rounded-xl text-sm transition-all active:scale-95"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Reset
-            </button>
-
-            {/* Save Drawing Button */}
-            <button
-              onClick={handleSaveDrawing}
-              disabled={isSaving}
-              type="button"
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-black rounded-xl text-sm transition-all shadow-md active:scale-95"
-            >
-              <Download className="w-4 h-4" />
-              {isSaving ? "Saving..." : "Save Drawing"}
-            </button>
-          </div>
         </div>
 
-        {/* Practice Canvas Component Wrapper */}
-        <div ref={containerRef} className="w-full">
+        {/* 3. Main Practice Canvas Element */}
+        <div ref={containerRef} className="w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <PracticeCanvas />
         </div>
+
+        {/* 4. Canvas ke Niche Download & Reset Buttons */}
+        <div className="flex items-center justify-end gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          {/* Reset Button */}
+          <button
+            onClick={handleClearDrawing}
+            type="button"
+            className="flex items-center gap-2 px-4 py-2.5 text-slate-600 hover:bg-slate-100 border border-slate-200 font-bold rounded-xl text-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset
+          </button>
+
+          {/* Download Button */}
+          <button
+            onClick={handleSaveDrawing}
+            disabled={isSaving}
+            type="button"
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-black rounded-xl text-sm transition-all shadow-md active:scale-95 cursor-pointer"
+          >
+            <Download className="w-4 h-4" />
+            {isSaving ? "Saving..." : "Download"}
+          </button>
+        </div>
+
       </div>
     </main>
   );
