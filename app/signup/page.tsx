@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { ArrowLeft } from 'lucide-react';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME_MS = 60 * 1000;
@@ -225,6 +226,18 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
+      
+      {/* BACK TO HOME BUTTON */}
+      <div className="absolute top-6 left-6 z-30">
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-sm transition-all active:scale-95"
+        >
+          <ArrowLeft className="w-4 h-4 text-[#2563EB]" />
+          <span>Back to Home</span>
+        </Link>
+      </div>
+
       <div className="relative max-w-md w-full pt-16">
         
         {/* Mascot */}
