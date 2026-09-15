@@ -27,7 +27,6 @@ export default function LeaderboardPage() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  // Throttling / Double-click guard state
   const [isProcessing, setIsProcessing] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -137,7 +136,6 @@ export default function LeaderboardPage() {
   const rank2 = leaderboardData.find((u) => u.rank === 2);
   const rank3 = leaderboardData.find((u) => u.rank === 3);
 
-  // SAFE CANVAS GENERATOR WITH CORS & COLOR ERROR PREVENTION
   const generateCanvas = async (): Promise<HTMLCanvasElement | null> => {
     if (!cardRef.current) return null;
 
@@ -162,7 +160,6 @@ export default function LeaderboardPage() {
     }
   };
 
-  // Pure Native Fallback Canvas Generator
   const generateFallbackCanvas = async (): Promise<HTMLCanvasElement | null> => {
     if (!currentUser) return null;
     const canvas = document.createElement("canvas");
@@ -221,7 +218,6 @@ export default function LeaderboardPage() {
     return canvas;
   };
 
-  // THROTTLED DOWNLOAD FUNCTION
   const handleDownloadImage = async () => {
     if (!cardRef.current || isProcessing || isDownloading || isSharing) return;
 
@@ -244,14 +240,12 @@ export default function LeaderboardPage() {
       alert("Image download failed. Please try again.");
     } finally {
       setIsDownloading(false);
-      // 1.5 Seconds Cooldown to prevent multi-click triggering
       setTimeout(() => {
         setIsProcessing(false);
       }, 1500);
     }
   };
 
-  // THROTTLED SHARE FUNCTION
   const handleShareImage = async () => {
     if (!cardRef.current || isProcessing || isSharing || isDownloading) return;
 
@@ -287,23 +281,32 @@ export default function LeaderboardPage() {
       handleDownloadImage();
     } finally {
       setIsSharing(false);
-      // 1.5 Seconds Cooldown
       setTimeout(() => {
         setIsProcessing(false);
       }, 1500);
     }
   };
 
-  const navItems = [
+  // Dashboard Specific Navigation Order
+  const desktopNavItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Practice", path: "/practice", icon: Palette },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
-    { name: "Practice", path: "/practice", icon: Palette },
     { name: "Leaderboard", path: "/leaderboard", active: true, icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
     { name: "Achievements", path: "/achievements", icon: Award },
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
+  ];
+
+  const mobileNavItems = [
+    { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Practice", path: "/practice", icon: Palette },
+    { name: "Scan", path: "/scan", icon: Scan },
+    { name: "Challenges", path: "/challenges", icon: Swords },
+    { name: "Leaderboard", path: "/leaderboard", active: true, icon: Trophy },
+    { name: "Profile", path: "/profile", icon: User },
   ];
 
   return (
@@ -342,7 +345,7 @@ export default function LeaderboardPage() {
               </div>
 
               <nav className="space-y-1.5">
-                {navItems.map((item) => {
+                {desktopNavItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
@@ -362,19 +365,34 @@ export default function LeaderboardPage() {
                 })}
               </nav>
             </div>
+
+            {/* Mobile Sidebar Bottom Profile Card */}
+            {currentUser && (
+              <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+                <img
+                  src={currentUser.avatar_url}
+                  alt={currentUser.full_name}
+                  className="w-10 h-10 rounded-xl object-cover border border-slate-200"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black text-slate-900 truncate">{currentUser.full_name}</p>
+                  <p className="text-[10px] font-bold text-slate-400">{currentUser.xp_points} XP</p>
+                </div>
+              </div>
+            )}
           </aside>
         </div>
       )}
 
-      {/* Desktop Sidebar Navigation */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
+      {/* Exact Desktop Sidebar Navigation */}
+      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0 h-screen sticky top-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
           </div>
 
           <nav className="space-y-1.5">
-            {navItems.map((item) => {
+            {desktopNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -393,6 +411,21 @@ export default function LeaderboardPage() {
             })}
           </nav>
         </div>
+
+        {/* Exact Desktop Bottom Profile Card */}
+        {currentUser && (
+          <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+            <img
+              src={currentUser.avatar_url}
+              alt={currentUser.full_name}
+              className="w-10 h-10 rounded-xl object-cover border border-slate-200"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-black text-slate-900 truncate">{currentUser.full_name}</p>
+              <p className="text-[10px] font-bold text-slate-400">{currentUser.xp_points} XP</p>
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* Main Content Area */}
@@ -420,22 +453,22 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* Banner Section */}
-        <div className="bg-white py-5 px-5 sm:px-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs flex flex-col items-center text-center space-y-2 relative overflow-hidden">
-          <div className="w-24 sm:w-32 h-auto shrink-0 flex items-center justify-center">
+        {/* Banner Section (Enlarged Mascot Left & Text Right Side-by-Side) */}
+        <div className="bg-white py-6 px-6 sm:px-10 rounded-[2.5rem] border-2 border-slate-100 shadow-xs flex flex-row items-center justify-center gap-6 sm:gap-8 text-left relative overflow-hidden">
+          <div className="w-28 sm:w-40 md:w-44 h-auto shrink-0 flex items-center justify-center">
             <img
               src={mascotImageUrl}
               alt="Mascot"
-              className="w-full h-auto object-contain drop-shadow-md"
+              className="w-full h-auto object-contain drop-shadow-lg"
               crossOrigin="anonymous"
             />
           </div>
 
-          <div className="space-y-1">
-            <h1 className="text-xl sm:text-3xl font-black text-[#0F172A] leading-tight">
+          <div className="space-y-2 flex-1">
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#0F172A] leading-tight">
               Leaderboard Standings
             </h1>
-            <p className="text-xs sm:text-sm font-bold text-slate-500 max-w-md mx-auto">
+            <p className="text-sm sm:text-base font-bold text-slate-500 max-w-lg">
               Compete with fellow learners and climb the global rankings!
             </p>
           </div>
@@ -589,18 +622,18 @@ export default function LeaderboardPage() {
         )}
       </main>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Exact Mobile Bottom Navigation Section */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-2 flex justify-around items-center z-40 shadow-lg">
-        {[
-          { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-          { name: "Scan", path: "/scan", icon: Scan },
-          { name: "Practice", path: "/practice", icon: Palette },
-          { name: "Rank", path: "/leaderboard", active: true, icon: Trophy },
-          { name: "Profile", path: "/profile", icon: User },
-        ].map((item) => {
+        {mobileNavItems.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.name} href={item.path} className={`flex flex-col items-center gap-1 p-1.5 rounded-xl text-xs font-black ${item.active ? "text-[#2563EB]" : "text-slate-400"}`}>
+            <Link 
+              key={item.name} 
+              href={item.path} 
+              className={`flex flex-col items-center gap-1 p-1.5 rounded-xl text-xs font-black ${
+                item.active ? "text-[#2563EB]" : "text-slate-400"
+              }`}
+            >
               <Icon className="w-5 h-5" />
               <span className="text-[10px]">{item.name}</span>
             </Link>
@@ -624,11 +657,9 @@ export default function LeaderboardPage() {
               ref={cardRef}
               className="w-full bg-white rounded-[2rem] p-5 text-center shadow-lg relative overflow-hidden mb-5 border-4 border-blue-500 flex flex-col items-center"
             >
-              {/* Corner Accents */}
               <div className="absolute -top-8 -left-8 w-20 h-20 bg-blue-500 rounded-full pointer-events-none" />
               <div className="absolute -bottom-8 -right-8 w-20 h-20 bg-blue-500 rounded-full pointer-events-none" />
 
-              {/* Logo */}
               <div className="relative z-10 flex flex-col items-center mb-2">
                 <img
                   src={logoUrl}
@@ -638,7 +669,6 @@ export default function LeaderboardPage() {
                 />
               </div>
 
-              {/* Title Section */}
               <div className="relative z-10 space-y-1 mb-3">
                 <div className="flex items-center justify-center gap-1">
                   <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
@@ -652,7 +682,6 @@ export default function LeaderboardPage() {
                 </div>
               </div>
 
-              {/* Avatar Box */}
               <div className="relative z-10 my-1">
                 <div className="relative inline-block bg-blue-500 p-1.5 rounded-2xl shadow-md">
                   <img
@@ -667,12 +696,10 @@ export default function LeaderboardPage() {
                 </div>
               </div>
 
-              {/* Full Name */}
               <h3 className="relative z-10 font-black text-lg text-[#0f172a] mt-2 mb-3 truncate w-full px-2">
                 {currentUser.full_name}
               </h3>
 
-              {/* Stats Container */}
               <div className="relative z-10 w-full bg-[#f0f6ff] rounded-xl p-3 border border-blue-100 flex items-center justify-around mb-3">
                 <div className="flex items-center gap-2 text-left">
                   <Star className="w-4 h-4 text-blue-600 fill-blue-600 shrink-0" />
@@ -695,14 +722,12 @@ export default function LeaderboardPage() {
                 </div>
               </div>
 
-              {/* Footer text */}
               <div className="relative z-10 text-[11px] font-bold text-[#2563eb] italic flex items-center justify-center gap-1">
                 <span>Keep drawing, keep growing!</span>
                 <Heart className="w-3 h-3 fill-blue-600 stroke-none" />
               </div>
             </div>
 
-            {/* Action Buttons (Protected with Throttling) */}
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 onClick={handleShareImage}

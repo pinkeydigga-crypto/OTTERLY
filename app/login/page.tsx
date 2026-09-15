@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft } from 'lucide-react';
@@ -9,6 +9,8 @@ import { ArrowLeft } from 'lucide-react';
 const MAX_ATTEMPTS = 4;
 // Updated: 5 minutes lockout (5 * 60 * 1000 ms)
 const LOCKOUT_TIME_MS = 5 * 60 * 1000;
+// Throttle cooldown: 3 seconds to prevent button spamming
+const THROTTLE_COOLDOWN_MS = 3000;
 
 export default function LoginPage() {
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
@@ -16,6 +18,10 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
+  const [isThrottled, setIsThrottled] = useState(false);
+
+  // Ref to keep track of the last click timestamp for throttling
+  const lastClickTimeRef = useRef<number>(0);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -57,7 +63,16 @@ export default function LoginPage() {
     e.preventDefault();
     e.stopPropagation();
 
-    if (lockoutSeconds > 0) return;
+    // 1. Lockout & Loading Check
+    if (lockoutSeconds > 0 || loading) return;
+
+    // 2. Throttling / Debouncing Check (Prevent rapid spam clicks)
+    const now = Date.now();
+    if (now - lastClickTimeRef.current < THROTTLE_COOLDOWN_MS) {
+      return;
+    }
+    lastClickTimeRef.current = now;
+    setIsThrottled(true);
 
     const attempts = parseInt(localStorage.getItem('login_attempts') || '0', 10);
     if (attempts >= MAX_ATTEMPTS) {
@@ -65,6 +80,7 @@ export default function LoginPage() {
       localStorage.setItem('login_lockout_until', lockUntil.toString());
       setLockoutSeconds(LOCKOUT_TIME_MS / 1000);
       setErrorMessage('Too many failed attempts. Login locked for 5 minutes.');
+      setIsThrottled(false);
       return;
     }
 
@@ -120,6 +136,8 @@ export default function LoginPage() {
       }
 
       setLoading(false);
+      // Reset throttle state after failure delay
+      setTimeout(() => setIsThrottled(false), THROTTLE_COOLDOWN_MS);
     }
   };
 
@@ -190,7 +208,7 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading || lockoutSeconds > 0}
+              disabled={loading || lockoutSeconds > 0 || isThrottled}
               style={{ backgroundColor: '#2563EB', boxShadow: '0px 4px 0px #1D4ED8' }}
               className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-0.5 transition-all mt-2 disabled:opacity-50"
             >
@@ -198,6 +216,8 @@ export default function LoginPage() {
                 ? `LOCKED (${formatTime(lockoutSeconds)})` 
                 : loading 
                 ? 'LOGGING IN...' 
+                : isThrottled
+                ? 'PLEASE WAIT...'
                 : 'LOG IN'}
             </button>
           </form>

@@ -26,6 +26,7 @@ import {
   Flame,
   Loader2,
   Star,
+  Palette,
 } from "lucide-react";
 
 interface AIAnalysisResult {
@@ -42,9 +43,19 @@ interface AIAnalysisResult {
   nextAllowedTime?: string;
 }
 
+interface Profile {
+  id: string;
+  name: string;
+  username: string;
+  email: string;
+  avatar_url: string;
+  xp: number;
+}
+
 export default function ScanPage() {
   const router = useRouter();
   const [authLoading, setAuthLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -71,6 +82,24 @@ export default function ScanPage() {
       if (!user) {
         router.replace("/login");
       } else {
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("id, name, username, email, avatar_url, xp")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (profileData) {
+          setProfile(profileData);
+        } else {
+          setProfile({
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist",
+            username: user.email?.split("@")[0] || "artist",
+            email: user.email || "",
+            avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
+            xp: 0,
+          });
+        }
         setAuthLoading(false);
       }
     };
@@ -292,6 +321,7 @@ export default function ScanPage() {
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Practice", path: "/practice", icon: Palette },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", active: true, icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
@@ -300,6 +330,10 @@ export default function ScanPage() {
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
+
+  const userXp = Number(profile?.xp) || 0;
+  const rawUserName = profile?.name || profile?.username || "Artist";
+  const userName = rawUserName.replace(/<[^>]*>?/gm, "").trim();
 
   if (authLoading) {
     return (
@@ -376,6 +410,18 @@ export default function ScanPage() {
                 })}
               </nav>
             </div>
+
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+              <img
+                src={profile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
+                alt="User Avatar"
+                className="w-10 h-10 rounded-xl object-cover bg-blue-100"
+              />
+              <div className="overflow-hidden">
+                <p className="text-sm font-black text-[#0F172A] truncate">{userName}</p>
+                <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
+              </div>
+            </div>
           </aside>
         </div>
       )}
@@ -410,6 +456,18 @@ export default function ScanPage() {
               );
             })}
           </nav>
+        </div>
+
+        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+          <img
+            src={profile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
+            alt="User Avatar"
+            className="w-10 h-10 rounded-xl object-cover bg-blue-100"
+          />
+          <div className="overflow-hidden">
+            <p className="text-sm font-black text-[#0F172A] truncate">{userName}</p>
+            <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
+          </div>
         </div>
       </aside>
 
@@ -775,9 +833,10 @@ export default function ScanPage() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-4 flex justify-around items-center z-40 shadow-lg">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-2 flex justify-around items-center z-40 shadow-lg">
         {[
           { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+          { name: "Practice", path: "/practice", icon: Palette },
           { name: "Scan", path: "/scan", active: true, icon: Scan },
           { name: "Challenges", path: "/challenges", icon: Swords },
           { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
@@ -786,14 +845,14 @@ export default function ScanPage() {
           const Icon = item.icon;
           return (
             <Link
-              href={item.path}
               key={item.name}
-              className={`flex flex-col font-black gap-1 items-center p-2 rounded-xl text-xs ${
+              href={item.path}
+              className={`flex flex-col items-center gap-1 p-1.5 rounded-xl text-xs font-black ${
                 item.active ? "text-[#2563EB]" : "text-slate-400"
               }`}
             >
               <Icon className="w-5 h-5" />
-              <span>{item.name}</span>
+              <span className="text-[9px]">{item.name}</span>
             </Link>
           );
         })}

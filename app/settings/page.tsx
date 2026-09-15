@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { 
   ArrowLeft, LayoutDashboard, Swords, Scan, Trophy, Compass, 
   Award, User, Settings, Flame, PanelLeft, X, Shield, Lock, 
-  LogOut, ChevronRight, Zap, Star, Target, Eye, KeyRound, AlertCircle
+  LogOut, ChevronRight, Zap, Star, Target, Eye, KeyRound, AlertCircle,
+  Palette, LucideIcon
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -22,8 +23,16 @@ interface UserStats {
   streak: number;
 }
 
+interface NavItem {
+  name: string;
+  path: string;
+  icon: LucideIcon;
+  active?: boolean;
+}
+
 export default function SettingsPage() {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [loading, setLoading] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -43,7 +52,7 @@ export default function SettingsPage() {
   const [userStats, setUserStats] = useState<UserStats>({
     id: "",
     email: "",
-    full_name: "User",
+    full_name: "Artist",
     avatar_url: "",
     scans_count: 0,
     challenges_completed: 0,
@@ -57,19 +66,27 @@ export default function SettingsPage() {
   const fetchUserData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // 1. Strict Auth Check to prevent unauthorized access
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (authError || !user) {
+        localStorage.clear();
         router.replace("/login");
         return;
       }
 
-      // Fetch user profile info
-      const { data: profile } = await supabase
+      // 2. Fetch authenticated user's specific profile
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .maybeSingle();
+        .single();
+
+      if (profileError || !profile) {
+        localStorage.clear();
+        router.replace("/login");
+        return;
+      }
 
       // Fallback: Check user_challenges table if completed count is 0
       let completedChallengesCount = profile?.challenges_completed ?? profile?.completed_challenges ?? profile?.challenges_count ?? 0;
@@ -94,8 +111,8 @@ export default function SettingsPage() {
       setUserStats({
         id: user.id,
         email: user.email || "",
-        full_name: profile?.full_name || profile?.name || "Artist Learner",
-        avatar_url: profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+        full_name: profile?.name || profile?.full_name || "Artist Learner",
+        avatar_url: profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
         scans_count: Number(scans),
         challenges_completed: Number(completedChallengesCount),
         xp_points: Number(xp),
@@ -104,7 +121,9 @@ export default function SettingsPage() {
       });
 
     } catch (err) {
-      console.error("Error loading user settings:", err);
+      console.error("Security check or settings fetch failed:", err);
+      localStorage.clear();
+      router.replace("/login");
     } finally {
       setLoading(false);
     }
@@ -116,6 +135,7 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    localStorage.clear();
     router.replace("/login");
   };
 
@@ -160,8 +180,10 @@ export default function SettingsPage() {
     }
   };
 
-  const navItems = [
+  // Exact Navigation Items Structure Syncing
+  const desktopNavItems: NavItem[] = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Practice", path: "/practice", icon: Palette },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
@@ -169,6 +191,15 @@ export default function SettingsPage() {
     { name: "Achievements", path: "/achievements", icon: Award },
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", active: true, icon: Settings },
+  ];
+
+  const mobileNavItems: NavItem[] = [
+    { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Practice", path: "/practice", icon: Palette },
+    { name: "Scan", path: "/scan", icon: Scan },
+    { name: "Challenges", path: "/challenges", icon: Swords },
+    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+    { name: "Profile", path: "/profile", icon: User },
   ];
 
   return (
@@ -180,35 +211,44 @@ export default function SettingsPage() {
           <button
             onClick={() => setIsMobileSidebarOpen(true)}
             className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
+            aria-label="Open sidebar"
           >
             <PanelLeft className="w-5 h-5" />
           </button>
-          <img src={logoUrl} alt="Logo" className="h-9 w-auto object-contain" />
+          <img src={logoUrl} alt="Otterleo Logo" className="h-9 w-auto object-contain" />
+        </div>
+
+        <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 px-3 py-1 rounded-full text-orange-600 font-extrabold text-xs">
+          <Flame className="w-4 h-4 fill-orange-500 stroke-orange-500" />
+          <span>{userStats.streak}</span>
         </div>
       </header>
 
-      {/* Mobile Sidebar */}
+      {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setIsMobileSidebarOpen(false)} />
-          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsMobileSidebarOpen(false)} />
+          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10 overflow-y-auto">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="Logo" className="h-9 w-auto object-contain" />
+                <img src={logoUrl} alt="Otterleo Logo" className="h-9 w-auto object-contain" />
                 <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <nav className="space-y-1.5">
-                {navItems.map((item) => {
+                {desktopNavItems.map((item) => {
                   const Icon = item.icon;
+                  const isActive = item.active || pathname === item.path;
                   return (
                     <Link
                       key={item.name}
                       href={item.path}
                       onClick={() => setIsMobileSidebarOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                        item.active ? "bg-[#2563EB] text-white border-b-4 border-blue-800" : "text-slate-500 hover:bg-slate-50"
+                        isActive 
+                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1" 
+                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
                       <Icon className="w-5 h-5 shrink-0" />
@@ -218,23 +258,39 @@ export default function SettingsPage() {
                 })}
               </nav>
             </div>
+
+            {/* Mobile Sidebar Bottom Profile Card */}
+            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+              <img
+                src={userStats.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
+                alt="User Avatar"
+                className="w-10 h-10 rounded-xl object-cover border border-slate-200 bg-blue-50"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-[#0F172A] truncate">{userStats.full_name || "Artist"}</p>
+                <p className="text-[10px] font-bold text-slate-400">{userStats.xp_points} XP</p>
+              </div>
+            </div>
           </aside>
         </div>
       )}
 
-      {/* Desktop Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
+      {/* Desktop Sidebar Navigation */}
+      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0 h-screen sticky top-0">
         <div className="space-y-8">
-          <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
+          <img src={logoUrl} alt="Otterleo Logo" className="h-12 w-auto object-contain" />
           <nav className="space-y-1.5">
-            {navItems.map((item) => {
+            {desktopNavItems.map((item) => {
               const Icon = item.icon;
+              const isActive = item.active || pathname === item.path;
               return (
                 <Link
                   key={item.name}
                   href={item.path}
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                    item.active ? "bg-[#2563EB] text-white border-b-4 border-blue-800" : "text-slate-500 hover:bg-slate-50"
+                    isActive 
+                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1" 
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   <Icon className="w-5 h-5 shrink-0" />
@@ -243,6 +299,19 @@ export default function SettingsPage() {
               );
             })}
           </nav>
+        </div>
+
+        {/* Desktop Bottom Profile Card */}
+        <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+          <img
+            src={userStats.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
+            alt="User Avatar"
+            className="w-10 h-10 rounded-xl object-cover border border-slate-200 bg-blue-50"
+          />
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-black text-[#0F172A] truncate">{userStats.full_name || "Artist"}</p>
+            <p className="text-[10px] font-bold text-slate-400">{userStats.xp_points} XP</p>
+          </div>
         </div>
       </aside>
 
@@ -388,7 +457,7 @@ export default function SettingsPage() {
         )}
       </main>
 
-      {/* DIRECT CHANGE PASSWORD MODAL */}
+      {/* CHANGE PASSWORD MODAL */}
       {isPasswordModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-[2.5rem] w-full max-w-md p-6 shadow-2xl relative border-2 border-slate-100 space-y-4">
@@ -506,6 +575,26 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-2 flex justify-around items-center z-40 shadow-lg">
+        {mobileNavItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.path;
+          return (
+            <Link
+              key={item.name}
+              href={item.path}
+              className={`flex flex-col items-center gap-1 p-1.5 rounded-xl text-xs font-black ${
+                isActive ? "text-[#2563EB]" : "text-slate-400"
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px]">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
     </div>
   );

@@ -303,16 +303,27 @@ export default function ChallengesPage() {
   const isCurrentDone = completedChallenges.includes(currentChallenge.id);
   const activeTabChallenge = LOCAL_CHALLENGES[0];
 
+  // Exact Sidebar items list
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Challenges", path: "/challenges", active: true, icon: Swords },
     { name: "Practice", path: "/practice", icon: Palette },
+    { name: "Challenges", path: "/challenges", active: true, icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
     { name: "Achievements", path: "/achievements", icon: Award },
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
+  ];
+
+  // Exact Mobile bottom bar items list
+  const mobileNavItems = [
+    { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Practice", path: "/practice", icon: Palette },
+    { name: "Scan", path: "/scan", icon: Scan },
+    { name: "Challenges", path: "/challenges", active: true, icon: Swords },
+    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+    { name: "Profile", path: "/profile", icon: User },
   ];
 
   return (
@@ -601,18 +612,18 @@ export default function ChallengesPage() {
 
       </main>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-4 flex justify-around items-center z-40">
-        {[
-          { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-          { name: "Challenges", path: "/challenges", active: true, icon: Swords },
-          { name: "Practice", path: "/practice", icon: Palette },
-          { name: "Scan", path: "/scan", icon: Scan },
-          { name: "Profile", path: "/profile", icon: User },
-        ].map((item) => {
+        {mobileNavItems.map((item) => {
           const Icon = item.icon;
           return (
-            <Link key={item.name} href={item.path} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-black ${item.active ? "text-[#2563EB]" : "text-slate-400"}`}>
+            <Link
+              key={item.name}
+              href={item.path}
+              className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-black ${
+                item.active ? "text-[#2563EB]" : "text-slate-400"
+              }`}
+            >
               <Icon className="w-5 h-5" />
               <span className="text-[10px]">{item.name}</span>
             </Link>

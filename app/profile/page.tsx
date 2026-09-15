@@ -23,6 +23,7 @@ import {
   LogOut,
   Trash2,
   AlertTriangle,
+  Palette,
 } from "lucide-react";
 
 const AVATARS = [
@@ -199,8 +200,10 @@ export default function ProfilePage() {
   const userXp = profile?.xp || 0;
   const userStreak = profile?.streak || 0;
 
-  const navItems = [
+  // Exact Navigation Lists matching Dashboard
+  const desktopNavItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Practice", path: "/practice", icon: Palette },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
@@ -210,10 +213,19 @@ export default function ProfilePage() {
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
+  const mobileNavItems = [
+    { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Practice", path: "/practice", icon: Palette },
+    { name: "Scan", path: "/scan", icon: Scan },
+    { name: "Challenges", path: "/challenges", icon: Swords },
+    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+    { name: "Profile", path: "/profile", active: true, icon: User },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-20 md:pb-0 font-sans">
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-24 md:pb-0 font-sans">
       {/* Mobile Top Header */}
-      <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+      <header className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMobileSidebarOpen(true)}
@@ -223,7 +235,7 @@ export default function ProfilePage() {
             <PanelLeft className="w-5 h-5" />
           </button>
 
-          <img src={logoUrl} alt="Otterleo Logo" className="h-14 w-auto object-contain max-h-16" />
+          <img src={logoUrl} alt="Otterleo Logo" className="h-9 w-auto object-contain" />
         </div>
 
         <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 px-3 py-1 rounded-full text-orange-600 font-extrabold text-xs">
@@ -240,10 +252,10 @@ export default function ProfilePage() {
             onClick={() => setIsMobileSidebarOpen(false)}
           />
 
-          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
+          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10 overflow-y-auto">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="Otterleo Logo" className="h-14 w-auto object-contain" />
+                <img src={logoUrl} alt="Otterleo Logo" className="h-9 w-auto object-contain" />
                 <button
                   onClick={() => setIsMobileSidebarOpen(false)}
                   className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
@@ -253,7 +265,7 @@ export default function ProfilePage() {
               </div>
 
               <nav className="space-y-1.5">
-                {navItems.map((item) => {
+                {desktopNavItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
@@ -274,30 +286,31 @@ export default function ProfilePage() {
               </nav>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+            {/* Mobile Sidebar Bottom Profile Card */}
+            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
               <img
                 src={selectedAvatar || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
                 alt="User Avatar"
-                className="w-10 h-10 rounded-xl object-cover bg-blue-100"
+                className="w-10 h-10 rounded-xl object-cover border border-slate-200"
               />
-              <div className="overflow-hidden">
-                <p className="text-sm font-black text-[#0F172A] truncate">{name || "Artist"}</p>
-                <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-black text-[#0F172A] truncate">{name || "Artist"}</p>
+                <p className="text-[10px] font-bold text-slate-400">{userXp} XP</p>
               </div>
             </div>
           </aside>
         </div>
       )}
 
-      {/* Desktop Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
+      {/* Exact Desktop Sidebar Navigation */}
+      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0 h-screen sticky top-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Otterleo Logo" className="h-16 sm:h-20 w-auto object-contain" />
+            <img src={logoUrl} alt="Otterleo Logo" className="h-12 w-auto object-contain" />
           </div>
 
           <nav className="space-y-1.5">
-            {navItems.map((item) => {
+            {desktopNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -317,15 +330,16 @@ export default function ProfilePage() {
           </nav>
         </div>
 
-        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+        {/* Exact Desktop Bottom Profile Card */}
+        <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
           <img
             src={selectedAvatar || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
             alt="User Avatar"
-            className="w-10 h-10 rounded-xl object-cover bg-blue-100"
+            className="w-10 h-10 rounded-xl object-cover border border-slate-200"
           />
-          <div className="overflow-hidden">
-            <p className="text-sm font-black text-[#0F172A] truncate">{name || "Artist"}</p>
-            <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-black text-[#0F172A] truncate">{name || "Artist"}</p>
+            <p className="text-[10px] font-bold text-slate-400">{userXp} XP</p>
           </div>
         </div>
       </aside>
@@ -535,21 +549,15 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-4 flex justify-around items-center z-40 shadow-lg">
-        {[
-          { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-          { name: "Scan", path: "/scan", icon: Scan },
-          { name: "Challenges", path: "/challenges", icon: Swords },
-          { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-          { name: "Profile", path: "/profile", active: true, icon: User },
-        ].map((item) => {
+      {/* Exact Mobile Bottom Navigation Section */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-2 flex justify-around items-center z-40 shadow-lg">
+        {mobileNavItems.map((item) => {
           const Icon = item.icon;
           return (
             <Link
               key={item.name}
               href={item.path}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-black ${
+              className={`flex flex-col items-center gap-1 p-1.5 rounded-xl text-xs font-black ${
                 item.active ? "text-[#2563EB]" : "text-slate-400"
               }`}
             >
