@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, ChevronRight,
-  Sparkles, Check
+  Sparkles, Check, ShieldAlert
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
@@ -73,6 +74,7 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
 ];
 
 export default function ChallengesPage() {
+  const router = useRouter();
   const [selectedTab] = useState<"intermediate">("intermediate");
   const [userXp, setUserXp] = useState<number>(0);
   const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
@@ -80,6 +82,9 @@ export default function ChallengesPage() {
   const [claimingId, setClaimingId] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+
+  // Auth Verification States
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   // Active Flow State
   const [activeView, setActiveView] = useState<'hub' | 'challenge-flow'>('hub');
@@ -96,17 +101,28 @@ export default function ChallengesPage() {
   const fetchPageData = useCallback(async () => {
     setLoading(true);
     try {
-      const cachedXp = localStorage.getItem("user_xp_cache");
-      if (cachedXp) {
-        setUserXp(Number(cachedXp));
-      }
-
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
 
+      // Unverified ya Logged-out user check
       if (!user) {
+        setIsVerified(false);
         setLoading(false);
         return;
+      }
+
+      // Check Email Verification Status
+      if (!user.email_confirmed_at) {
+        setIsVerified(false);
+        setLoading(false);
+        return;
+      }
+
+      setIsVerified(true);
+
+      const cachedXp = localStorage.getItem("user_xp_cache");
+      if (cachedXp) {
+        setUserXp(Number(cachedXp));
       }
 
       const { data: profile } = await supabase
@@ -183,8 +199,8 @@ export default function ChallengesPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
 
-      if (!user) {
-        alert("Please login to complete challenges!");
+      if (!user || !user.email_confirmed_at) {
+        alert("Please verify your account to complete challenges!");
         setClaimingId(null);
         setActiveView('hub');
         return;
@@ -237,10 +253,50 @@ export default function ChallengesPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F6FAFF] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  // Blocking view for Unverified users
+  if (isVerified === false) {
+    return (
+      <div className="min-h-screen bg-[#F6FAFF] flex flex-col items-center justify-center p-4 tracking-tight">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 max-w-md w-full text-center space-y-5 shadow-sm">
+          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto border border-amber-200">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-slate-900">Access Restricted</h2>
+            <p className="text-xs font-bold text-slate-500 leading-relaxed">
+              Kripya challenges complete karne aur XP earn karne ke liye apni email id verify karein.
+            </p>
+          </div>
+          <div className="pt-2 space-y-2">
+            <Link
+              href="/login"
+              className="block w-full py-3.5 bg-[#2563EB] hover:bg-blue-600 text-white font-black text-xs rounded-2xl border-b-2 border-blue-800 transition"
+            >
+              Log In / Verify Account
+            </Link>
+            <Link
+              href="/dashboard"
+              className="block w-full py-3 text-slate-500 font-black text-xs hover:bg-slate-50 rounded-2xl transition"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currentChallenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
   const activeStepList = currentChallenge.steps;
   const isCurrentDone = completedChallenges.includes(currentChallenge.id);
-
   const activeTabChallenge = LOCAL_CHALLENGES[0];
 
   const navItems = [
