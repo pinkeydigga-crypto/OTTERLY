@@ -7,20 +7,19 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
-// Cost-effective models priority list
 const MODELS_TO_TRY = [
   "gemini-1.5-flash",
   "gemini-2.5-flash",
 ];
 
-// Supabase Service Role Client (RLS Bypass karne ke liye Server-side Client)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-);
-
 export async function POST(req: Request) {
   try {
+    // ==========================================
+    // SAFE SUPABASE INITIALIZATION (Fixes Build Error & Prevents Leak)
+    // ==========================================
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
     const cookieStore = await cookies();
     const lastScanCookie = cookieStore.get("otto_last_scan_time");
 
@@ -47,12 +46,15 @@ export async function POST(req: Request) {
     }
 
     // ==========================================
-    // 2. USER ID / DB CHECK (RLS Bypassed via Service Role)
+    // 2. USER ID / DB CHECK (RLS Bypassed safely on server)
     // ==========================================
     const body = await req.json().catch(() => null);
-    const userId = body?.userId; // Client se userId optional pass ho sakti hai
+    const userId = body?.userId;
 
-    if (userId) {
+    // Direct initialization inside runtime handler
+    if (userId && supabaseUrl && supabaseServiceKey) {
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+      
       const { data: user, error: dbError } = await supabaseAdmin
         .from("users")
         .select("last_scan_at")
@@ -121,7 +123,7 @@ export async function POST(req: Request) {
     }
 
     // ==========================================
-    // 4. COST-OPTIMIZED HIGH-TRAINED PROMPT
+    // 4. COST-OPTIMIZED PROMPT
     // ==========================================
     const promptText = `
       You are "Otto", a friendly expert drawing mentor.
@@ -183,7 +185,7 @@ export async function POST(req: Request) {
               ],
               generationConfig: {
                 responseMimeType: "application/json",
-                maxOutputTokens: 600, // Token budget limit to save costs
+                maxOutputTokens: 600,
                 temperature: 0.2,
               },
             }),
@@ -218,7 +220,6 @@ export async function POST(req: Request) {
       const now = new Date();
       const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-      // Set Cookie
       cookieStore.set("otto_last_scan_time", now.toISOString(), {
         maxAge: 86400,
         path: "/",
@@ -227,8 +228,8 @@ export async function POST(req: Request) {
         secure: process.env.NODE_ENV === "production",
       });
 
-      // DB update bypassing RLS using Service Role Key
-      if (userId) {
+      if (userId && supabaseUrl && supabaseServiceKey) {
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
         await supabaseAdmin
           .from("users")
           .update({ last_scan_at: now.toISOString() })
