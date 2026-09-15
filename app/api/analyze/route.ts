@@ -7,13 +7,12 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
-// Multi-model Fallback List
+// LATEST ACTIVE MODELS (Primary: gemini-3.6-flash)
 const MODELS_TO_TRY = [
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite-preview-02-05",
-  "gemini-1.5-flash",
-  "gemini-1.5-flash-8b",
-  "gemini-1.5-pro",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-1.5-flash"
 ];
 
 // Anti-Hacker In-Memory Rate Limiter
@@ -53,7 +52,7 @@ function isValidImageHeader(buffer: Buffer): boolean {
 
 export async function POST(req: Request) {
   try {
-    // ERR_100: Spam/Burst Rate Limit Check (IP level)
+    // ERR_100: Rate Limit Check (IP level)
     const forwardedFor = req.headers.get("x-forwarded-for");
     const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1";
 
@@ -127,7 +126,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // ERR_102: Missing GEMINI_API_KEY
+    // ERR_102: Missing API Key
     if (!apiKey) {
       return NextResponse.json(
         { isDrawing: false, message: "Server configuration issue: GEMINI_API_KEY missing.", errorCode: "ERR_102" },
@@ -135,7 +134,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ERR_103: Empty Request / Invalid JSON Body
+    // ERR_103: Empty Request Body
     if (!body || !body.image || typeof body.image !== "string") {
       return NextResponse.json(
         { isDrawing: false, message: "Please upload a valid artwork image payload.", errorCode: "ERR_103" },
@@ -143,7 +142,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ERR_104: Image File Size Exceeded (> 5MB Base64 equivalent)
+    // ERR_104: Image File Size Exceeded
     const imageStr = body.image;
     if (imageStr.length > 7 * 1024 * 1024) {
       return NextResponse.json(
@@ -161,7 +160,7 @@ export async function POST(req: Request) {
       base64Data = parts[1];
     }
 
-    // ERR_105A: Unsupported File Extension/Mime
+    // ERR_105A: Unsupported Mime Type
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       return NextResponse.json(
         { isDrawing: false, message: "Format not supported. Upload JPG, PNG, or WEBP.", errorCode: "ERR_105A" },
@@ -169,7 +168,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // ERR_105B: Magic Bytes File Corrupted or Tampered
+    // ERR_105B: Invalid Image Header
     const buffer = Buffer.from(base64Data, "base64");
     if (!isValidImageHeader(buffer)) {
       return NextResponse.json(
@@ -262,20 +261,19 @@ export async function POST(req: Request) {
           }
         }
       } catch (err) {
-        console.warn(`[Otto AI Model Try Error - ${modelName}]:`, err);
+        console.warn(`[Otto AI Fetch Error] ${modelName} failed. Trying next...`);
       }
     }
 
-    // ERR_106A / ERR_106B / ERR_106C: Specific Gemini API Failure Diagnostics
     if (!jsonResult) {
-      let debugCode = "ERR_106A"; // All models exhausted / Busy
+      let debugCode = "ERR_106A";
       let debugMessage = "Otto AI is busy right now. Please try again in 5 seconds.";
 
       if (lastApiStatus === 400 || lastApiStatus === 403) {
-        debugCode = "ERR_106B"; // Invalid API key or Permissions
+        debugCode = "ERR_106B";
         debugMessage = "AI API Key permission error or key disabled.";
       } else if (lastApiStatus === 429) {
-        debugCode = "ERR_106C"; // Gemini Quota / Billing Exceeded
+        debugCode = "ERR_106C";
         debugMessage = "AI Provider quota exceeded. Try again in a few moments.";
       }
 
@@ -310,7 +308,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json(jsonResult);
   } catch (error: unknown) {
-    // ERR_107: Fatal Runtime Server Crash
     return NextResponse.json(
       { isDrawing: false, message: "Internal server runtime error. Try again.", errorCode: "ERR_107" },
       { status: 500 }
