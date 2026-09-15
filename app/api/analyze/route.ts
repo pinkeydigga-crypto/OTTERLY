@@ -7,13 +7,39 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
+// Multi-model Fallback List
 const MODELS_TO_TRY = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite-preview-02-05",
   "gemini-1.5-flash",
   "gemini-1.5-flash-8b",
   "gemini-1.5-pro",
 ];
 
-// Security: Check real file signatures (Magic Bytes)
+// Anti-Hacker In-Memory Rate Limiter
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const windowMs = 60 * 1000;
+  const maxRequests = 5;
+
+  const record = rateLimitMap.get(ip);
+
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+    return false;
+  }
+
+  if (record.count >= maxRequests) {
+    return true;
+  }
+
+  record.count += 1;
+  return false;
+}
+
+// Magic Bytes Check
 function isValidImageHeader(buffer: Buffer): boolean {
   if (buffer.length < 4) return false;
   const hex = buffer.subarray(0, 4).toString("hex").toUpperCase();
@@ -27,13 +53,28 @@ function isValidImageHeader(buffer: Buffer): boolean {
 
 export async function POST(req: Request) {
   try {
+    // ERR_100: Spam/Burst Rate Limit Check (IP level)
+    const forwardedFor = req.headers.get("x-forwarded-for");
+    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1";
+
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        {
+          isDrawing: false,
+          message: "Too many requests. Please wait 1 minute before scanning again.",
+          errorCode: "ERR_100",
+        },
+        { status: 429 }
+      );
+    }
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     const cookieStore = await cookies();
     const lastScanCookie = cookieStore.get("otto_last_scan_time");
 
-    // 1. COOKIE 24-HOUR CHECK
+    // ERR_101A: 24-Hour Cookie Lock
     if (lastScanCookie) {
       const lastScanTime = new Date(lastScanCookie.value).getTime();
       const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
@@ -45,15 +86,15 @@ export async function POST(req: Request) {
             isDrawing: false,
             lockActive: true,
             nextAllowedTime: nextAllowed.toISOString(),
-            message: "Daily limit reached. You can scan only 1 artwork every 24 hours.",
-            errorCode: "ERR_101",
+            message: "Daily scan limit reached for this browser.",
+            errorCode: "ERR_101A",
           },
           { status: 423 }
         );
       }
     }
 
-    // 2. DB CHECK (RLS Bypassed via Service Key)
+    // ERR_101B: 24-Hour Supabase DB Lock
     const body = await req.json().catch(() => null);
     const userId = body?.userId;
 
@@ -78,7 +119,7 @@ export async function POST(req: Request) {
               lockActive: true,
               nextAllowedTime: nextAllowed.toISOString(),
               message: "Daily scan limit reached for your account.",
-              errorCode: "ERR_101",
+              errorCode: "ERR_101B",
             },
             { status: 423 }
           );
@@ -86,25 +127,27 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. INPUT VALIDATION & SECURITY
+    // ERR_102: Missing GEMINI_API_KEY
     if (!apiKey) {
       return NextResponse.json(
-        { isDrawing: false, message: "Server configuration issue. (Error 102)", errorCode: "ERR_102" },
+        { isDrawing: false, message: "Server configuration issue: GEMINI_API_KEY missing.", errorCode: "ERR_102" },
         { status: 500 }
       );
     }
 
+    // ERR_103: Empty Request / Invalid JSON Body
     if (!body || !body.image || typeof body.image !== "string") {
       return NextResponse.json(
-        { isDrawing: false, message: "Please upload a valid artwork image.", errorCode: "ERR_103" },
+        { isDrawing: false, message: "Please upload a valid artwork image payload.", errorCode: "ERR_103" },
         { status: 400 }
       );
     }
 
+    // ERR_104: Image File Size Exceeded (> 5MB Base64 equivalent)
     const imageStr = body.image;
     if (imageStr.length > 7 * 1024 * 1024) {
       return NextResponse.json(
-        { isDrawing: false, message: "Image size too large. Max limit is 5MB.", errorCode: "ERR_104" },
+        { isDrawing: false, message: "Image size too large. Maximum allowed limit is 5MB.", errorCode: "ERR_104" },
         { status: 400 }
       );
     }
@@ -118,22 +161,23 @@ export async function POST(req: Request) {
       base64Data = parts[1];
     }
 
+    // ERR_105A: Unsupported File Extension/Mime
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       return NextResponse.json(
-        { isDrawing: false, message: "Format not supported. Upload JPG, PNG, or WEBP.", errorCode: "ERR_105" },
+        { isDrawing: false, message: "Format not supported. Upload JPG, PNG, or WEBP.", errorCode: "ERR_105A" },
         { status: 400 }
       );
     }
 
+    // ERR_105B: Magic Bytes File Corrupted or Tampered
     const buffer = Buffer.from(base64Data, "base64");
     if (!isValidImageHeader(buffer)) {
       return NextResponse.json(
-        { isDrawing: false, message: "Invalid image file detected.", errorCode: "ERR_105" },
+        { isDrawing: false, message: "Corrupted or invalid image file detected.", errorCode: "ERR_105B" },
         { status: 400 }
       );
     }
 
-    // 4. DETAILED & COST-OPTIMIZED PROMPT
     const promptText = `
       You are "Otto", an expert, friendly art and drawing mentor.
       Examine the uploaded image very carefully.
@@ -174,13 +218,13 @@ export async function POST(req: Request) {
       }
     `;
 
-    // 5. GEMINI API CALL (800 TOKENS)
     let jsonResult = null;
+    let lastApiStatus = 0;
 
     for (const modelName of MODELS_TO_TRY) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
 
         const apiResponse = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
@@ -199,12 +243,14 @@ export async function POST(req: Request) {
               ],
               generationConfig: {
                 responseMimeType: "application/json",
-                maxOutputTokens: 800, // Token limit raised for detailed response
+                maxOutputTokens: 800,
                 temperature: 0.2,
               },
             }),
           }
         ).finally(() => clearTimeout(timeoutId));
+
+        lastApiStatus = apiResponse.status;
 
         if (apiResponse.ok) {
           const data = await apiResponse.json();
@@ -214,23 +260,31 @@ export async function POST(req: Request) {
             jsonResult = JSON.parse(cleanJsonText);
             break;
           }
-        } else {
-          const errText = await apiResponse.text();
-          console.error(`[Otto AI Model Failed - ${modelName}]: Status ${apiResponse.status} - ${errText}`);
         }
       } catch (err) {
-        console.error(`[Otto AI Fetch Error - ${modelName}]:`, err);
+        console.warn(`[Otto AI Model Try Error - ${modelName}]:`, err);
       }
     }
 
+    // ERR_106A / ERR_106B / ERR_106C: Specific Gemini API Failure Diagnostics
     if (!jsonResult) {
+      let debugCode = "ERR_106A"; // All models exhausted / Busy
+      let debugMessage = "Otto AI is busy right now. Please try again in 5 seconds.";
+
+      if (lastApiStatus === 400 || lastApiStatus === 403) {
+        debugCode = "ERR_106B"; // Invalid API key or Permissions
+        debugMessage = "AI API Key permission error or key disabled.";
+      } else if (lastApiStatus === 429) {
+        debugCode = "ERR_106C"; // Gemini Quota / Billing Exceeded
+        debugMessage = "AI Provider quota exceeded. Try again in a few moments.";
+      }
+
       return NextResponse.json(
-        { isDrawing: false, message: "Otto AI is busy right now. Please try again in a few seconds.", errorCode: "ERR_106" },
+        { isDrawing: false, message: debugMessage, errorCode: debugCode, httpStatus: lastApiStatus },
         { status: 502 }
       );
     }
 
-    // 6. DB & COOKIE UPDATE
     if (jsonResult.isDrawing === true) {
       const now = new Date();
       const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -256,9 +310,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(jsonResult);
   } catch (error: unknown) {
-    console.error("[Otto AI Critical Error]:", error);
+    // ERR_107: Fatal Runtime Server Crash
     return NextResponse.json(
-      { isDrawing: false, message: "Service connection error. Try again.", errorCode: "ERR_107" },
+      { isDrawing: false, message: "Internal server runtime error. Try again.", errorCode: "ERR_107" },
       { status: 500 }
     );
   }
