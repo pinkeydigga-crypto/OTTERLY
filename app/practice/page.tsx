@@ -70,11 +70,11 @@ export default function PracticePage() {
           </Link>
         </div>
 
-        {/* 2. Top Header Card (Logo on Top, Text Left, Mascot Right) */}
-        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center space-y-6">
+        {/* 2. Top Header Card (Logo on top left + Mascot on right side banner layout) */}
+        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
           
           {/* Top Logo */}
-          <div className="flex justify-center w-full">
+          <div className="flex justify-start w-full">
             <img
               src={logoUrl}
               alt="Otterleo Logo"
@@ -95,7 +95,7 @@ export default function PracticePage() {
             </div>
 
             {/* Mascot on Right */}
-            <div className="w-24 sm:w-32 h-auto shrink-0 flex items-center justify-center">
+            <div className="w-28 sm:w-36 h-auto shrink-0 flex items-center justify-center">
               <img
                 src={mascotImageUrl}
                 alt="Mascot"

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, ChevronRight,
-  Sparkles, Check, ShieldAlert, PenTool
+  Sparkles, Check, ShieldAlert, Palette
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
@@ -306,7 +306,7 @@ export default function ChallengesPage() {
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Challenges", path: "/challenges", active: true, icon: Swords },
-    { name: "Practice", path: "/practice", icon: PenTool },
+    { name: "Practice", path: "/practice", icon: Palette },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
@@ -606,7 +606,7 @@ export default function ChallengesPage() {
         {[
           { name: "Home", path: "/dashboard", icon: LayoutDashboard },
           { name: "Challenges", path: "/challenges", active: true, icon: Swords },
-          { name: "Practice", path: "/practice", icon: PenTool },
+          { name: "Practice", path: "/practice", icon: Palette },
           { name: "Scan", path: "/scan", icon: Scan },
           { name: "Profile", path: "/profile", icon: User },
         ].map((item) => {
