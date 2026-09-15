@@ -7,16 +7,15 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
+// Updated Active Stable Models
 const MODELS_TO_TRY = [
-  "gemini-1.5-flash",
   "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
 ];
 
 export async function POST(req: Request) {
   try {
-    // ==========================================
-    // SAFE SUPABASE INITIALIZATION (Fixes Build Error & Prevents Leak)
-    // ==========================================
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -46,12 +45,11 @@ export async function POST(req: Request) {
     }
 
     // ==========================================
-    // 2. USER ID / DB CHECK (RLS Bypassed safely on server)
+    // 2. USER ID / DB CHECK (RLS Bypassed safely)
     // ==========================================
     const body = await req.json().catch(() => null);
     const userId = body?.userId;
 
-    // Direct initialization inside runtime handler
     if (userId && supabaseUrl && supabaseServiceKey) {
       const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
       
@@ -85,6 +83,7 @@ export async function POST(req: Request) {
     // 3. INPUT VALIDATIONS
     // ==========================================
     if (!apiKey) {
+      console.error("[Otto AI Error]: GEMINI_API_KEY is missing in env variables.");
       return NextResponse.json(
         { isDrawing: false, message: "Server configuration issue. (Error 102)", errorCode: "ERR_102" },
         { status: 500 }
@@ -106,12 +105,13 @@ export async function POST(req: Request) {
       );
     }
 
+    // Clean Base64 Data & Extract MimeType
     let mimeType = "image/jpeg";
     let base64Data = imageStr;
 
     if (imageStr.includes(";base64,")) {
       const parts = imageStr.split(";base64,");
-      mimeType = parts[0].replace("data:", "").toLowerCase();
+      mimeType = parts[0].replace("data:", "").toLowerCase().trim();
       base64Data = parts[1];
     }
 
@@ -138,8 +138,8 @@ export async function POST(req: Request) {
       Return strictly valid JSON format:
       {
         "isDrawing": true,
-        "score": number_between_1_to_100,
-        "skillLevel": "Beginner" | "Intermediate" | "Advanced",
+        "score": 85,
+        "skillLevel": "Beginner",
         "strengths": [
           "Short point on good line control or proportions",
           "Short point on shading or details"
@@ -159,14 +159,14 @@ export async function POST(req: Request) {
     `;
 
     // ==========================================
-    // 5. GEMINI API CALL WITH TOKEN CAPS
+    // 5. GEMINI API CALL WITH RETRIES & LOGS
     // ==========================================
     let jsonResult = null;
 
     for (const modelName of MODELS_TO_TRY) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
 
         const apiResponse = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
@@ -198,11 +198,14 @@ export async function POST(req: Request) {
           if (rawText) {
             const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
             jsonResult = JSON.parse(cleanJsonText);
-            break;
+            break; // Success -> Stop loop
           }
+        } else {
+          const errText = await apiResponse.text();
+          console.error(`[Otto AI Model Failed - ${modelName}]: Status ${apiResponse.status} - ${errText}`);
         }
       } catch (err) {
-        console.error(`[Otto AI Error]: Model ${modelName} failed`, err);
+        console.error(`[Otto AI Fetch Error - ${modelName}]:`, err);
       }
     }
 
@@ -241,6 +244,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(jsonResult);
   } catch (error: unknown) {
+    console.error("[Otto AI Critical Error]:", error);
     return NextResponse.json(
       { isDrawing: false, message: "Service connection error. Try again.", errorCode: "ERR_107" },
       { status: 500 }
