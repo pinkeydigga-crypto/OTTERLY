@@ -188,12 +188,15 @@ export default function ChallengesPage() {
   };
 
   const handleCompleteChallenge = async (challenge: LocalChallenge) => {
+    if (claimingId === challenge.id) return;
+
     if (completedChallenges.includes(challenge.id)) {
       await handleReviewChallenge();
       return;
     }
 
     setClaimingId(challenge.id);
+    const previousXp = userXp;
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -206,15 +209,18 @@ export default function ChallengesPage() {
         return;
       }
 
+      const optimisticXp = previousXp + challenge.xp;
+      setUserXp(optimisticXp);
+
       const { data: newTotalXp, error: rpcError } = await supabase.rpc('increment_user_xp', {
         user_id_param: user.id,
         xp_to_add: challenge.xp
       });
 
       if (rpcError) {
+        setUserXp(previousXp);
         console.error("RPC Error:", rpcError);
-        alert("Error updating XP: " + rpcError.message);
-        setClaimingId(null);
+        alert("Server network slow hai! Kripya 5 second baad dobara try karein.");
         return;
       }
 
@@ -246,6 +252,7 @@ export default function ChallengesPage() {
 
       setActiveView('hub');
     } catch (err: any) {
+      setUserXp(previousXp);
       console.error("Error completing challenge:", err);
       alert("Error saving challenge completion: " + (err.message || "Unknown error"));
     } finally {
