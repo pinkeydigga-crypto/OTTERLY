@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Protected Routes List (Jahan unverified/unauthenticated user nahi ja sakta)
+  // Protected Routes List
   const protectedRoutes = [
     "/dashboard",
     "/scan",
@@ -49,20 +49,20 @@ export async function proxy(request: NextRequest) {
     "/learning-path",
     "/achievements",
     "/profile",
-    "/settings"
+    "/settings",
   ];
 
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
 
-  // 1. Agar User Logged in NAHI hai aur kisi Protected Page par jaane ki koshish kare -> Redirect to /login
+  // 1. Unauthenticated user trying to access protected route -> Redirect to /login
   if (!user && isProtectedRoute) {
     const loginUrl = new URL("/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  // 2. Agar User Pehle se Logged in hai aur Login/Signup page kholne ki koshish kare -> Redirect to /dashboard
+  // 2. Authenticated user trying to access login/signup -> Redirect to /dashboard
   if (user && (pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
     const dashboardUrl = new URL("/dashboard", request.url);
     return NextResponse.redirect(dashboardUrl);

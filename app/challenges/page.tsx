@@ -4,515 +4,624 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, CheckCircle2, Loader2, Zap, ChevronRight,
-  Sparkles, Check, ShieldAlert
+  ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
+  Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, ChevronRight,
+  Sparkles, Check, ShieldAlert
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
 import PracticeCanvas from "@/components/PracticeCanvas";
-import Sidebar from "@/components/sidebar";
 
 interface TutorialStep {
-  step: number;
-  title: string;
-  instruction: string;
-  tips: string[];
-  imageUrl: string;
+  step: number;
+  title: string;
+  instruction: string;
+  tips: string[];
+  imageUrl: string;
 }
 
 interface LocalChallenge {
-  id: string;
-  title: string;
-  description: string;
-  difficulty: "intermediate";
-  xp: number;
-  previewImage: string;
-  steps: TutorialStep[];
+  id: string;
+  title: string;
+  description: string;
+  difficulty: "intermediate";
+  xp: number;
+  previewImage: string;
+  steps: TutorialStep[];
 }
 
 const EYE_STEPS: TutorialStep[] = [
-  {
-    step: 1,
-    title: "Step 1: Basic Eye Outline",
-    instruction: "Lightly sketch the almond shape of the eye, including the tear duct and defining the upper eyelid fold.",
-    tips: ["Keep lines light", "Check symmetry"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_14463_chatgpt.com.jpeg"
-  },
-  {
-    step: 2,
-    title: "Step 2: Iris & Pupil Details",
-    instruction: "Draw the inner circle for the iris and the central pupil. Begin adding basic shading and mark the highlight.",
-    tips: ["Center the pupil", "Define the light source"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144627_chatgpt.com.jpeg"
-  },
-  {
-    step: 3,
-    title: "Step 3: Eyelashes & Depth",
-    instruction: "Apply rich shading to the iris and add detailed, natural eyelashes along both the upper and lower lids.",
-    tips: ["Vary lash thickness", "Deepen the shadows"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144810_chatgpt.com.jpeg"
-  },
-  {
-    step: 4,
-    title: "Step 4: Practice Drawing Canvas",
-    instruction: "Awesome work! Practice drawing your eye outline directly on the interactive canvas below.",
-    tips: ["Focus on smooth curve lines", "Use line thickness settings"],
-    imageUrl: ""
-  }
+  {
+    step: 1,
+    title: "Step 1: Basic Eye Outline",
+    instruction: "Lightly sketch the almond shape of the eye, including the tear duct and defining the upper eyelid fold.",
+    tips: ["Keep lines light", "Check symmetry"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_14463_chatgpt.com.jpeg"
+  },
+  {
+    step: 2,
+    title: "Step 2: Iris & Pupil Details",
+    instruction: "Draw the inner circle for the iris and the central pupil. Begin adding basic shading and mark the highlight.",
+    tips: ["Center the pupil", "Define the light source"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144627_chatgpt.com.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Eyelashes & Depth",
+    instruction: "Apply rich shading to the iris and add detailed, natural eyelashes along both the upper and lower lids.",
+    tips: ["Vary lash thickness", "Deepen the shadows"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144810_chatgpt.com.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Practice Drawing Canvas",
+    instruction: "Awesome work! Practice drawing your eye outline directly on the interactive canvas below.",
+    tips: ["Focus on smooth curve lines", "Use line thickness settings"],
+    imageUrl: ""
+  }
 ];
 
 const LOCAL_CHALLENGES: LocalChallenge[] = [
-  {
-    id: "eye-drawing-1min",
-    title: "Challenge: The Realistic Eye",
-    description: "Time to step up! Render a hyper-realistic eye and secure your spot on the leaderboard.",
-    difficulty: "intermediate",
-    xp: 60,
-    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144810_chatgpt.com.jpeg",
-    steps: EYE_STEPS
-  }
+  {
+    id: "eye-drawing-1min",
+    title: "Challenge: The Realistic Eye",
+    description: "Time to step up! Render a hyper-realistic eye and secure your spot on the leaderboard.",
+    difficulty: "intermediate",
+    xp: 60,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144810_chatgpt.com.jpeg",
+    steps: EYE_STEPS
+  }
 ];
 
 export default function ChallengesPage() {
-  const router = useRouter();
-  const [selectedTab] = useState<"intermediate">("intermediate");
-  const [userXp, setUserXp] = useState<number>(0);
-  const [userName, setUserName] = useState<string>("Artist");
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
-  const [streakCount, setStreakCount] = useState<number>(0);
-  const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [claimingId, setClaimingId] = useState<string | null>(null);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
+  const [selectedTab] = useState<"intermediate">("intermediate");
+  const [userXp, setUserXp] = useState<number>(0);
+  const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Auth Verification States
-  const [isVerified, setIsVerified] = useState<boolean | null>(null);
+  // Auth Verification States
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
-  // Active Flow State
-  const [activeView, setActiveView] = useState<'hub' | 'challenge-flow'>('hub');
-  const [activeChallengeId, setActiveChallengeId] = useState<string>("eye-drawing-1min");
-  const [currentStep, setCurrentStep] = useState<number>(0);
+  // Active Flow State
+  const [activeView, setActiveView] = useState<'hub' | 'challenge-flow'>('hub');
+  const [activeChallengeId, setActiveChallengeId] = useState<string>("eye-drawing-1min");
+  const [currentStep, setCurrentStep] = useState<number>(0);
 
-  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
+  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const fetchPageData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+  const fetchPageData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
 
-      // Unverified ya Logged-out user check
-      if (!user) {
-        setIsVerified(false);
-        setLoading(false);
-        return;
-      }
+      // Unverified ya Logged-out user check
+      if (!user) {
+        setIsVerified(false);
+        setLoading(false);
+        return;
+      }
 
-      // Check Email Verification Status
-      if (!user.email_confirmed_at) {
-        setIsVerified(false);
-        setLoading(false);
-        return;
-      }
+      // Check Email Verification Status
+      if (!user.email_confirmed_at) {
+        setIsVerified(false);
+        setLoading(false);
+        return;
+      }
 
-      setIsVerified(true);
+      setIsVerified(true);
 
-      const cachedXp = localStorage.getItem("user_xp_cache");
-      if (cachedXp) {
-        setUserXp(Number(cachedXp));
-      }
+      const cachedXp = localStorage.getItem("user_xp_cache");
+      if (cachedXp) {
+        setUserXp(Number(cachedXp));
+      }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("xp")
+        .eq("id", user.id)
+        .maybeSingle();
 
-      if (profile) {
-        const dbXp = profile.xp ?? 0;
-        setUserXp(dbXp);
-        setUserName(profile.name || profile.username || user.email?.split("@")[0] || "Artist");
-        setAvatarUrl(profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`);
-        setStreakCount(profile.streak || profile.streak_count || profile.current_streak || 0);
-        localStorage.setItem("user_xp_cache", dbXp.toString());
-      }
+      if (profile && profile.xp !== null && profile.xp !== undefined) {
+        const dbXp = profile.xp;
+        setUserXp(dbXp);
+        localStorage.setItem("user_xp_cache", dbXp.toString());
+      }
 
-      const { data: completed } = await supabase
-        .from("user_completed_challenges")
-        .select("challenge_id")
-        .eq("user_id", user.id);
+      const { data: completed } = await supabase
+        .from("user_completed_challenges")
+        .select("challenge_id")
+        .eq("user_id", user.id);
 
-      if (completed) {
-        setCompletedChallenges(completed.map((c) => c.challenge_id));
-      }
-    } catch (err) {
-      console.error("Error loading data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (completed) {
+        setCompletedChallenges(completed.map((c) => c.challenge_id));
+      }
+    } catch (err) {
+      console.error("Error loading data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  useEffect(() => {
-    fetchPageData();
+  useEffect(() => {
+    fetchPageData();
 
-    const handleXpEvent = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (typeof customEvent.detail === 'number') {
-        setUserXp(customEvent.detail);
-        localStorage.setItem("user_xp_cache", customEvent.detail.toString());
-      }
-    };
+    const handleXpEvent = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (typeof customEvent.detail === 'number') {
+        setUserXp(customEvent.detail);
+        localStorage.setItem("user_xp_cache", customEvent.detail.toString());
+      }
+    };
 
-    window.addEventListener('xpUpdated', handleXpEvent);
-    return () => {
-      window.removeEventListener('xpUpdated', handleXpEvent);
-    };
-  }, [fetchPageData]);
+    window.addEventListener('xpUpdated', handleXpEvent);
+    return () => {
+      window.removeEventListener('xpUpdated', handleXpEvent);
+    };
+  }, [fetchPageData]);
 
-  const handleReviewChallenge = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+  const handleReviewChallenge = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
 
-      if (user) {
-        const updatedStreak = await updateActivityStreak(user.id);
-        if (updatedStreak !== null) {
-          setStreakCount(updatedStreak);
-          window.dispatchEvent(new CustomEvent('streakUpdated', { detail: updatedStreak }));
-        }
-      }
-    } catch (err) {
-      console.error("Error updating streak on review:", err);
-    } finally {
-      setActiveView('hub');
-    }
-  };
+      if (user) {
+        const updatedStreak = await updateActivityStreak(user.id);
+        if (updatedStreak !== null) {
+          window.dispatchEvent(new CustomEvent('streakUpdated', { detail: updatedStreak }));
+        }
+      }
+    } catch (err) {
+      console.error("Error updating streak on review:", err);
+    } finally {
+      setActiveView('hub');
+    }
+  };
 
-  const handleCompleteChallenge = async (challenge: LocalChallenge) => {
-    if (claimingId === challenge.id) return;
+  const handleCompleteChallenge = async (challenge: LocalChallenge) => {
+    if (claimingId === challenge.id) return;
 
-    if (completedChallenges.includes(challenge.id)) {
-      await handleReviewChallenge();
-      return;
-    }
+    if (completedChallenges.includes(challenge.id)) {
+      await handleReviewChallenge();
+      return;
+    }
 
-    setClaimingId(challenge.id);
-    const previousXp = userXp;
+    setClaimingId(challenge.id);
+    const previousXp = userXp;
 
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
 
-      if (!user || !user.email_confirmed_at) {
-        alert("Please verify your account to complete challenges!");
-        setClaimingId(null);
-        setActiveView('hub');
-        return;
-      }
+      if (!user || !user.email_confirmed_at) {
+        alert("Please verify your account to complete challenges!");
+        setClaimingId(null);
+        setActiveView('hub');
+        return;
+      }
 
-      const optimisticXp = previousXp + challenge.xp;
-      setUserXp(optimisticXp);
+      const optimisticXp = previousXp + challenge.xp;
+      setUserXp(optimisticXp);
 
-      const { data: newTotalXp, error: rpcError } = await supabase.rpc('increment_user_xp', {
-        user_id_param: user.id,
-        xp_to_add: challenge.xp
-      });
+      const { data: newTotalXp, error: rpcError } = await supabase.rpc('increment_user_xp', {
+        user_id_param: user.id,
+        xp_to_add: challenge.xp
+      });
 
-      if (rpcError) {
-        setUserXp(previousXp);
-        console.error("RPC Error:", rpcError);
-        alert("Server network slow hai! Kripya 5 second baad dobara try karein.");
-        return;
-      }
+      if (rpcError) {
+        setUserXp(previousXp);
+        console.error("RPC Error:", rpcError);
+        alert("Server network slow hai! Kripya 5 second baad dobara try karein.");
+        return;
+      }
 
-      const updatedXp = Number(newTotalXp);
+      const updatedXp = Number(newTotalXp);
 
-      const { error: upsertError } = await supabase
-        .from("user_completed_challenges")
-        .upsert(
-          { user_id: user.id, challenge_id: challenge.id },
-          { onConflict: 'user_id,challenge_id' }
-        );
+      const { error: upsertError } = await supabase
+        .from("user_completed_challenges")
+        .upsert(
+          { user_id: user.id, challenge_id: challenge.id },
+          { onConflict: 'user_id,challenge_id' }
+        );
 
-      if (upsertError) {
-        await supabase.from("user_completed_challenges").insert({
-          user_id: user.id,
-          challenge_id: challenge.id,
-        });
-      }
+      if (upsertError) {
+        await supabase.from("user_completed_challenges").insert({
+          user_id: user.id,
+          challenge_id: challenge.id,
+        });
+      }
 
-      const updatedStreak = await updateActivityStreak(user.id);
-      if (updatedStreak !== null) {
-        setStreakCount(updatedStreak);
-        window.dispatchEvent(new CustomEvent('streakUpdated', { detail: updatedStreak }));
-      }
+      const updatedStreak = await updateActivityStreak(user.id);
+      if (updatedStreak !== null) {
+        window.dispatchEvent(new CustomEvent('streakUpdated', { detail: updatedStreak }));
+      }
 
-      setUserXp(updatedXp);
-      localStorage.setItem("user_xp_cache", updatedXp.toString());
-      setCompletedChallenges((prev) => Array.from(new Set([...prev, challenge.id])));
-      window.dispatchEvent(new CustomEvent('xpUpdated', { detail: updatedXp }));
+      setUserXp(updatedXp);
+      localStorage.setItem("user_xp_cache", updatedXp.toString());
+      setCompletedChallenges((prev) => Array.from(new Set([...prev, challenge.id])));
+      window.dispatchEvent(new CustomEvent('xpUpdated', { detail: updatedXp }));
 
-      setActiveView('hub');
-    } catch (err: any) {
-      setUserXp(previousXp);
-      console.error("Error completing challenge:", err);
-      alert("Error saving challenge completion: " + (err.message || "Unknown error"));
-    } finally {
-      setClaimingId(null);
-    }
-  };
+      setActiveView('hub');
+    } catch (err: any) {
+      setUserXp(previousXp);
+      console.error("Error completing challenge:", err);
+      alert("Error saving challenge completion: " + (err.message || "Unknown error"));
+    } finally {
+      setClaimingId(null);
+    }
+  };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F6FAFF] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F6FAFF] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
-  // Blocking view for Unverified users
-  if (isVerified === false) {
-    return (
-      <div className="min-h-screen bg-[#F6FAFF] flex flex-col items-center justify-center p-4 tracking-tight">
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 max-w-md w-full text-center space-y-5 shadow-sm">
-          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto border border-amber-200">
-            <ShieldAlert className="w-8 h-8" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-black text-slate-900">Access Restricted</h2>
-            <p className="text-xs font-bold text-slate-500 leading-relaxed">
-              Kripya challenges complete karne aur XP earn karne ke liye apni email id verify karein.
-            </p>
-          </div>
-          <div className="pt-2 space-y-2">
-            <Link
-              href="/login"
-              className="block w-full py-3.5 bg-[#2563EB] hover:bg-blue-600 text-white font-black text-xs rounded-2xl border-b-2 border-blue-800 transition"
-            >
-              Log In / Verify Account
-            </Link>
-            <Link
-              href="/dashboard"
-              className="block w-full py-3 text-slate-500 font-black text-xs hover:bg-slate-50 rounded-2xl transition"
-            >
-              Back to Dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Blocking view for Unverified users
+  if (isVerified === false) {
+    return (
+      <div className="min-h-screen bg-[#F6FAFF] flex flex-col items-center justify-center p-4 tracking-tight">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 max-w-md w-full text-center space-y-5 shadow-sm">
+          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto border border-amber-200">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-slate-900">Access Restricted</h2>
+            <p className="text-xs font-bold text-slate-500 leading-relaxed">
+              Kripya challenges complete karne aur XP earn karne ke liye apni email id verify karein.
+            </p>
+          </div>
+          <div className="pt-2 space-y-2">
+            <Link
+              href="/login"
+              className="block w-full py-3.5 bg-[#2563EB] hover:bg-blue-600 text-white font-black text-xs rounded-2xl border-b-2 border-blue-800 transition"
+            >
+              Log In / Verify Account
+            </Link>
+            <Link
+              href="/dashboard"
+              className="block w-full py-3 text-slate-500 font-black text-xs hover:bg-slate-50 rounded-2xl transition"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const currentChallenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
-  const activeStepList = currentChallenge.steps;
-  const activeTabChallenge = LOCAL_CHALLENGES[0];
+  const currentChallenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
+  const activeStepList = currentChallenge.steps;
+  const isCurrentDone = completedChallenges.includes(currentChallenge.id);
+  const activeTabChallenge = LOCAL_CHALLENGES[0];
 
-  return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0">
-      
-      {/* Centralized Sidebar Component */}
-      <Sidebar
-        userName={userName}
-        userXp={userXp}
-        userStreak={streakCount}
-        avatarUrl={avatarUrl}
-        isMobileSidebarOpen={isMobileSidebarOpen}
-        setIsMobileSidebarOpen={setIsMobileSidebarOpen}
-      />
+  const navItems = [
+    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Challenges", path: "/challenges", active: true, icon: Swords },
+    { name: "Scan", path: "/scan", icon: Scan },
+    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+    { name: "Learning Path", path: "/learning-path", icon: Compass },
+    { name: "Achievements", path: "/achievements", icon: Award },
+    { name: "Profile", path: "/profile", icon: User },
+    { name: "Settings", path: "/settings", icon: Settings },
+  ];
 
-      {/* Main Area */}
-      <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-5 overflow-y-auto">
-        
-        {/* Top Desktop Navigation */}
-        <div className="hidden md:flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-200 text-slate-700 font-black text-xs hover:bg-slate-50"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
+  return (
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0">
+      
+      {/* Mobile Top Header */}
+      <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
+            aria-label="Open sidebar"
+          >
+            <PanelLeft className="w-5 h-5" />
+          </button>
+          
+          <Link href="/dashboard" className="flex items-center">
+            <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
+          </Link>
+        </div>
 
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-amber-700 font-black text-sm">
-            <Zap className="w-4 h-4 fill-amber-500 text-amber-500" />
-            <span>{userXp} XP</span>
-          </div>
-        </div>
+        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-amber-700 font-black text-xs">
+          <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+          <span>{userXp} XP</span>
+        </div>
+      </header>
 
-        {activeView === 'hub' ? (
-          <>
-            {/* Top Banner Header with Mascot */}
-            <div className="bg-white p-5 rounded-[2rem] border border-slate-200/80 shadow-2xs flex items-center justify-between relative overflow-hidden">
-              <div className="space-y-1 pr-3">
-                <h1 className="text-2xl font-black text-[#0F172A]">Challenges</h1>
-                <p className="text-xs font-bold text-slate-500 max-w-xs">
-                  Complete step-by-step challenges, earn XP and level up your skills!
-                </p>
-              </div>
-              <img src={mascotImageUrl} alt="Mascot" className="w-32 sm:w-36 h-auto object-contain shrink-0" />
-            </div>
+      {/* Mobile Sidebar */}
+      {isMobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <Link href="/dashboard">
+                  <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
+                </Link>
+                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-            {/* Challenge Card */}
-            <div className="bg-white rounded-[2rem] p-5 border border-slate-200/80 shadow-2xs space-y-4">
-              
-              {/* Completed Badge */}
-              {completedChallenges.includes(activeTabChallenge.id) && (
-                <div className="flex justify-end w-full">
-                  <span className="text-[11px] font-black bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-xl flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Completed
-                  </span>
-                </div>
-              )}
+              <nav className="space-y-1.5">
+                {navItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.path}
+                      onClick={() => setIsMobileSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
+                        item.active
+                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
+                          : "text-slate-500 hover:bg-slate-50"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5 shrink-0" />
+                      <span>{item.name}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          </aside>
+        </div>
+      )}
 
-              {/* Preview Image Frame */}
-              <div className="w-full h-32 sm:h-36 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 flex items-center justify-center p-2">
-                <img
-                  src={activeTabChallenge.previewImage}
-                  alt={activeTabChallenge.title}
-                  className="max-h-full max-w-full object-contain hover:scale-105 transition-all duration-300"
-                />
-              </div>
+      {/* Desktop Sidebar */}
+      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
+        <div className="space-y-8">
+          <Link href="/dashboard">
+            <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
+          </Link>
 
-              <div className="space-y-3">
-                <div>
-                  <h2 className="font-black text-slate-900 text-lg">{activeTabChallenge.title}</h2>
-                  <p className="text-xs font-bold text-slate-500 mt-1">
-                    {activeTabChallenge.description}
-                  </p>
-                </div>
+          <nav className="space-y-1.5">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.path}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
+                    item.active
+                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
+                      : "text-slate-500 hover:bg-slate-50"
+                  }`}
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
 
-                <div className="flex items-center gap-3 text-xs font-black">
-                  <span className="flex items-center gap-1 text-amber-500">
-                    <Zap className="w-3.5 h-3.5 fill-amber-500" />
-                    +{activeTabChallenge.xp} XP
-                  </span>
+      {/* Main Area */}
+      <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-5 overflow-y-auto">
+        
+        {/* Top Desktop Navigation */}
+        <div className="hidden md:flex items-center justify-between">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-200 text-slate-700 font-black text-xs hover:bg-slate-50"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Link>
 
-                  <span className="px-2.5 py-0.5 rounded-lg text-[11px] uppercase bg-amber-50 text-amber-600">
-                    Pro
-                  </span>
-                </div>
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-amber-700 font-black text-sm">
+            <Zap className="w-4 h-4 fill-amber-500 text-amber-500" />
+            <span>{userXp} XP</span>
+          </div>
+        </div>
 
-                <button
-                  onClick={() => {
-                    setActiveChallengeId(activeTabChallenge.id);
-                    setActiveView('challenge-flow');
-                    setCurrentStep(0);
-                  }}
-                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-xs border-b-2 transition-all ${
-                    completedChallenges.includes(activeTabChallenge.id)
-                      ? "bg-slate-800 hover:bg-slate-900 text-white border-slate-950"
-                      : "bg-[#2563EB] hover:bg-blue-600 text-white border-blue-800"
-                  }`}
-                >
-                  <span>{completedChallenges.includes(activeTabChallenge.id) ? 'Review Challenge' : 'Accept Challenge 🚀'}</span>
-                  {!completedChallenges.includes(activeTabChallenge.id) && <ChevronRight className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-          </>
-        ) : (
-          /* STEP-BY-STEP TUTORIAL VIEW */
-          <div className="bg-white rounded-[2rem] p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-5">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <span className="text-[11px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-xl">
-                Step {currentStep + 1} of {activeStepList.length}
-              </span>
-              <button
-                onClick={() => setActiveView('hub')}
-                className="text-xs font-black text-slate-500 hover:text-slate-800 bg-slate-100 px-3 py-1.5 rounded-xl transition"
-              >
-                Exit Mission
-              </button>
-            </div>
+        {activeView === 'hub' ? (
+          <>
+            {/* Top Banner Header with Mascot */}
+            <div className="bg-white p-5 rounded-[2rem] border border-slate-200/80 shadow-2xs flex items-center justify-between relative overflow-hidden">
+              <div className="space-y-1 pr-3">
+                <h1 className="text-2xl font-black text-[#0F172A]">Challenges</h1>
+                <p className="text-xs font-bold text-slate-500 max-w-xs">
+                  Complete step-by-step challenges, earn XP and level up your skills!
+                </p>
+              </div>
+              <img src={mascotImageUrl} alt="Mascot" className="w-32 sm:w-36 h-auto object-contain shrink-0" />
+            </div>
 
-            <div>
-              <h3 className="text-lg font-black text-slate-900">{activeStepList[currentStep].title}</h3>
-              <p className="text-xs font-bold text-slate-500 mt-1 leading-relaxed">
-                {activeStepList[currentStep].instruction}
-              </p>
-            </div>
+            {/* Challenge Card */}
+            <div className="bg-white rounded-[2rem] p-5 border border-slate-200/80 shadow-2xs space-y-4">
+              
+              {/* Completed Badge */}
+              {completedChallenges.includes(activeTabChallenge.id) && (
+                <div className="flex justify-end w-full">
+                  <span className="text-[11px] font-black bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-xl flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+                  </span>
+                </div>
+              )}
 
-            {/* Step Content: Image Reference OR Practice Drawing Canvas Component */}
-            {activeStepList[currentStep].imageUrl ? (
-              <div className="w-full h-56 sm:h-64 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-3 overflow-hidden shadow-inner">
-                {mounted && (
-                  <img
-                    src={activeStepList[currentStep].imageUrl}
-                    alt="Tutorial step reference"
-                    className="max-h-full max-w-full object-contain scale-125 sm:scale-135 transition-transform duration-300 transform-gpu"
-                  />
-                )}
-              </div>
-            ) : (
-              <PracticeCanvas />
-            )}
+              {/* Preview Image Frame */}
+              <div className="w-full h-32 sm:h-36 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 flex items-center justify-center p-2">
+                <img
+                  src={activeTabChallenge.previewImage}
+                  alt={activeTabChallenge.title}
+                  className="max-h-full max-w-full object-contain hover:scale-105 transition-all duration-300"
+                />
+              </div>
 
-            {/* Tips Section */}
-            <div className="bg-amber-50/60 border border-amber-200/60 p-4 rounded-2xl space-y-2">
-              <h4 className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" /> Pro Tips:
-              </h4>
-              <ul className="space-y-1">
-                {activeStepList[currentStep].tips.map((tip, idx) => (
-                  <li key={idx} className="text-xs font-bold text-slate-600 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
+              <div className="space-y-3">
+                <div>
+                  <h2 className="font-black text-slate-900 text-lg">{activeTabChallenge.title}</h2>
+                  <p className="text-xs font-bold text-slate-500 mt-1">
+                    {activeTabChallenge.description}
+                  </p>
+                </div>
 
-            {/* Step Actions */}
-            <div className="flex justify-between items-center pt-2">
-              <button
-                onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
-                disabled={currentStep === 0}
-                className="px-4 py-2.5 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition"
-              >
-                Previous
-              </button>
+                <div className="flex items-center gap-3 text-xs font-black">
+                  <span className="flex items-center gap-1 text-amber-500">
+                    <Zap className="w-3.5 h-3.5 fill-amber-500" />
+                    +{activeTabChallenge.xp} XP
+                  </span>
 
-              {currentStep < activeStepList.length - 1 ? (
-                <button
-                  onClick={() => setCurrentStep(prev => Math.min(activeStepList.length - 1, prev + 1))}
-                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-[#2563EB] text-white hover:bg-blue-600 border-b-2 border-blue-800 transition flex items-center gap-1"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : completedChallenges.includes(currentChallenge.id) ? (
-                <button
-                  onClick={handleReviewChallenge}
-                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-slate-800 hover:bg-slate-900 text-white transition flex items-center gap-1.5 shadow-xs"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Mission Accomplished (Return)</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleCompleteChallenge(currentChallenge)}
-                  disabled={claimingId === currentChallenge.id}
-                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-xs disabled:opacity-70"
-                >
-                  {claimingId === currentChallenge.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>Finish & Claim +{currentChallenge.xp} XP</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+                  <span className="px-2.5 py-0.5 rounded-lg text-[11px] uppercase bg-amber-50 text-amber-600">
+                    Pro
+                  </span>
+                </div>
 
-      </main>
-    </div>
-  );
-}
+                <button
+                  onClick={() => {
+                    setActiveChallengeId(activeTabChallenge.id);
+                    setActiveView('challenge-flow');
+                    setCurrentStep(0);
+                  }}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-xs border-b-2 transition-all ${
+                    completedChallenges.includes(activeTabChallenge.id)
+                      ? "bg-slate-800 hover:bg-slate-900 text-white border-slate-950"
+                      : "bg-[#2563EB] hover:bg-blue-600 text-white border-blue-800"
+                  }`}
+                >
+                  <span>{completedChallenges.includes(activeTabChallenge.id) ? 'Review Challenge' : 'Accept Challenge 🚀'}</span>
+                  {!completedChallenges.includes(activeTabChallenge.id) && <ChevronRight className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* STEP-BY-STEP TUTORIAL VIEW */
+          <div className="bg-white rounded-[2rem] p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <span className="text-[11px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-xl">
+                Step {currentStep + 1} of {activeStepList.length}
+              </span>
+              <button
+                onClick={() => setActiveView('hub')}
+                className="text-xs font-black text-slate-500 hover:text-slate-800 bg-slate-100 px-3 py-1.5 rounded-xl transition"
+              >
+                Exit Mission
+              </button>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-black text-slate-900">{activeStepList[currentStep].title}</h3>
+              <p className="text-xs font-bold text-slate-500 mt-1 leading-relaxed">
+                {activeStepList[currentStep].instruction}
+              </p>
+            </div>
+
+            {/* Step Content: Image Reference OR Practice Drawing Canvas Component */}
+            {activeStepList[currentStep].imageUrl ? (
+              <div className="w-full h-56 sm:h-64 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-3 overflow-hidden shadow-inner">
+                {mounted && (
+                  <img
+                    src={activeStepList[currentStep].imageUrl}
+                    alt="Tutorial step reference"
+                    className="max-h-full max-w-full object-contain scale-125 sm:scale-135 transition-transform duration-300 transform-gpu"
+                  />
+                )}
+              </div>
+            ) : (
+              <PracticeCanvas />
+            )}
+
+            {/* Tips Section */}
+            <div className="bg-amber-50/60 border border-amber-200/60 p-4 rounded-2xl space-y-2">
+              <h4 className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" /> Pro Tips:
+              </h4>
+              <ul className="space-y-1">
+                {activeStepList[currentStep].tips.map((tip, idx) => (
+                  <li key={idx} className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Step Actions */}
+            <div className="flex justify-between items-center pt-2">
+              <button
+                onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
+                disabled={currentStep === 0}
+                className="px-4 py-2.5 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition"
+              >
+                Previous
+              </button>
+
+              {currentStep < activeStepList.length - 1 ? (
+                <button
+                  onClick={() => setCurrentStep(prev => Math.min(activeStepList.length - 1, prev + 1))}
+                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-[#2563EB] text-white hover:bg-blue-600 border-b-2 border-blue-800 transition flex items-center gap-1"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              ) : isCurrentDone ? (
+                <button
+                  onClick={handleReviewChallenge}
+                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-slate-800 hover:bg-slate-900 text-white transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Mission Accomplished (Return)</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleCompleteChallenge(currentChallenge)}
+                  disabled={claimingId === currentChallenge.id}
+                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-xs disabled:opacity-70"
+                >
+                  {claimingId === currentChallenge.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Finish & Claim +{currentChallenge.xp} XP</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* Mobile Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-4 flex justify-around items-center z-40">
+        {[
+          { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+          { name: "Scan", path: "/scan", icon: Scan },
+          { name: "Challenges", path: "/challenges", active: true, icon: Swords },
+          { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+          { name: "Profile", path: "/profile", icon: User },
+        ].map((item) => {
+          const Icon = item.icon;
+          return (
+            <Link key={item.name} href={item.path} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-black ${item.active ? "text-[#2563EB]" : "text-slate-400"}`}>
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px]">{item.name}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+    </div>
+  );
+} 
