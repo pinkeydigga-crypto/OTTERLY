@@ -4,13 +4,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, ChevronRight,
+  ArrowLeft, CheckCircle2, Loader2, Zap, ChevronRight,
   Sparkles, Check, ShieldAlert
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
 import PracticeCanvas from "@/components/PracticeCanvas";
+import Sidebar from "@/components/sidebar";
 
 interface TutorialStep {
   step: number;
@@ -77,6 +77,9 @@ export default function ChallengesPage() {
   const router = useRouter();
   const [selectedTab] = useState<"intermediate">("intermediate");
   const [userXp, setUserXp] = useState<number>(0);
+  const [userName, setUserName] = useState<string>("Artist");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [streakCount, setStreakCount] = useState<number>(0);
   const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -91,7 +94,6 @@ export default function ChallengesPage() {
   const [activeChallengeId, setActiveChallengeId] = useState<string>("eye-drawing-1min");
   const [currentStep, setCurrentStep] = useState<number>(0);
 
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
 
   useEffect(() => {
@@ -127,13 +129,16 @@ export default function ChallengesPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("xp")
+        .select("*")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profile && profile.xp !== null && profile.xp !== undefined) {
-        const dbXp = profile.xp;
+      if (profile) {
+        const dbXp = profile.xp ?? 0;
         setUserXp(dbXp);
+        setUserName(profile.name || profile.username || user.email?.split("@")[0] || "Artist");
+        setAvatarUrl(profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`);
+        setStreakCount(profile.streak || profile.streak_count || profile.current_streak || 0);
         localStorage.setItem("user_xp_cache", dbXp.toString());
       }
 
@@ -177,6 +182,7 @@ export default function ChallengesPage() {
       if (user) {
         const updatedStreak = await updateActivityStreak(user.id);
         if (updatedStreak !== null) {
+          setStreakCount(updatedStreak);
           window.dispatchEvent(new CustomEvent('streakUpdated', { detail: updatedStreak }));
         }
       }
@@ -242,6 +248,7 @@ export default function ChallengesPage() {
 
       const updatedStreak = await updateActivityStreak(user.id);
       if (updatedStreak !== null) {
+        setStreakCount(updatedStreak);
         window.dispatchEvent(new CustomEvent('streakUpdated', { detail: updatedStreak }));
       }
 
@@ -303,116 +310,20 @@ export default function ChallengesPage() {
 
   const currentChallenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
   const activeStepList = currentChallenge.steps;
-  const isCurrentDone = completedChallenges.includes(currentChallenge.id);
   const activeTabChallenge = LOCAL_CHALLENGES[0];
-
-  const navItems = [
-    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Challenges", path: "/challenges", active: true, icon: Swords },
-    { name: "Scan", path: "/scan", icon: Scan },
-    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-    { name: "Learning Path", path: "/learning-path", icon: Compass },
-    { name: "Achievements", path: "/achievements", icon: Award },
-    { name: "Profile", path: "/profile", icon: User },
-    { name: "Settings", path: "/settings", icon: Settings },
-  ];
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0">
       
-      {/* Mobile Top Header */}
-      <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
-            aria-label="Open sidebar"
-          >
-            <PanelLeft className="w-5 h-5" />
-          </button>
-          
-          <Link href="/dashboard" className="flex items-center">
-            <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-amber-700 font-black text-xs">
-          <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-          <span>{userXp} XP</span>
-        </div>
-      </header>
-
-      {/* Mobile Sidebar */}
-      {isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
-          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <Link href="/dashboard">
-                  <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
-                </Link>
-                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <nav className="space-y-1.5">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.path}
-                      onClick={() => setIsMobileSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                        item.active
-                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
-                          : "text-slate-500 hover:bg-slate-50"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      {/* Desktop Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
-        <div className="space-y-8">
-          <Link href="/dashboard">
-            <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
-          </Link>
-
-          <nav className="space-y-1.5">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                    item.active
-                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
-                      : "text-slate-500 hover:bg-slate-50"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
+      {/* Centralized Sidebar Component */}
+      <Sidebar
+        userName={userName}
+        userXp={userXp}
+        userStreak={streakCount}
+        avatarUrl={avatarUrl}
+        isMobileSidebarOpen={isMobileSidebarOpen}
+        setIsMobileSidebarOpen={setIsMobileSidebarOpen}
+      />
 
       {/* Main Area */}
       <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-5 overflow-y-auto">
@@ -573,7 +484,7 @@ export default function ChallengesPage() {
                   <span>Next</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
-              ) : isCurrentDone ? (
+              ) : completedChallenges.includes(currentChallenge.id) ? (
                 <button
                   onClick={handleReviewChallenge}
                   className="px-5 py-2.5 rounded-xl font-black text-xs bg-slate-800 hover:bg-slate-900 text-white transition flex items-center gap-1.5 shadow-xs"
@@ -602,26 +513,6 @@ export default function ChallengesPage() {
         )}
 
       </main>
-
-      {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-4 flex justify-around items-center z-40">
-        {[
-          { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-          { name: "Scan", path: "/scan", icon: Scan },
-          { name: "Challenges", path: "/challenges", active: true, icon: Swords },
-          { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-          { name: "Profile", path: "/profile", icon: User },
-        ].map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link key={item.name} href={item.path} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-black ${item.active ? "text-[#2563EB]" : "text-slate-400"}`}>
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px]">{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
     </div>
   );
 }

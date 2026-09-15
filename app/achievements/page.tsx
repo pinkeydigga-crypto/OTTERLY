@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { 
-  ArrowLeft, PanelLeft, X, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings,
-  Flame, Star, Target, Image as ImageIcon, BarChart3, CheckCircle2, Lock, Loader2, Check
+  ArrowLeft, Star, Target, Image as ImageIcon, Trophy, 
+  Flame, BarChart3, CheckCircle2, Lock, Loader2, Check 
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import Sidebar from "@/components/sidebar";
 
 interface Achievement {
   id: string;
@@ -79,8 +79,10 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
 function AchievementsContent() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
-  // Initial state zero to prevent SSR/Hydration mismatch
+  // User Profile State
   const [userXp, setUserXp] = useState<number>(0);
+  const [userName, setUserName] = useState<string>("Artist");
+  const [avatarUrl, setAvatarUrl] = useState<string>("");
 
   const [scansCount, setScansCount] = useState<number>(0);
   const [challengesCount, setChallengesCount] = useState<number>(0);
@@ -89,10 +91,8 @@ function AchievementsContent() {
   
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_11-9-2026_144618_chatgpt.com-removebg-preview.png";
 
-  // Load cached XP after mount on client-side
   useEffect(() => {
     if (typeof window !== "undefined") {
       const cached = localStorage.getItem("user_xp_cache");
@@ -109,12 +109,10 @@ function AchievementsContent() {
 
       if (!user) return;
 
-      // 1. Fetch via RPC
       const { data: rpcStats } = await supabase.rpc('get_user_activity_counts', {
         p_user_id: user.id
       });
 
-      // 2. Direct Query explicitly on SCANS table
       const [
         { count: directScansTableCount },
         { count: directSketchesTableCount },
@@ -127,7 +125,6 @@ function AchievementsContent() {
         supabase.from("profiles").select("*").eq("id", user.id).maybeSingle()
       ]);
 
-      // Calculate total scans prioritizing scans table
       const totalScansDetected = Math.max(
         directScansTableCount || 0,
         rpcStats?.scans_count || 0,
@@ -143,6 +140,7 @@ function AchievementsContent() {
 
       const totalStreak = Math.max(
         rpcStats?.streak_count || 0,
+        profile?.streak || 0,
         profile?.streak_count || 0,
         profile?.current_streak || 0
       );
@@ -150,13 +148,15 @@ function AchievementsContent() {
       const liveXp = profile?.xp ?? 0;
 
       setUserXp(liveXp);
+      setUserName(profile?.name || profile?.username || user.email?.split("@")[0] || "Artist");
+      setAvatarUrl(profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`);
+      
       localStorage.setItem("user_xp_cache", liveXp.toString());
 
       setScansCount(totalScansDetected);
       setChallengesCount(totalChallenges);
       setStreakCount(totalStreak);
 
-      // Fetch claimed list
       const { data: claimed } = await supabase
         .from("user_completed_achievements")
         .select("achievement_id")
@@ -226,17 +226,6 @@ function AchievementsContent() {
     }
   };
 
-  const navItems = [
-    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Challenges", path: "/challenges", icon: Swords },
-    { name: "Scan", path: "/scan", icon: Scan },
-    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-    { name: "Learning Path", path: "/learning-path", icon: Compass },
-    { name: "Achievements", path: "/achievements", active: true, icon: Award },
-    { name: "Profile", path: "/profile", icon: User },
-    { name: "Settings", path: "/settings", icon: Settings },
-  ];
-
   const totalAchievements = ALL_ACHIEVEMENTS.length;
   const unlockedCount = claimedAchievements.length;
   const progressPercentage = Math.round((unlockedCount / totalAchievements) * 100);
@@ -244,95 +233,15 @@ function AchievementsContent() {
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0">
       
-      {/* Mobile Top Header */}
-      <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
-          >
-            <PanelLeft className="w-5 h-5" />
-          </button>
-          
-          <img src={logoUrl} alt="Otterleo Logo" className="h-14 w-auto object-contain max-h-16" />
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-full text-amber-600 font-black text-xs">
-          <Star className="w-4 h-4 fill-amber-400 stroke-amber-400" />
-          <span>{userXp} XP</span>
-        </div>
-      </header>
-
-      {/* Mobile Drawer Navigation */}
-      {isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div 
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
-          
-          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="Otterleo Logo" className="h-14 w-auto object-contain" />
-                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <nav className="space-y-1.5">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.path}
-                      onClick={() => setIsMobileSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                        item.active
-                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      {/* Desktop Sidebar Navigation */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
-        <div className="space-y-8">
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Otterleo Logo" className="h-16 sm:h-20 w-auto object-contain" />
-          </div>
-
-          <nav className="space-y-1.5">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                    item.active
-                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
+      {/* Centralized Sidebar Component */}
+      <Sidebar
+        userName={userName}
+        userXp={userXp}
+        userStreak={streakCount}
+        avatarUrl={avatarUrl}
+        isMobileSidebarOpen={isMobileSidebarOpen}
+        setIsMobileSidebarOpen={setIsMobileSidebarOpen}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-8 max-w-5xl mx-auto w-full space-y-6 overflow-y-auto">
@@ -487,30 +396,10 @@ function AchievementsContent() {
         </div>
 
       </main>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-4 flex justify-around items-center z-40 shadow-lg">
-        {[
-          { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-          { name: "Scan", path: "/scan", icon: Scan },
-          { name: "Challenges", path: "/challenges", icon: Swords },
-          { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-          { name: "Achievements", path: "/achievements", active: true, icon: Award },
-        ].map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link key={item.name} href={item.path} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-black ${item.active ? "text-[#2563EB]" : "text-slate-400"}`}>
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px]">{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
     </div>
   );
 }
 
-// Prevent SSR hydration mismatch via dynamic import with ssr: false
 const AchievementsPage = dynamic(() => Promise.resolve(AchievementsContent), {
   ssr: false,
 });

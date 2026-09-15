@@ -3,13 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Sidebar from "@/components/sidebar";
 import { 
-  ArrowLeft, Share2, Download, X, Loader2, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings, Flame, PanelLeft,
-  Crown, Star, Heart
+  ArrowLeft, Share2, Download, X, Loader2,
+  Flame, Crown, Star, Heart
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import html2canvas from "html2canvas";
 
 interface ProfileUser {
   id: string;
@@ -27,7 +26,6 @@ export default function LeaderboardPage() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const [leaderboardData, setLeaderboardData] = useState<ProfileUser[]>([]);
   const [currentUser, setCurrentUser] = useState<ProfileUser | null>(null);
@@ -135,32 +133,6 @@ export default function LeaderboardPage() {
   const rank2 = leaderboardData.find((u) => u.rank === 2);
   const rank3 = leaderboardData.find((u) => u.rank === 3);
 
-  // SAFE CANVAS GENERATOR WITH CORS & COLOR ERROR PREVENTION
-  const generateCanvas = async (): Promise<HTMLCanvasElement | null> => {
-    if (!cardRef.current) return null;
-
-    try {
-      return await html2canvas(cardRef.current, {
-        useCORS: true,
-        allowTaint: false,
-        scale: 3,
-        backgroundColor: "#ffffff",
-        logging: false,
-        imageTimeout: 15000,
-        onclone: (clonedDoc) => {
-          const images = clonedDoc.getElementsByTagName("img");
-          for (let i = 0; i < images.length; i++) {
-            images[i].setAttribute("crossorigin", "anonymous");
-          }
-        },
-      });
-    } catch (canvasErr) {
-      console.warn("html2canvas fallback trigger due to:", canvasErr);
-      return generateFallbackCanvas();
-    }
-  };
-
-  // Pure Native Fallback Canvas Generator
   const generateFallbackCanvas = async (): Promise<HTMLCanvasElement | null> => {
     if (!currentUser) return null;
     const canvas = document.createElement("canvas");
@@ -169,17 +141,14 @@ export default function LeaderboardPage() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    // Fill Card Background
     ctx.fillStyle = "#ffffff";
     ctx.roundRect(0, 0, 720, 960, 40);
     ctx.fill();
 
-    // Border
     ctx.strokeStyle = "#3b82f6";
     ctx.lineWidth = 12;
     ctx.stroke();
 
-    // Corner Accents
     ctx.fillStyle = "#3b82f6";
     ctx.beginPath();
     ctx.arc(0, 0, 100, 0, Math.PI * 2);
@@ -189,13 +158,11 @@ export default function LeaderboardPage() {
     ctx.arc(720, 960, 100, 0, Math.PI * 2);
     ctx.fill();
 
-    // Title Block
     ctx.fillStyle = "#1e293b";
     ctx.font = "900 32px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("MY LEADERBOARD RANK", 360, 160);
 
-    // Rank Badge
     ctx.fillStyle = "#2563eb";
     ctx.roundRect(260, 190, 200, 50, 25);
     ctx.fill();
@@ -204,12 +171,10 @@ export default function LeaderboardPage() {
     ctx.font = "900 24px sans-serif";
     ctx.fillText(`Top #${currentUser.rank || "N/A"}`, 360, 224);
 
-    // Name
     ctx.fillStyle = "#0f172a";
     ctx.font = "900 40px sans-serif";
     ctx.fillText(currentUser.full_name, 360, 520);
 
-    // Stats Box
     ctx.fillStyle = "#f0f6ff";
     ctx.roundRect(100, 580, 520, 140, 20);
     ctx.fill();
@@ -219,7 +184,6 @@ export default function LeaderboardPage() {
     ctx.fillText(`XP: ${currentUser.xp_points} XP`, 240, 660);
     ctx.fillText(`Streak: ${currentUser.streak} Days`, 480, 660);
 
-    // Footer Text
     ctx.fillStyle = "#2563eb";
     ctx.font = "italic bold 24px sans-serif";
     ctx.fillText("Keep drawing, keep growing!", 360, 820);
@@ -232,7 +196,7 @@ export default function LeaderboardPage() {
     setIsDownloading(true);
 
     try {
-      const canvas = await generateCanvas();
+      const canvas = await generateFallbackCanvas();
       if (!canvas) throw new Error("Canvas generation failed");
 
       const dataUrl = canvas.toDataURL("image/png");
@@ -255,7 +219,7 @@ export default function LeaderboardPage() {
     setIsSharing(true);
 
     try {
-      const canvas = await generateCanvas();
+      const canvas = await generateFallbackCanvas();
       if (!canvas) throw new Error("Canvas generation failed");
 
       canvas.toBlob(async (blob) => {
@@ -286,110 +250,20 @@ export default function LeaderboardPage() {
     }
   };
 
-  const navItems = [
-    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Challenges", path: "/challenges", icon: Swords },
-    { name: "Scan", path: "/scan", icon: Scan },
-    { name: "Leaderboard", path: "/leaderboard", active: true, icon: Trophy },
-    { name: "Learning Path", path: "/learning-path", icon: Compass },
-    { name: "Achievements", path: "/achievements", icon: Award },
-    { name: "Profile", path: "/profile", icon: User },
-    { name: "Settings", path: "/settings", icon: Settings },
-  ];
-
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0">
+      <Sidebar
+        {...({
+          userName: currentUser?.full_name ?? "User",
+          userXp: currentUser?.xp_points ?? 0,
+          userStreak: currentUser?.streak ?? 0,
+          avatarUrl: currentUser?.avatar_url ?? "",
+          userRank: currentUser?.rank ?? 0,
+          userLevel: Math.max(1, Math.floor((currentUser?.xp_points ?? 0) / 100) + 1),
+        } as any)}
+      />
 
-      {/* Mobile Top Header */}
-      <header className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
-            aria-label="Open sidebar"
-          >
-            <PanelLeft className="w-5 h-5" />
-          </button>
-
-          <img src={logoUrl} alt="Logo" className="h-9 w-auto object-contain" />
-        </div>
-      </header>
-
-      {/* Mobile Drawer */}
-      {isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
-
-          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="Logo" className="h-9 w-auto object-contain" />
-                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <nav className="space-y-1.5">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.path}
-                      onClick={() => setIsMobileSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                        item.active
-                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      {/* Desktop Sidebar Navigation */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
-        <div className="space-y-8">
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
-          </div>
-
-          <nav className="space-y-1.5">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                    item.active
-                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
       <main className="flex-1 p-3 sm:p-6 md:p-8 max-w-5xl mx-auto w-full min-w-0 space-y-5 overflow-y-auto">
-
-        {/* Top Navigation */}
         <div className="flex items-center justify-between gap-2">
           <Link
             href="/dashboard"
@@ -411,7 +285,6 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* Banner Section */}
         <div className="bg-white py-5 px-5 sm:px-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs flex flex-col items-center text-center space-y-2 relative overflow-hidden">
           <div className="w-24 sm:w-32 h-auto shrink-0 flex items-center justify-center">
             <img
@@ -441,10 +314,8 @@ export default function LeaderboardPage() {
           </div>
         ) : (
           <>
-            {/* Podium Section */}
             {leaderboardData.length > 0 ? (
               <div className="pt-2 grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 items-end w-full">
-                {/* RANK 2 */}
                 {rank2 ? (
                   <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-2.5 sm:p-4 text-center relative flex flex-col items-center shadow-xs">
                     <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-black text-[10px] sm:text-xs text-slate-700 mb-1">
@@ -470,7 +341,6 @@ export default function LeaderboardPage() {
                   </div>
                 ) : <div />}
 
-                {/* RANK 1 */}
                 {rank1 ? (
                   <div className="bg-amber-50/80 border-2 border-amber-200 rounded-[2.2rem] p-3 sm:p-5 text-center relative flex flex-col items-center shadow-xs">
                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 border-2 border-white flex items-center justify-center font-black text-xs text-white shadow-xs mb-1">
@@ -496,7 +366,6 @@ export default function LeaderboardPage() {
                   </div>
                 ) : <div />}
 
-                {/* RANK 3 */}
                 {rank3 ? (
                   <div className="bg-white border-2 border-slate-100 rounded-[2rem] p-2.5 sm:p-4 text-center relative flex flex-col items-center shadow-xs">
                     <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-orange-200 border-2 border-white flex items-center justify-center font-black text-[10px] sm:text-xs text-orange-800 mb-1">
@@ -524,7 +393,6 @@ export default function LeaderboardPage() {
               </div>
             ) : null}
 
-            {/* Leaderboard Table List */}
             <div className="bg-white rounded-[2.5rem] border-2 border-slate-100 p-4 sm:p-6 shadow-xs">
               <h3 className="font-black text-slate-900 text-base mb-4 px-2">Top Rankings</h3>
 
@@ -580,26 +448,6 @@ export default function LeaderboardPage() {
         )}
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-4 flex justify-around items-center z-40 shadow-lg">
-        {[
-          { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-          { name: "Scan", path: "/scan", icon: Scan },
-          { name: "Challenges", path: "/challenges", icon: Swords },
-          { name: "Leaderboard", path: "/leaderboard", active: true, icon: Trophy },
-          { name: "Profile", path: "/profile", icon: User },
-        ].map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link key={item.name} href={item.path} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-black ${item.active ? "text-[#2563EB]" : "text-slate-400"}`}>
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px]">{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Share Card Modal */}
       {isShareModalOpen && currentUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-[2.5rem] w-full max-w-[360px] p-4 sm:p-6 shadow-2xl relative border-2 border-slate-100 my-auto">
@@ -610,16 +458,13 @@ export default function LeaderboardPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Target Proportional Card for Download & Share */}
             <div
               ref={cardRef}
               className="w-full bg-white rounded-[2rem] p-5 text-center shadow-lg relative overflow-hidden mb-5 border-4 border-blue-500 flex flex-col items-center"
             >
-              {/* Corner Accents */}
               <div className="absolute -top-8 -left-8 w-20 h-20 bg-blue-500 rounded-full pointer-events-none" />
               <div className="absolute -bottom-8 -right-8 w-20 h-20 bg-blue-500 rounded-full pointer-events-none" />
 
-              {/* Logo */}
               <div className="relative z-10 flex flex-col items-center mb-2">
                 <img
                   src={logoUrl}
@@ -629,7 +474,6 @@ export default function LeaderboardPage() {
                 />
               </div>
 
-              {/* Title Section */}
               <div className="relative z-10 space-y-1 mb-3">
                 <div className="flex items-center justify-center gap-1">
                   <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
@@ -643,7 +487,6 @@ export default function LeaderboardPage() {
                 </div>
               </div>
 
-              {/* Avatar Box */}
               <div className="relative z-10 my-1">
                 <div className="relative inline-block bg-blue-500 p-1.5 rounded-2xl shadow-md">
                   <img
@@ -658,12 +501,10 @@ export default function LeaderboardPage() {
                 </div>
               </div>
 
-              {/* Full Name */}
               <h3 className="relative z-10 font-black text-lg text-[#0f172a] mt-2 mb-3 truncate w-full px-2">
                 {currentUser.full_name}
               </h3>
 
-              {/* Stats Container */}
               <div className="relative z-10 w-full bg-[#f0f6ff] rounded-xl p-3 border border-blue-100 flex items-center justify-around mb-3">
                 <div className="flex items-center gap-2 text-left">
                   <Star className="w-4 h-4 text-blue-600 fill-blue-600 shrink-0" />
@@ -686,14 +527,12 @@ export default function LeaderboardPage() {
                 </div>
               </div>
 
-              {/* Footer text */}
               <div className="relative z-10 text-[11px] font-bold text-[#2563eb] italic flex items-center justify-center gap-1">
                 <span>Keep drawing, keep growing!</span>
                 <Heart className="w-3 h-3 fill-blue-600 stroke-none" />
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 onClick={handleShareImage}
