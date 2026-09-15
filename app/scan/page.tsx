@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, ChangeEvent } from "react";
+import { useState, useEffect, useMemo, ChangeEvent, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -78,33 +78,31 @@ export default function ScanPage() {
     checkUser();
   }, [router]);
 
-  const clearLock = () => {
+  const clearLock = useCallback(() => {
     setCountdown(null);
-    if (analysis && analysis.lockActive) {
-      setAnalysis(null);
-    }
-  };
+    setAnalysis((prev) => (prev?.lockActive ? null : prev));
+  }, []);
 
-  const calculateCountdown = useMemo(() => {
+  const calculateCountdown = useCallback(() => {
     const nextAllowedIso = analysis?.nextAllowedTime;
-    if (!nextAllowedIso) return () => clearLock();
+    if (!nextAllowedIso) {
+      clearLock();
+      return;
+    }
 
     const nextAllowed = new Date(nextAllowedIso);
+    const currentTime = new Date();
+    const difference = nextAllowed.getTime() - currentTime.getTime();
 
-    return () => {
-      const currentTime = new Date();
-      const difference = nextAllowed.getTime() - currentTime.getTime();
-
-      if (difference <= 0) {
-        clearLock();
-      } else {
-        const h = Math.floor((difference / (1000 * 60 * 60)) % 24);
-        const m = Math.floor((difference / (1000 * 60)) % 60);
-        const s = Math.floor((difference / 1000) % 60);
-        setCountdown({ hours: h, minutes: m, seconds: s });
-      }
-    };
-  }, [analysis]);
+    if (difference <= 0) {
+      clearLock();
+    } else {
+      const h = Math.floor((difference / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((difference / (1000 * 60)) % 60);
+      const s = Math.floor((difference / 1000) % 60);
+      setCountdown({ hours: h, minutes: m, seconds: s });
+    }
+  }, [analysis?.nextAllowedTime, clearLock]);
 
   useEffect(() => {
     if (analysis?.nextAllowedTime) {
@@ -112,7 +110,7 @@ export default function ScanPage() {
       const timerInterval = setInterval(calculateCountdown, 1000);
       return () => clearInterval(timerInterval);
     }
-  }, [analysis, calculateCountdown]);
+  }, [analysis?.nextAllowedTime, calculateCountdown]);
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     if (countdown || (analysis && analysis.lockActive)) {
@@ -125,14 +123,21 @@ export default function ScanPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Strict File Validation
-    const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const ALLOWED_MIME_TYPES = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ];
     const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
     const MAX_FILE_SIZE_MB = 5;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
     const extension = file.name.split(".").pop()?.toLowerCase() || "";
-    if (!ALLOWED_EXTENSIONS.includes(extension) || !ALLOWED_MIME_TYPES.includes(file.type)) {
+    if (
+      !ALLOWED_EXTENSIONS.includes(extension) ||
+      !ALLOWED_MIME_TYPES.includes(file.type)
+    ) {
       setErrorMessage(
         "Invalid file format! Only valid JPG, JPEG, PNG, and WEBP image files are allowed."
       );
@@ -218,7 +223,9 @@ export default function ScanPage() {
         if (res.status === 503) {
           attempt++;
           if (attempt < maxRetries) {
-            await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+            await new Promise((resolve) =>
+              setTimeout(resolve, attempt * 1500)
+            );
             continue;
           } else {
             setErrorMessage(
@@ -260,7 +267,9 @@ export default function ScanPage() {
         } else {
           attempt++;
           if (attempt < maxRetries) {
-            await new Promise((resolve) => setTimeout(resolve, attempt * 1500));
+            await new Promise((resolve) =>
+              setTimeout(resolve, attempt * 1500)
+            );
           } else {
             setErrorMessage(
               "Otto AI is facing high demand. Please try again after a few seconds. Error 1"
@@ -784,7 +793,7 @@ export default function ScanPage() {
               }`}
             >
               <Icon className="w-5 h-5" />
-              <span className="text-[10px]">{item.name}</span>
+              <span>{item.name}</span>
             </Link>
           );
         })}

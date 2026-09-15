@@ -92,10 +92,10 @@ export default function DashboardPage() {
         .from("profiles")
         .select("id, name, username, email, avatar_url, xp, streak, last_login")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (profError) {
-        console.error("Dashboard profile fetch exception occurred.");
+        console.error("Dashboard profile fetch exception:", profError.message, profError.details);
       }
 
       if (profileData) {
@@ -115,12 +115,24 @@ export default function DashboardPage() {
             })
             .eq("id", user.id)
             .select("id, name, username, email, avatar_url, xp, streak, last_login")
-            .single();
+            .maybeSingle();
 
           setProfile(updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr });
         } else {
           setProfile(profileData);
         }
+      } else {
+        // Fallback profile object if DB record is temporarily missing
+        setProfile({
+          id: user.id,
+          name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist",
+          username: user.email?.split("@")[0] || "artist",
+          email: user.email || "",
+          avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
+          xp: 0,
+          streak: 1,
+          last_login: getLocalDateString()
+        });
       }
 
       // 3. Fetch Today's Challenge Safely
@@ -145,7 +157,7 @@ export default function DashboardPage() {
         }
       }
 
-      // 4. Secure & Dynamic Achievements Retrieval
+      // 4. Dynamic Achievements Retrieval
       const { data: userAchData, error: achError } = await supabase
         .from("user_completed_achievements")
         .select("id, achievement_id, created_at")
@@ -218,7 +230,7 @@ export default function DashboardPage() {
       }
 
     } catch (err) {
-      console.error("Dashboard error occurred while processing request.");
+      console.error("Dashboard error occurred while processing request:", err);
     } finally {
       setLoading(false);
     }
