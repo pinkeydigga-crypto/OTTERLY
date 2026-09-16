@@ -71,7 +71,7 @@ export default function ScanPage() {
   const mascotImageUrl =
     "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20scan.jpeg";
   const logoUrl =
-    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
+    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
   useEffect(() => {
     const checkUser = async () => {

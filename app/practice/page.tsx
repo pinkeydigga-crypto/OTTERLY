@@ -10,8 +10,8 @@ export default function PracticePage() {
   const [isSaving, setIsSaving] = useState(false);
 
   // Asset URLs
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
-  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_15-9-2026_185944_chatgpt.com-removebg-preview.png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+  const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/DRAW%20OTTO.png";
 
   // Function to capture and download the canvas image safely
   const handleSaveDrawing = () => {

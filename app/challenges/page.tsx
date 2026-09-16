@@ -91,7 +91,7 @@ export default function ChallengesPage() {
   const [activeChallengeId, setActiveChallengeId] = useState<string>("eye-drawing-1min");
   const [currentStep, setCurrentStep] = useState<number>(0);
 
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
 
   useEffect(() => {

@@ -5,7 +5,7 @@ import { ArrowLeft, ShieldCheck, Mail, Phone, Sparkles } from "lucide-react";
 
 export default function TermsPage() {
   const logoUrl =
-    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
+    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] font-sans tracking-tight text-slate-800 pb-12">

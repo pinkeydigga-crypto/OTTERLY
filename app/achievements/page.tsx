@@ -86,7 +86,7 @@ function AchievementsContent() {
   const [claimedAchievements, setClaimedAchievements] = useState<string[]>([]);
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/ChatGPT%20Image%20Sep%2011,%202026,%2002_35_53%20PM%20(1).png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_11-9-2026_144618_chatgpt.com-removebg-preview.png";
 
   useEffect(() => {
