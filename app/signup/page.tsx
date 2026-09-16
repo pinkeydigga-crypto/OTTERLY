@@ -116,32 +116,52 @@ export default function SignupPage() {
 
     if (lockoutSeconds > 0 || loading) return;
 
-    if (!formData.name.trim() || !formData.username.trim() || !formData.email.trim() || !formData.password) {
+    const cleanName = formData.name.trim();
+    const cleanUsername = formData.username.trim();
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const password = formData.password;
+
+    if (!cleanName || !cleanUsername || !cleanEmail || !password) {
       setErrorMessage('Please fill in all fields.');
       return;
     }
 
-    if (!consent) {
-      setErrorMessage('You must check the consent box to agree to the Terms & Privacy Policy.');
+    // Name validation: 2 to 8 characters
+    const nameRegex = /^[a-zA-Z\s'-]{2,8}$/;
+    if (!nameRegex.test(cleanName)) {
+      setErrorMessage('Name must be 2 to 8 characters long and contain only letters.');
       return;
     }
 
+    // Username validation: 2 to 8 characters (alphanumeric or underscores)
+    const usernameRegex = /^[a-zA-Z0-9_]{2,8}$/;
+    if (!usernameRegex.test(cleanUsername)) {
+      setErrorMessage('Username must be 2-8 characters long and contain only letters, numbers, and underscores.');
+      return;
+    }
+
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const cleanEmail = formData.email.trim().toLowerCase();
     if (!emailRegex.test(cleanEmail)) {
       setErrorMessage('Please enter a valid email address.');
       return;
     }
 
-    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-    const cleanUsername = formData.username.trim();
-    if (!usernameRegex.test(cleanUsername)) {
-      setErrorMessage('Username must be 3-20 characters long and contain only letters, numbers, and underscores.');
+    // Password validation: minimum 8 characters
+    if (password.length < 8) {
+      setErrorMessage('Password must be at least 8 characters long.');
       return;
     }
 
-    if (formData.password.length < 6) {
-      setErrorMessage('Password must be at least 6 characters long.');
+    // Weak password check
+    const commonWeakPasswords = ['password', '12345678', 'qwertyui', '00000000', '11111111', 'abcdefgh'];
+    if (commonWeakPasswords.includes(password.toLowerCase()) || /^\d+$/.test(password)) {
+      setErrorMessage('Password is too weak. Please use a combination of letters, numbers, or symbols.');
+      return;
+    }
+
+    if (!consent) {
+      setErrorMessage('You must check the consent box to agree to the Terms & Privacy Policy.');
       return;
     }
 
@@ -173,7 +193,7 @@ export default function SignupPage() {
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
-        password: formData.password,
+        password: password,
       });
 
       if (authError) throw authError;
@@ -186,7 +206,7 @@ export default function SignupPage() {
         .upsert([
           {
             id: user.id,
-            name: formData.name.trim(),
+            name: cleanName,
             username: cleanUsername,
             email: cleanEmail,
             avatar_url: selectedAvatar,
@@ -214,7 +234,7 @@ export default function SignupPage() {
 
       const userData = {
         id: user.id,
-        name: formData.name.trim(),
+        name: cleanName,
         username: cleanUsername,
         email: cleanEmail,
         avatar: selectedAvatar,
@@ -390,9 +410,12 @@ export default function SignupPage() {
                   disabled={lockoutSeconds > 0 || loading}
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="Your Name"
+                  placeholder="John"
                   className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
                 />
+                <p className="text-[10px] text-[#0F172A]/40 mt-1 pl-1 font-medium">
+                  Must be between 2 and 8 characters long.
+                </p>
               </div>
 
               <div>
@@ -403,9 +426,12 @@ export default function SignupPage() {
                   disabled={lockoutSeconds > 0 || loading}
                   value={formData.username}
                   onChange={handleChange}
-                  placeholder="Username"
+                  placeholder="john12"
                   className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
                 />
+                <p className="text-[10px] text-[#0F172A]/40 mt-1 pl-1 font-medium">
+                  Must be 2-8 characters long (letters, numbers, underscores).
+                </p>
               </div>
 
               <div>
@@ -432,6 +458,9 @@ export default function SignupPage() {
                   placeholder="••••••••"
                   className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
                 />
+                <p className="text-[10px] text-[#0F172A]/40 mt-1 pl-1 font-medium">
+                  At least 8 characters. Avoid simple sequences or weak passwords.
+                </p>
               </div>
 
               <div className="flex items-start gap-2 pt-1">
