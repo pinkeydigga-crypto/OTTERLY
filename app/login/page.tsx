@@ -20,6 +20,28 @@ export default function LoginPage() {
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const [isThrottled, setIsThrottled] = useState(false);
 
+  // Dynamic Typewriter effect state
+  const [typedText, setTypedText] = useState('');
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
+
+  useEffect(() => {
+    const fullText = "Welcome Back to Otto!";
+    setTypedText('');
+    setIsTypingComplete(false);
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index < fullText.length) {
+        setTypedText(fullText.slice(0, index + 1));
+        index++;
+      } else {
+        setIsTypingComplete(true);
+        clearInterval(timer);
+      }
+    }, 70);
+
+    return () => clearInterval(timer);
+  }, []);
+
   // Ref to keep track of the last click timestamp for throttling
   const lastClickTimeRef = useRef<number>(0);
 
@@ -144,8 +166,34 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
       
+      {/* Speech Bubble Tail Pointing Left */}
+      <style jsx global>{`
+        .speech-bubble-tail-left {
+          position: absolute;
+          left: -7px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 0;
+          height: 0;
+          border-top: 5px solid transparent;
+          border-bottom: 5px solid transparent;
+          border-right: 7px solid #60A5FA;
+        }
+        .speech-bubble-tail-left-inner {
+          position: absolute;
+          left: -5px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 0;
+          height: 0;
+          border-top: 4px solid transparent;
+          border-bottom: 4px solid transparent;
+          border-right: 6px solid #F0F7FF;
+        }
+      `}</style>
+
       {/* BACK TO HOME BUTTON */}
-      <div className="absolute top-6 left-6 z-30">
+      <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
         <Link 
           href="/" 
           className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-sm transition-all active:scale-95"
@@ -155,18 +203,25 @@ export default function LoginPage() {
         </Link>
       </div>
 
-      <div className="relative max-w-md w-full pt-16">
+      <div className="relative max-w-md w-full pt-10">
         
-        <div className="absolute -top-6 left-6 z-20 w-28 h-28 sm:w-32 sm:h-32 drop-shadow-md pointer-events-none">
-          <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
-        </div>
+        {/* Main Card Container */}
+        <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
+          
+          {/* MASCOT & SPEECH BUBBLE (SAME AS SIGNUP PAGE) */}
+          <div className="flex items-center gap-3 my-2 pl-1">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md shrink-0">
+              <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
+            </div>
 
-        <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4 pt-14">
-          <div className="text-center space-y-1">
-            <h2 className="text-3xl font-black text-[#0F172A] tracking-tight">
-              Welcome Back to <span className="text-[#2563EB]">Otto</span>
-            </h2>
-            <p className="text-xs font-semibold text-[#0F172A]/60">Enter your email & password to log in</p>
+            <div className="relative px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-black text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-sm">
+              <span>{typedText}</span>
+              {!isTypingComplete && (
+                <span className="animate-pulse text-[#2563EB]">|</span>
+              )}
+              <div className="speech-bubble-tail-left"></div>
+              <div className="speech-bubble-tail-left-inner"></div>
+            </div>
           </div>
 
           {errorMessage && (
@@ -175,7 +230,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4">
+          <form onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4 pt-1">
             <div>
               <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
               <input
@@ -209,8 +264,8 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading || lockoutSeconds > 0 || isThrottled}
-              style={{ backgroundColor: '#2563EB', boxShadow: '0px 4px 0px #1D4ED8' }}
-              className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-0.5 transition-all mt-2 disabled:opacity-50"
+              style={{ backgroundColor: '#2563EB', boxShadow: '0px 6px 0px #1D4ED8' }}
+              className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-50"
             >
               {lockoutSeconds > 0 
                 ? `LOCKED (${formatTime(lockoutSeconds)})` 

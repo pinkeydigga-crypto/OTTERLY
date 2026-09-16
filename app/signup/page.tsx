@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME_MS = 60 * 1000;
@@ -20,11 +20,34 @@ export default function SignupPage() {
   const router = useRouter();
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
 
+  const [step, setStep] = useState<1 | 2>(1);
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [consent, setConsent] = useState(false);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
+
+  // Dynamic Typewriter effect state per step
+  const [typedText, setTypedText] = useState('');
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
+
+  useEffect(() => {
+    const fullText = step === 1 ? "Choose your avatar!" : "Create your account!";
+    setTypedText('');
+    setIsTypingComplete(false);
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index < fullText.length) {
+        setTypedText(fullText.slice(0, index + 1));
+        index++;
+      } else {
+        setIsTypingComplete(true);
+        clearInterval(timer);
+      }
+    }, 70);
+
+    return () => clearInterval(timer);
+  }, [step]);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -33,7 +56,6 @@ export default function SignupPage() {
     password: '',
   });
 
-  // Lockout Checker Logic
   const syncLockoutState = useCallback(() => {
     try {
       const lockUntil = localStorage.getItem('signup_lockout_until');
@@ -55,7 +77,6 @@ export default function SignupPage() {
     }
   }, []);
 
-  // Interval & Cross-Tab Sync
   useEffect(() => {
     syncLockoutState();
     const timer = setInterval(syncLockoutState, 1000);
@@ -84,13 +105,17 @@ export default function SignupPage() {
     setErrorMessage('Too many attempts. Registration locked for 60 seconds.');
   };
 
+  const handleNextStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+    setStep(2);
+  };
+
   const handleSignup = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    // 1. Prevent action if locked or already loading
     if (lockoutSeconds > 0 || loading) return;
 
-    // 2. Client-side Form Validation
     if (!formData.name.trim() || !formData.username.trim() || !formData.email.trim() || !formData.password) {
       setErrorMessage('Please fill in all fields.');
       return;
@@ -120,7 +145,6 @@ export default function SignupPage() {
       return;
     }
 
-    // 3. Attempt Tracking Logic (Increment BEFORE API call to catch spam)
     let attempts = 0;
     try {
       attempts = parseInt(localStorage.getItem('signup_attempts') || '0', 10);
@@ -134,7 +158,6 @@ export default function SignupPage() {
       localStorage.setItem('signup_attempts', newAttempts.toString());
     } catch (e) {}
 
-    // Check if limit exceeded (3 Attempts)
     if (newAttempts >= MAX_ATTEMPTS) {
       triggerLockout();
       return;
@@ -148,7 +171,6 @@ export default function SignupPage() {
         await supabase.auth.signOut();
       } catch (e) {}
 
-      // Supabase Signup Request
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
         password: formData.password,
@@ -159,7 +181,6 @@ export default function SignupPage() {
       const user = authData.user;
       if (!user) throw new Error("Could not create authentication session.");
 
-      // Insert Profile
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert([
@@ -176,7 +197,6 @@ export default function SignupPage() {
 
       if (profileError) console.error("Profile creation error:", profileError);
 
-      // Record Consent
       const { error: consentError } = await supabase
         .from('user_consents')
         .insert([
@@ -189,7 +209,6 @@ export default function SignupPage() {
 
       if (consentError) console.error("Consent recording error:", consentError);
 
-      // Clear attempt trackers on success
       localStorage.removeItem('signup_attempts');
       localStorage.removeItem('signup_lockout_until');
 
@@ -211,7 +230,6 @@ export default function SignupPage() {
 
       const remaining = MAX_ATTEMPTS - newAttempts;
       
-      // Friendly message handling (Supabase rate limit or standard errors)
       if (err?.status === 429 || err?.message?.toLowerCase().includes("rate limit")) {
         triggerLockout();
       } else {
@@ -227,8 +245,34 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
       
+      {/* Speech Bubble Tail Pointing Left */}
+      <style jsx global>{`
+        .speech-bubble-tail-left {
+          position: absolute;
+          left: -7px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 0;
+          height: 0;
+          border-top: 5px solid transparent;
+          border-bottom: 5px solid transparent;
+          border-right: 7px solid #60A5FA;
+        }
+        .speech-bubble-tail-left-inner {
+          position: absolute;
+          left: -5px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 0;
+          height: 0;
+          border-top: 4px solid transparent;
+          border-bottom: 4px solid transparent;
+          border-right: 6px solid #F0F7FF;
+        }
+      `}</style>
+
       {/* BACK TO HOME BUTTON */}
-      <div className="absolute top-6 left-6 z-30">
+      <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
         <Link 
           href="/" 
           className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-sm transition-all active:scale-95"
@@ -238,20 +282,49 @@ export default function SignupPage() {
         </Link>
       </div>
 
-      <div className="relative max-w-md w-full pt-16">
+      <div className="relative max-w-md w-full pt-10">
         
-        {/* Mascot */}
-        <div className="absolute -top-6 left-6 z-20 w-28 h-28 sm:w-32 sm:h-32 drop-shadow-md pointer-events-none">
-          <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
-        </div>
+        {/* Main Card Container */}
+        <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
+          
+          {/* STEP INDICATOR DOTS & BACK BUTTON */}
+          <div className="flex items-center justify-between pb-1">
+            {step === 2 ? (
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className="inline-flex items-center gap-1 text-xs font-black text-[#2563EB] hover:underline cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Back</span>
+              </button>
+            ) : (
+              <div className="w-10" />
+            )}
 
-        {/* Card Container */}
-        <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-3 pt-14">
-          <div className="text-center space-y-1">
-            <h2 className="text-3xl font-black text-[#0F172A] tracking-tight">
-              Join <span className="text-[#2563EB]">Otto</span>
-            </h2>
-            <p className="text-xs font-semibold text-[#0F172A]/60">Choose your avatar & create account</p>
+            {/* STEP DOTS */}
+            <div className="flex items-center justify-center gap-2 mx-auto">
+              <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+              <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+            </div>
+
+            <div className="w-10" />
+          </div>
+
+          {/* MASCOT & SPEECH BUBBLE */}
+          <div className="flex items-center gap-3 my-2 pl-1">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md shrink-0">
+              <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
+            </div>
+
+            <div className="relative px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-black text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-sm">
+              <span>{typedText}</span>
+              {!isTypingComplete && (
+                <span className="animate-pulse text-[#2563EB]">|</span>
+              )}
+              <div className="speech-bubble-tail-left"></div>
+              <div className="speech-bubble-tail-left-inner"></div>
+            </div>
           </div>
 
           {errorMessage && (
@@ -260,12 +333,10 @@ export default function SignupPage() {
             </div>
           )}
 
-          <form onSubmit={handleSignup} className="space-y-3">
-            <div>
-              <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-2 text-center">
-                Choose Your Avatar
-              </label>
-              <div className="flex justify-center gap-3">
+          {/* STEP 1: CHOOSE AVATAR */}
+          {step === 1 && (
+            <form onSubmit={handleNextStep} className="space-y-4 pt-1">
+              <div className="grid grid-cols-2 gap-3 max-w-[200px] mx-auto">
                 {AVATARS.map((avatar) => {
                   const isSelected = selectedAvatar === avatar.url;
                   return (
@@ -277,10 +348,10 @@ export default function SignupPage() {
                         e.preventDefault();
                         setSelectedAvatar(avatar.url);
                       }}
-                      className={`relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl p-1 overflow-hidden transition-all duration-200 cursor-pointer ${
+                      className={`relative aspect-square rounded-2xl p-1.5 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col items-center justify-center ${
                         isSelected
-                          ? 'ring-4 ring-[#2563EB] scale-110 shadow-md bg-blue-50 border-2 border-[#2563EB]'
-                          : 'opacity-70 hover:opacity-100 border border-slate-200 hover:scale-105'
+                          ? 'ring-4 ring-[#2563EB] scale-105 shadow-md bg-blue-50 border-2 border-[#2563EB]'
+                          : 'opacity-70 hover:opacity-100 border-2 border-slate-200 hover:scale-105'
                       } ${lockoutSeconds > 0 || loading ? 'opacity-40 pointer-events-none' : ''}`}
                     >
                       <img
@@ -292,97 +363,115 @@ export default function SignupPage() {
                   );
                 })}
               </div>
-            </div>
 
-            <div>
-              <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
-              <input
-                type="text"
-                name="name"
-                disabled={lockoutSeconds > 0 || loading}
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Name"
-                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
-              />
-            </div>
+              {/* BUTTON WITH DEEP SHADOW & CHEVRON ICON */}
+              <button
+                type="submit"
+                style={{
+                  backgroundColor: '#2563EB',
+                  boxShadow: '0px 6px 0px #1D4ED8',
+                }}
+                className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
+              >
+                <span>NEXT</span>
+                <ChevronRight className="w-5 h-5 stroke-[3]" />
+              </button>
+            </form>
+          )}
 
-            <div>
-              <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Username</label>
-              <input
-                type="text"
-                name="username"
-                disabled={lockoutSeconds > 0 || loading}
-                value={formData.username}
-                onChange={handleChange}
-                placeholder="Username"
-                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
-              />
-            </div>
+          {/* STEP 2: USER DETAILS FORM */}
+          {step === 2 && (
+            <form onSubmit={handleSignup} className="space-y-3">
+              <div>
+                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  disabled={lockoutSeconds > 0 || loading}
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Your Name"
+                  className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
+                />
+              </div>
 
-            <div>
-              <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
-              <input
-                type="email"
-                name="email"
-                disabled={lockoutSeconds > 0 || loading}
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="youremail@gmail.com"
-                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
-              />
-            </div>
+              <div>
+                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Username</label>
+                <input
+                  type="text"
+                  name="username"
+                  disabled={lockoutSeconds > 0 || loading}
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="Username"
+                  className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
+                />
+              </div>
 
-            <div>
-              <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Set Password</label>
-              <input
-                type="password"
-                name="password"
-                disabled={lockoutSeconds > 0 || loading}
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
-              />
-            </div>
+              <div>
+                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
+                <input
+                  type="email"
+                  name="email"
+                  disabled={lockoutSeconds > 0 || loading}
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="youremail@gmail.com"
+                  className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
+                />
+              </div>
 
-            <div className="flex items-start gap-2 pt-1">
-              <input
-                type="checkbox"
-                id="consent"
-                disabled={lockoutSeconds > 0 || loading}
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
-              />
-              <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
-                I consent to the collection and processing of my personal data in accordance with our{' '}
-                <Link href="/terms" className="text-[#2563EB] font-bold hover:underline">
-                  Terms & Conditions
-                </Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="text-[#2563EB] font-bold hover:underline">
-                  Privacy Policy
-                </Link>.
-              </label>
-            </div>
+              <div>
+                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Set Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  disabled={lockoutSeconds > 0 || loading}
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading || lockoutSeconds > 0}
-              style={{
-                backgroundColor: lockoutSeconds > 0 || loading ? '#94A3B8' : '#2563EB',
-                boxShadow: lockoutSeconds > 0 || loading ? 'none' : '0px 4px 0px #1D4ED8',
-              }}
-              className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-0.5 transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {lockoutSeconds > 0 
-                ? `LOCKED (${lockoutSeconds}s)` 
-                : loading 
-                ? 'CREATING...' 
-                : 'CREATE ACCOUNT'}
-            </button>
-          </form>
+              <div className="flex items-start gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="consent"
+                  disabled={lockoutSeconds > 0 || loading}
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
+                />
+                <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
+                  I consent to the collection and processing of my personal data in accordance with our{' '}
+                  <Link href="/terms" className="text-[#2563EB] font-bold hover:underline">
+                    Terms & Conditions
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/privacy" className="text-[#2563EB] font-bold hover:underline">
+                    Privacy Policy
+                  </Link>.
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || lockoutSeconds > 0}
+                style={{
+                  backgroundColor: lockoutSeconds > 0 || loading ? '#94A3B8' : '#2563EB',
+                  boxShadow: lockoutSeconds > 0 || loading ? 'none' : '0px 6px 0px #1D4ED8',
+                }}
+                className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {lockoutSeconds > 0 
+                  ? `LOCKED (${lockoutSeconds}s)` 
+                  : loading 
+                  ? 'CREATING...' 
+                  : 'CREATE ACCOUNT'}
+              </button>
+            </form>
+          )}
 
           <div className="pt-1 text-center">
             <p className="text-xs font-semibold text-[#0F172A]/60">
