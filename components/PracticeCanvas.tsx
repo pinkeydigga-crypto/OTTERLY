@@ -1,16 +1,20 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { RotateCcw, Pencil, Highlighter, Undo2, Redo2 } from "lucide-react";
+import { RotateCcw, Pencil, Highlighter, Eraser, Undo2, Redo2 } from "lucide-react";
 
-type ToolType = "pencil" | "highlighter";
+type ToolType = "pencil" | "highlighter" | "eraser";
 
 const HIGHLIGHTER_COLORS = [
-  { name: "Grey", value: "rgba(107, 114, 128, 0.4)" },
-  { name: "White", value: "rgba(255, 255, 255, 0.8)" },
+  { name: "Yellow", value: "rgba(234, 179, 8, 0.4)" },
+  { name: "Orange", value: "rgba(249, 115, 22, 0.4)" },
+  { name: "Pink", value: "rgba(236, 72, 153, 0.4)" },
+  { name: "Green", value: "rgba(34, 197, 94, 0.4)" },
+  { name: "Brown", value: "rgba(120, 53, 15, 0.4)" },
   { name: "Blue", value: "rgba(59, 130, 246, 0.4)" },
   { name: "Red", value: "rgba(239, 68, 68, 0.4)" },
-  { name: "Yellow", value: "rgba(234, 179, 8, 0.4)" },
+  { name: "Grey", value: "rgba(107, 114, 128, 0.4)" },
+  { name: "White", value: "rgba(255, 255, 255, 0.8)" },
 ];
 
 export default function PracticeCanvas() {
@@ -20,7 +24,7 @@ export default function PracticeCanvas() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [lineWidth, setLineWidth] = useState(3);
   const [activeTool, setActiveTool] = useState<ToolType>("pencil");
-  const [highlighterColor, setHighlighterColor] = useState(HIGHLIGHTER_COLORS[2].value);
+  const [highlighterColor, setHighlighterColor] = useState(HIGHLIGHTER_COLORS[0].value);
 
   // History Stack for Undo & Redo
   const [history, setHistory] = useState<ImageData[]>([]);
@@ -154,7 +158,7 @@ export default function PracticeCanvas() {
     setIsDrawing(true);
   };
 
-  // Render Whole Stroke Continuously (Fixes Overlap Patches)
+  // Render Whole Stroke Continuously
   const draw = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -190,11 +194,18 @@ export default function PracticeCanvas() {
       ctx.lineWidth = lineWidth;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.globalAlpha = 0.85; // Natural Graphite Translucency
-    } else {
-      // NO-PATCH SMOOTH HIGHLIGHTER
+      ctx.globalAlpha = 0.85;
+    } else if (activeTool === "highlighter") {
+      // SMOOTH HIGHLIGHTER
       ctx.strokeStyle = highlighterColor;
       ctx.lineWidth = lineWidth * 4.5;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.globalAlpha = 1.0;
+    } else if (activeTool === "eraser") {
+      // SMOOTH WORKING ERASER (Restores White Canvas Smoothly)
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = lineWidth * 5; // Scaled according to size slider
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.globalAlpha = 1.0;
@@ -249,7 +260,9 @@ export default function PracticeCanvas() {
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className="w-full h-[380px] sm:h-[450px] bg-white rounded-[1.5rem] cursor-crosshair touch-none border border-slate-100 block"
+          className={`w-full h-[380px] sm:h-[450px] bg-white rounded-[1.5rem] touch-none border border-slate-100 block ${
+            activeTool === "eraser" ? "cursor-cell" : "cursor-crosshair"
+          }`}
         />
 
         {/* OTTERLEO LOGO BRANDING AT CANVAS FOOTER */}
@@ -268,12 +281,12 @@ export default function PracticeCanvas() {
         {/* Tool Switcher, Undo/Redo & Clear Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
           
-          {/* Pencil & Highlighter Tool Buttons */}
-          <div className="flex items-center bg-slate-200/70 p-1 rounded-xl shrink-0">
+          {/* Pencil, Highlighter & Eraser Tool Buttons */}
+          <div className="flex items-center bg-slate-200/70 p-1 rounded-xl shrink-0 gap-1">
             <button
               type="button"
               onClick={() => setActiveTool("pencil")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
                 activeTool === "pencil"
                   ? "bg-white text-slate-800 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -284,7 +297,7 @@ export default function PracticeCanvas() {
             <button
               type="button"
               onClick={() => setActiveTool("highlighter")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
                 activeTool === "highlighter"
                   ? "bg-white text-blue-600 shadow-xs"
                   : "text-slate-600 hover:text-slate-900"
@@ -292,9 +305,20 @@ export default function PracticeCanvas() {
             >
               <Highlighter className="w-3.5 h-3.5" /> Highlighter
             </button>
+            <button
+              type="button"
+              onClick={() => setActiveTool("eraser")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
+                activeTool === "eraser"
+                  ? "bg-white text-rose-600 shadow-xs"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Eraser className="w-3.5 h-3.5" /> Eraser
+            </button>
           </div>
 
-          {/* Size Slider */}
+          {/* Size Slider (Applies to Pencil, Highlighter, and Eraser) */}
           <div className="flex items-center gap-2 grow max-w-[150px] min-w-[100px]">
             <span className="text-[11px] font-black text-slate-500 shrink-0">Size:</span>
             <input
@@ -343,7 +367,7 @@ export default function PracticeCanvas() {
         {activeTool === "highlighter" && (
           <div className="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 w-full">
             <span className="text-[11px] font-black text-slate-500 shrink-0">Highlighter Color:</span>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {HIGHLIGHTER_COLORS.map((c) => (
                 <button
                   type="button"
