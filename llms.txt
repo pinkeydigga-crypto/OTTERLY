@@ -20,6 +20,6 @@
 - What is Otterleo?
 - How to learn drawing in a fun way?
 - Best gamified drawing learning platform
-- Fun drawing website with AI feedback
+- Fun drawing learning website 
 - Interactive drawing practice website with leaderboard and XP
 - sketching 

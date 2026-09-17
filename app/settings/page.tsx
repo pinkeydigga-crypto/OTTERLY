@@ -48,8 +48,16 @@ export default function SettingsPage() {
   });
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  // Rate Limiting State (Throttling: Max 3 attempts per 5 minutes)
-  const [saveAttempts, setSaveAttempts] = useState<number[]>([]);
+  // Rate Limiting State (Throttling: Exactly 1 attempt per 10 minutes)
+  const [lastPasswordChangeTime, setLastPasswordChangeTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Persistent rate-limit check via localStorage
+    const savedTime = localStorage.getItem("last_password_change_time");
+    if (savedTime) {
+      setLastPasswordChangeTime(Number(savedTime));
+    }
+  }, []);
 
   // User Stats State
   const [userStats, setUserStats] = useState<UserStats>({
@@ -142,20 +150,22 @@ export default function SettingsPage() {
     router.replace("/login");
   };
 
-  // DIRECT SUPABASE AUTH PASSWORD UPDATE WITH RATE LIMITING / THROTTLING
+  // DIRECT SUPABASE AUTH PASSWORD UPDATE WITH 10-MINUTE THROTTLING RATE LIMITING
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordStatus({ type: null, message: "" });
 
-    // Rate Limiting Check: Max 3 requests in 5 minutes (5 * 60 * 1000 ms)
+    // Rate Limiting Check: 1 attempt per 10 minutes (10 * 60 * 1000 ms)
+    const TEN_MINUTES_MS = 10 * 60 * 1000;
     const now = Date.now();
-    const fiveMinutesAgo = now - 5 * 60 * 1000;
-    const recentAttempts = saveAttempts.filter(timestamp => timestamp > fiveMinutesAgo);
 
-    if (recentAttempts.length >= 3) {
+    if (lastPasswordChangeTime && now - lastPasswordChangeTime < TEN_MINUTES_MS) {
+      const remainingMs = TEN_MINUTES_MS - (now - lastPasswordChangeTime);
+      const remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
+
       setPasswordStatus({ 
         type: "error", 
-        message: "Aap 5 minute me sirf 3 baar save kar sakte hain. Kripya thoda wait karein." 
+        message: `Aap 10 minute me sirf 1 baar password change kar sakte hain. Kripya ${remainingMinutes} minute baad dobara try karein.` 
       });
       return;
     }
@@ -173,9 +183,6 @@ export default function SettingsPage() {
     setIsUpdatingPassword(true);
 
     try {
-      // Record this save attempt timestamp
-      setSaveAttempts([...recentAttempts, now]);
-
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -183,6 +190,11 @@ export default function SettingsPage() {
       if (error) {
         setPasswordStatus({ type: "error", message: error.message });
       } else {
+        // Record timestamp for 10-minute rate limit
+        const currentTime = Date.now();
+        setLastPasswordChangeTime(currentTime);
+        localStorage.setItem("last_password_change_time", currentTime.toString());
+
         setPasswordStatus({ 
           type: "success", 
           message: "Password successfully update ho gaya hai!" 
@@ -478,7 +490,7 @@ export default function SettingsPage() {
 
       {/* CHANGE PASSWORD MODAL */}
       {isPasswordModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-[2.5rem] w-full max-w-md p-6 shadow-2xl relative border-2 border-slate-100 space-y-4">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -560,7 +572,7 @@ export default function SettingsPage() {
 
       {/* PRIVACY POLICY MODAL */}
       {isPrivacyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-6 shadow-2xl relative border-2 border-slate-100 max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-2">
