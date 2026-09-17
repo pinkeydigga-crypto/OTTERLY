@@ -212,10 +212,14 @@ export default function ScanPage() {
         }
 
         const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+          setSelectedImage(compressedBase64);
+        } else {
+          setSelectedImage(reader.result as string);
+        }
 
-        const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
-        setSelectedImage(compressedBase64);
         setAnalysis(null);
         setErrorMessage(null);
       };
@@ -237,7 +241,8 @@ export default function ScanPage() {
 
     while (attempt < maxRetries && !success) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      // Updated timeout to 55000ms (55s)
+      const timeoutId = setTimeout(() => controller.abort(), 55000);
 
       try {
         const res = await fetch("/api/analyze", {
@@ -255,8 +260,9 @@ export default function ScanPage() {
         if (res.status === 503) {
           attempt++;
           if (attempt < maxRetries) {
+            // Updated retry backoff to 2500ms
             await new Promise((resolve) =>
-              setTimeout(resolve, attempt * 1500)
+              setTimeout(resolve, attempt * 2500)
             );
             continue;
           } else {
@@ -300,7 +306,7 @@ export default function ScanPage() {
           attempt++;
           if (attempt < maxRetries) {
             await new Promise((resolve) =>
-              setTimeout(resolve, attempt * 1500)
+              setTimeout(resolve, attempt * 2500)
             );
           } else {
             setErrorMessage(
@@ -621,12 +627,10 @@ export default function ScanPage() {
                   {isAnalyzing && (
                     <>
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
+                      {/* Top to Bottom scanning laser line */}
                       <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#00f3ff,0_0_30px_#00f3ff] animate-scan z-10" />
+                      {/* Background scanning gradient effect */}
                       <div className="absolute left-0 right-0 h-16 bg-gradient-to-b from-cyan-500/20 to-transparent animate-scan z-0" />
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-cyan-400 text-xs font-black px-4 py-2 rounded-full border border-cyan-500/40 flex items-center gap-2 z-20 shadow-lg">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                        Otto AI Analyzing Artwork...
-                      </div>
                     </>
                   )}
 

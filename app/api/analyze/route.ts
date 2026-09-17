@@ -7,7 +7,6 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
-// LATEST ACTIVE MODELS (Primary: gemini-3.6-flash)
 const MODELS_TO_TRY = [
   "gemini-3.6-flash",
   "gemini-3.5-flash-lite",
@@ -38,6 +37,22 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
+// Global In-Memory Concurrency Queue / Semaphore
+let activeRequestsCount = 0;
+const MAX_CONCURRENT_HEAVY_JOBS = 3; // Maximum parallel Gemini calls allowed simultaneously
+
+async function waitForServerCapacity(maxWaitMs = 15000): Promise<boolean> {
+  const startTime = Date.now();
+  while (activeRequestsCount >= MAX_CONCURRENT_HEAVY_JOBS) {
+    if (Date.now() - startTime > maxWaitMs) {
+      return false; // Queue timeout
+    }
+    // Wait for 500ms before checking capacity again
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  return true;
+}
+
 // Magic Bytes Check
 function isValidImageHeader(buffer: Buffer): boolean {
   if (buffer.length < 4) return false;
@@ -52,9 +67,10 @@ function isValidImageHeader(buffer: Buffer): boolean {
 
 export async function POST(req: Request) {
   try {
-    // ERR_100: Rate Limit Check (IP level)
+    // ERR_100: Safe Production IP Extraction
     const forwardedFor = req.headers.get("x-forwarded-for");
-    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : "127.0.0.1";
+    const realIp = req.headers.get("x-real-ip");
+    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "0.0.0.0";
 
     if (isRateLimited(ip)) {
       return NextResponse.json(
@@ -64,6 +80,19 @@ export async function POST(req: Request) {
           errorCode: "ERR_100",
         },
         { status: 429 }
+      );
+    }
+
+    // Heavy Traffic Auto-Queueing (Crash Safeguard)
+    const capacityAvailable = await waitForServerCapacity(12000);
+    if (!capacityAvailable) {
+      return NextResponse.json(
+        {
+          isDrawing: false,
+          message: "Server is under heavy load. Please try again in 5 seconds.",
+          errorCode: "ERR_108_BUSY",
+        },
+        { status: 503 }
       );
     }
 
@@ -94,38 +123,6 @@ export async function POST(req: Request) {
           },
           { status: 423 }
         );
-      }
-    }
-
-    // ERR_101B: 24-Hour Supabase DB Lock
-    if (userId && supabaseUrl && supabaseServiceKey) {
-      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-
-      const { data: user, error: dbError } = await supabaseAdmin
-        .from("profiles")
-        .select("last_scanned_at, last_scan_at")
-        .eq("id", userId)
-        .maybeSingle();
-
-      const lastScanVal = user?.last_scanned_at || user?.last_scan_at;
-
-      if (!dbError && lastScanVal) {
-        const lastScanTime = new Date(lastScanVal).getTime();
-        const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
-
-        if (hoursPassed < 24) {
-          const nextAllowed = new Date(lastScanTime + 24 * 60 * 60 * 1000);
-          return NextResponse.json(
-            {
-              isDrawing: false,
-              lockActive: true,
-              nextAllowedTime: nextAllowed.toISOString(),
-              message: "Daily scan limit reached for your account.",
-              errorCode: "ERR_101B",
-            },
-            { status: 423 }
-          );
-        }
       }
     }
 
@@ -180,6 +177,29 @@ export async function POST(req: Request) {
       );
     }
 
+    // =========================================================================
+    // ATOMIC DATABASE ROW LOCK (PREVENTS RACE CONDITION / MULTI-USER SCANS)
+    // =========================================================================
+    if (userId && supabaseUrl && supabaseServiceKey) {
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+      // Execute Atomic Stored Procedure Lock
+      const { data: isAllowed, error: lockError } = await supabaseAdmin
+        .rpc("check_and_lock_scan", { user_id_param: userId });
+
+      if (lockError || !isAllowed) {
+        return NextResponse.json(
+          {
+            isDrawing: false,
+            lockActive: true,
+            message: "Daily scan limit reached for your account.",
+            errorCode: "ERR_101B",
+          },
+          { status: 423 }
+        );
+      }
+    }
+
     const promptText = `
       You are "Otto", a world-class, professional art critique and drawing mentor.
       Analyze the uploaded image with extreme precision and attention to fine detail.
@@ -223,49 +243,57 @@ export async function POST(req: Request) {
     let jsonResult = null;
     let lastApiStatus = 0;
 
-    for (const modelName of MODELS_TO_TRY) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+    // Increment Active Processing counter before hitting Gemini API
+    activeRequestsCount++;
 
-        const apiResponse = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            signal: controller.signal,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    { text: promptText },
-                    { inlineData: { mimeType: mimeType, data: base64Data } },
-                  ],
+    try {
+      for (const modelName of MODELS_TO_TRY) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+          const apiResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+            {
+              method: "POST",
+              signal: controller.signal,
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      { text: promptText },
+                      { inlineData: { mimeType: mimeType, data: base64Data } },
+                    ],
+                  },
+                ],
+                generationConfig: {
+                  responseMimeType: "application/json",
+                  maxOutputTokens: 800,
+                  temperature: 0.2,
                 },
-              ],
-              generationConfig: {
-                responseMimeType: "application/json",
-                maxOutputTokens: 800,
-                temperature: 0.2,
-              },
-            }),
-          }
-        ).finally(() => clearTimeout(timeoutId));
+              }),
+            }
+          ).finally(() => clearTimeout(timeoutId));
 
-        lastApiStatus = apiResponse.status;
+          lastApiStatus = apiResponse.status;
 
-        if (apiResponse.ok) {
-          const data = await apiResponse.json();
-          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (rawText) {
-            const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
-            jsonResult = JSON.parse(cleanJsonText);
-            break;
+          if (apiResponse.ok) {
+            const data = await apiResponse.json();
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
+              jsonResult = JSON.parse(cleanJsonText);
+              break;
+            }
           }
+        } catch (err) {
+          console.warn(`[Otto AI Fetch Warning] Model ${modelName} call failed. Trying next model...`);
         }
-      } catch (err) {
-        console.warn(`[Otto AI Fetch Error] ${modelName} failed. Trying next...`);
       }
+    } finally {
+      // Decrement Active Processing counter (Guaranteed Release)
+      activeRequestsCount = Math.max(0, activeRequestsCount - 1);
     }
 
     if (!jsonResult) {
@@ -297,23 +325,6 @@ export async function POST(req: Request) {
         sameSite: "strict",
         secure: process.env.NODE_ENV === "production",
       });
-
-      if (userId && supabaseUrl && supabaseServiceKey) {
-        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-        const isoNow = now.toISOString();
-
-        const { error: profileErr } = await supabaseAdmin
-          .from("profiles")
-          .update({ last_scanned_at: isoNow, last_scan_at: isoNow })
-          .eq("id", userId);
-
-        if (profileErr) {
-          await supabaseAdmin
-            .from("users")
-            .update({ last_scan_at: isoNow, last_scanned_at: isoNow })
-            .eq("id", userId);
-        }
-      }
 
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
     }
