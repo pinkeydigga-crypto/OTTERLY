@@ -180,9 +180,12 @@ export async function POST(req: Request) {
     // =========================================================================
     // ATOMIC DATABASE ROW LOCK (PREVENTS RACE CONDITION / MULTI-USER SCANS)
     // =========================================================================
-    if (userId && supabaseUrl && supabaseServiceKey) {
-      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    let supabaseAdmin = null;
+    if (supabaseUrl && supabaseServiceKey) {
+      supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    }
 
+    if (userId && supabaseAdmin) {
       // Execute Atomic Stored Procedure Lock
       const { data: isAllowed, error: lockError } = await supabaseAdmin
         .rpc("check_and_lock_scan", { user_id_param: userId });
@@ -325,6 +328,14 @@ export async function POST(req: Request) {
         sameSite: "strict",
         secure: process.env.NODE_ENV === "production",
       });
+
+      // UPDATE SUPABASE TABLE WITH TIMESTAMP ON SUCCESSFUL DRAWING SCAN
+      if (userId && supabaseAdmin) {
+        await supabaseAdmin
+          .from("profiles")
+          .update({ last_scanned_at: now.toISOString() })
+          .eq("id", userId);
+      }
 
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
     }
