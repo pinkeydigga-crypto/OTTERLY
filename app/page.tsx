@@ -8,7 +8,9 @@ export default function HomePage() {
   const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png';
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png';
 
+  // Carousel images with proper encoded URLs
   const sketches = [
+    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789570157001.png',
     'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567428738.png',
     'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567954822%20%281%29.png',
     'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567813703.png',
@@ -17,21 +19,15 @@ export default function HomePage() {
 
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  // Exact Single Card Scroll Logic
   const scroll = (direction: 'left' | 'right') => {
     if (carouselRef.current) {
-      const container = carouselRef.current;
-      const firstCard = container.firstElementChild as HTMLElement;
-
-      if (firstCard) {
-        // Card Ki Width + Flex Gap (16px / gap-4)
-        const cardWidth = firstCard.offsetWidth + 16;
-        
-        container.scrollBy({
-          left: direction === 'left' ? -cardWidth : cardWidth,
-          behavior: 'smooth',
-        });
-      }
+      const { scrollLeft, clientWidth } = carouselRef.current;
+      const scrollAmount = clientWidth * 0.75;
+      
+      carouselRef.current.scrollTo({
+        left: direction === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: 'smooth',
+      });
     }
   };
 
@@ -191,7 +187,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* SKETCH CAROUSEL SECTION */}
+      {/* NON-MOVING MANUAL SKETCH CAROUSEL SECTION */}
       <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 my-8 z-10">
         <div className="text-center mb-6">
           <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
@@ -199,42 +195,37 @@ export default function HomePage() {
           </h2>
         </div>
 
-        <div className="relative group max-w-full">
-          {/* Left Arrow Button */}
+        <div className="relative group">
           <button
             onClick={() => scroll('left')}
-            type="button"
             aria-label="Previous sketch"
-            className="absolute -left-2 sm:-left-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-lg flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-[#2563EB] transition-all active:scale-90 cursor-pointer"
+            className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-[#2563EB] transition-all active:scale-95 cursor-pointer"
           >
             <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
           </button>
 
-          {/* Scrollable Container */}
           <div
             ref={carouselRef}
-            className="flex items-center gap-4 overflow-x-auto no-scrollbar scroll-smooth py-3 px-1 snap-x snap-mandatory"
+            className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth py-2 px-1"
           >
             {sketches.map((url, idx) => (
               <div
                 key={idx}
-                className="snap-center shrink-0 w-[82vw] sm:w-[340px] h-[200px] sm:h-[230px] bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden p-3 flex items-center justify-center relative hover:shadow-md transition-shadow"
+                className="flex-none w-[280px] sm:w-[340px] h-[200px] sm:h-[230px] bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden p-3 flex items-center justify-center relative hover:shadow-md transition-shadow"
               >
                 <img
                   src={url}
                   alt={`Liked sketch ${idx + 1}`}
-                  className="w-full h-full object-contain block pointer-events-none"
+                  className="w-full h-full object-contain block"
                 />
               </div>
             ))}
           </div>
 
-          {/* Right Arrow Button */}
           <button
             onClick={() => scroll('right')}
-            type="button"
             aria-label="Next sketch"
-            className="absolute -right-2 sm:-right-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-lg flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-[#2563EB] transition-all active:scale-90 cursor-pointer"
+            className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-[#2563EB] transition-all active:scale-95 cursor-pointer"
           >
             <ChevronRight className="w-6 h-6 stroke-[2.5]" />
           </button>
