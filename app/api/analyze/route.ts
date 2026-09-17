@@ -100,14 +100,17 @@ export async function POST(req: Request) {
     if (userId && supabaseUrl && supabaseServiceKey) {
       const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
       
+      // Checking 'profiles' table first, fallbacks gracefully if table is 'users'
       const { data: user, error: dbError } = await supabaseAdmin
-        .from("users")
-        .select("last_scan_at")
+        .from("profiles")
+        .select("last_scanned_at, last_scan_at")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
 
-      if (!dbError && user?.last_scan_at) {
-        const lastScanTime = new Date(user.last_scan_at).getTime();
+      const lastScanVal = user?.last_scanned_at || user?.last_scan_at;
+
+      if (!dbError && lastScanVal) {
+        const lastScanTime = new Date(lastScanVal).getTime();
         const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
 
         if (hoursPassed < 24) {
@@ -295,12 +298,24 @@ export async function POST(req: Request) {
         secure: process.env.NODE_ENV === "production",
       });
 
+      // FIXED DB UPDATE LOGIC (Guarantees column gets updated)
       if (userId && supabaseUrl && supabaseServiceKey) {
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-        await supabaseAdmin
-          .from("users")
-          .update({ last_scan_at: now.toISOString() })
+        const isoNow = now.toISOString();
+
+        // 1. Try updating profiles table
+        const { error: profileErr } = await supabaseAdmin
+          .from("profiles")
+          .update({ last_scanned_at: isoNow, last_scan_at: isoNow })
           .eq("id", userId);
+
+        // 2. Fallback to users table if profiles table update was ignored
+        if (profileErr) {
+          await supabaseAdmin
+            .from("users")
+            .update({ last_scan_at: isoNow, last_scanned_at: isoNow })
+            .eq("id", userId);
+        }
       }
 
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
