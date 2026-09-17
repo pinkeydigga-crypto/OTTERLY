@@ -21,9 +21,9 @@ export const metadata: Metadata = {
     'Otterleo Drawing App',
     'AI Drawing Coach',
     'Gamified Drawing Lessons',
-    'Otto Mascot',
-    'Learn Drawing AI',
-    'AI Drawing App XP Streaks'
+    'Otto ',
+    'Learn Sketching in fun way',
+    'Drawing App XP Streaks'
   ],
   alternates: {
     canonical: '/about',
@@ -153,7 +153,7 @@ export default function AboutPage() {
     },
     {
       q: "How does the Artwork Scan feature work?",
-      a: "Scan your paper drawings using your camera to get an instant precision score, feedback on proportions, shading, and line accuracy powered by computer vision."
+      a: "Scan your artwork  to get an instant precision score, feedback on proportions, shading, and line accuracy powered by computer vision."
     }
   ];
 
