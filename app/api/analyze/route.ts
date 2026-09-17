@@ -70,10 +70,14 @@ export async function POST(req: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    const cookieStore = await cookies();
-    const lastScanCookie = cookieStore.get("otto_last_scan_time");
+    const body = await req.json().catch(() => null);
+    const userId = body?.userId;
 
-    // ERR_101A: 24-Hour Cookie Lock
+    const cookieStore = await cookies();
+    const cookieKey = userId ? `otto_last_scan_time_${userId}` : "otto_last_scan_time";
+    const lastScanCookie = cookieStore.get(cookieKey);
+
+    // ERR_101A: 24-Hour User Cookie Lock
     if (lastScanCookie) {
       const lastScanTime = new Date(lastScanCookie.value).getTime();
       const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
@@ -85,7 +89,7 @@ export async function POST(req: Request) {
             isDrawing: false,
             lockActive: true,
             nextAllowedTime: nextAllowed.toISOString(),
-            message: "Daily scan limit reached for this browser.",
+            message: "Daily scan limit reached for this account.",
             errorCode: "ERR_101A",
           },
           { status: 423 }
@@ -94,13 +98,9 @@ export async function POST(req: Request) {
     }
 
     // ERR_101B: 24-Hour Supabase DB Lock
-    const body = await req.json().catch(() => null);
-    const userId = body?.userId;
-
     if (userId && supabaseUrl && supabaseServiceKey) {
       const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-      
-      // Checking 'profiles' table first, fallbacks gracefully if table is 'users'
+
       const { data: user, error: dbError } = await supabaseAdmin
         .from("profiles")
         .select("last_scanned_at, last_scan_at")
@@ -290,7 +290,7 @@ export async function POST(req: Request) {
       const now = new Date();
       const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-      cookieStore.set("otto_last_scan_time", now.toISOString(), {
+      cookieStore.set(cookieKey, now.toISOString(), {
         maxAge: 86400,
         path: "/",
         httpOnly: true,
@@ -298,18 +298,15 @@ export async function POST(req: Request) {
         secure: process.env.NODE_ENV === "production",
       });
 
-      // FIXED DB UPDATE LOGIC (Guarantees column gets updated)
       if (userId && supabaseUrl && supabaseServiceKey) {
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
         const isoNow = now.toISOString();
 
-        // 1. Try updating profiles table
         const { error: profileErr } = await supabaseAdmin
           .from("profiles")
           .update({ last_scanned_at: isoNow, last_scan_at: isoNow })
           .eq("id", userId);
 
-        // 2. Fallback to users table if profiles table update was ignored
         if (profileErr) {
           await supabaseAdmin
             .from("users")

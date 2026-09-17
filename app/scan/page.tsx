@@ -243,7 +243,10 @@ export default function ScanPage() {
         const res = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: selectedImage }),
+          body: JSON.stringify({ 
+            image: selectedImage,
+            userId: profile?.id 
+          }),
           signal: controller.signal,
         });
 
