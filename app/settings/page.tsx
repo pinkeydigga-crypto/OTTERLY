@@ -48,6 +48,9 @@ export default function SettingsPage() {
   });
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
+  // Rate Limiting State (Throttling: Max 3 attempts per 5 minutes)
+  const [saveAttempts, setSaveAttempts] = useState<number[]>([]);
+
   // User Stats State
   const [userStats, setUserStats] = useState<UserStats>({
     id: "",
@@ -139,10 +142,23 @@ export default function SettingsPage() {
     router.replace("/login");
   };
 
-  // DIRECT SUPABASE AUTH PASSWORD UPDATE
+  // DIRECT SUPABASE AUTH PASSWORD UPDATE WITH RATE LIMITING / THROTTLING
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordStatus({ type: null, message: "" });
+
+    // Rate Limiting Check: Max 3 requests in 5 minutes (5 * 60 * 1000 ms)
+    const now = Date.now();
+    const fiveMinutesAgo = now - 5 * 60 * 1000;
+    const recentAttempts = saveAttempts.filter(timestamp => timestamp > fiveMinutesAgo);
+
+    if (recentAttempts.length >= 3) {
+      setPasswordStatus({ 
+        type: "error", 
+        message: "Aap 5 minute me sirf 3 baar save kar sakte hain. Kripya thoda wait karein." 
+      });
+      return;
+    }
 
     if (newPassword.length < 6) {
       setPasswordStatus({ type: "error", message: "Naya password kam se kam 6 characters ka hona chahiye." });
@@ -157,6 +173,9 @@ export default function SettingsPage() {
     setIsUpdatingPassword(true);
 
     try {
+      // Record this save attempt timestamp
+      setSaveAttempts([...recentAttempts, now]);
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -180,7 +199,7 @@ export default function SettingsPage() {
     }
   };
 
-  // Exact Navigation Items Structure Syncing
+  // Navigation Items
   const desktopNavItems: NavItem[] = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Practice", path: "/practice", icon: Palette },
