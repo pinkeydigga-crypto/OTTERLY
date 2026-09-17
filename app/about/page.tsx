@@ -2,17 +2,16 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 
 const SITE_URL = "https://Otterleo.in";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
-const FOUNDER_IMAGE_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/harjas.jpg";
 const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Otterleo — The Fun Way to Learn Drawing | Founder Harjas Digga',
-  description: 'Otterleo is the best online fun drawing and sketching learning platform created by Harjas Digga. Practice on canvas, compete on leaderboards, gain XP, set avatars, scan artwork for AI feedback, and learn drawing step-by-step.',
+  title: 'Otterleo — The Fun Way to Learn Drawing & Sketching',
+  description: 'Otterleo is the best online fun drawing and sketching learning platform. Practice on canvas, compete on leaderboards, gain XP, set avatars, scan artwork for AI feedback, and learn drawing step-by-step.',
   keywords: [
     'Otterleo',
     'What is Otterleo',
@@ -20,40 +19,36 @@ export const metadata: Metadata = {
     'Best fun drawing learning platform',
     'Fun drawing website',
     'Otterleo Drawing App',
-    'Harjas Digga',
-    'Harjas Digga Otterleo',
     'AI Drawing Coach',
     'Gamified Drawing Lessons',
     'Otto Mascot',
     'Learn Drawing AI',
     'AI Drawing App XP Streaks'
   ],
-  authors: [{ name: 'Harjas Digga' }],
-  creator: 'Harjas Digga',
   alternates: {
     canonical: '/about',
   },
   openGraph: {
-    title: 'Otterleo — The Fun Way to Learn Drawing | Harjas Digga',
-    description: 'Learn to draw and sketch with Otterleo and Otto. make art fun , affordable, and accessible.',
+    title: 'Otterleo — The Fun Way to Learn Drawing',
+    description: 'Learn to draw and sketch with Otterleo and Otto. Make art fun, affordable, and accessible.',
     url: `${SITE_URL}/about`,
     siteName: 'Otterleo',
     locale: 'en_US',
     type: 'website',
     images: [
       {
-        url: FOUNDER_IMAGE_URL,
+        url: LOGO_URL,
         width: 1200,
         height: 630,
-        alt: 'Harjas Digga - Founder of Otterleo',
+        alt: 'Otterleo - Fun Drawing Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Otterleo — The Fun Way to Learn Drawing | Founder Harjas Digga',
-    description: 'Gamified drawing learning platform created by Harjas Digga. Master drawing with instant AI feedback.',
-    images: [FOUNDER_IMAGE_URL],
+    title: 'Otterleo — The Fun Way to Learn Drawing',
+    description: 'Gamified drawing and sketching learning platform. Master drawing with instant AI feedback.',
+    images: [LOGO_URL],
   },
   robots: {
     index: true,
@@ -75,10 +70,6 @@ export default function AboutPage() {
           "@type": "Offer",
           "price": "299",
           "priceCurrency": "INR"
-        },
-        "author": {
-          "@type": "Person",
-          "name": "Harjas Digga"
         }
       },
       {
@@ -89,14 +80,7 @@ export default function AboutPage() {
         "logo": LOGO_URL,
         "sameAs": [
           SITE_URL
-        ],
-        "founder": {
-          "@type": "Person",
-          "name": "Harjas Digga",
-          "jobTitle": "Founder & Creator",
-          "image": FOUNDER_IMAGE_URL,
-          "description": "Founder of Otterleo, passionate about AI and gamified creative education."
-        }
+        ]
       },
       {
         "@type": "FAQPage",
@@ -107,7 +91,7 @@ export default function AboutPage() {
             "name": "What is Otterleo?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Otterleo is an online fun drawing and sketching learning platform where users learn art through engaging challenges, practice on an interactive canvas, compete on global leaderboards, gain XP, set custom avatars, and get instant artwork scores using AI."
+              "text": "Otterleo is a fun online drawing and sketching learning platform where users learn art through engaging challenges, practice on an interactive canvas, compete on global leaderboards, gain XP, set custom avatars, and get instant artwork scores using AI."
             }
           },
           {
@@ -116,14 +100,6 @@ export default function AboutPage() {
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Otterleo makes learning drawing fun by turning art practice into a game with daily sketch challenges, streak rewards, interactive canvas practice, leaderboard rankings, and instant AI artwork feedback."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Who is the founder of Otterleo?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Otterleo was founded and built by 15-year-old tech founder Harjas Digga to revolutionize art education through gamification."
             }
           },
           {
@@ -140,8 +116,8 @@ export default function AboutPage() {
         "@type": "WebPage",
         "@id": `${SITE_URL}/about/#webpage`,
         "url": `${SITE_URL}/about`,
-        "name": "About Otterleo & Founder Harjas Digga",
-        "description": "Information about Otterleo drawing platform, Otto mascot, and founder Harjas Digga.",
+        "name": "About Otterleo",
+        "description": "Information about Otterleo drawing platform and Otto mascot.",
         "isPartOf": {
           "@id": `${SITE_URL}/#website`
         },
@@ -169,15 +145,11 @@ export default function AboutPage() {
   const faqs = [
     {
       q: "What is Otterleo?",
-      a: "Otterleo is an online fun drawing and sketching learning platform. Users can complete fun challenges, practice directly on the Otterleo canvas, earn XP, customize avatars, and compete with other artists on global leaderboards while learning art step-by-step."
+      a: "Otterleo is a fun online drawing and sketching learning platform where users complete sketch challenges, practice on interactive canvas, earn XP, customize avatars, and compete with other artists on global leaderboards while learning art step-by-step."
     },
     {
       q: "How can I learn drawing in a fun way on Otterleo?",
-      a: "Otterleo turns boring art lessons into a game! Complete daily sketch challenges, maintain streaks, track your progress on leaderboards, unlock achievements, and get instant AI feedback on your physical artwork scans."
-    },
-    {
-      q: "Who created Otterleo?",
-      a: "Otterleo was created by Harjas Digga, a 15-year-old developer passionate about building gamified tools that make learning fine arts accessible, affordable, and engaging."
+      a: "Otterleo turns art practice into a game! Complete daily sketch challenges, maintain streaks, track your progress on leaderboards, unlock achievements, and get instant AI feedback on your physical artwork scans."
     },
     {
       q: "How does the Artwork Scan feature work?",
@@ -192,7 +164,7 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
       />
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-4xl mx-auto px-6 py-8">
         
         {/* BACK TO HOME BUTTON */}
         <div className="mb-6">
@@ -277,55 +249,28 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* FOUNDER SECTION */}
-        <section className="bg-white rounded-3xl p-8 md:p-10 my-12 border border-[#E2E8F0] shadow-sm">
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <div className="w-full md:w-80 h-64 md:h-80 rounded-2xl overflow-hidden border border-[#CBD5E1] flex-shrink-0 relative">
-              <Image 
-                src={FOUNDER_IMAGE_URL} 
-                alt="Harjas Digga - Founder of Otterleo" 
-                title="Harjas Digga - Founder of Otterleo"
-                fill
-                sizes="(max-width: 768px) 100vw, 320px"
-                className="object-cover"
-              />
-            </div>
-
-            <div className="flex-1 text-center md:text-left">
-              <span className="inline-block bg-[#EFF6FF] text-[#2563EB] text-xs font-bold px-3 py-1 rounded-full mb-3">
-                FOUNDER
-              </span>
-              <h2 className="text-3xl font-extrabold text-[#0F172A]">Harjas Digga</h2>
-              <h3 className="text-md font-semibold text-[#2563EB] mt-1 mb-4">
-                Founder of Otterleo
-              </h3>
-
-              <p className="text-[#475569] leading-relaxed text-sm md:text-base">
-                <strong>Harjas Digga</strong> is the creator and founder behind <strong>Otterleo</strong>. Driven by a passion for technology, design, and gamification, Harjas built Otterleo to make learning how to draw intuitive, engaging, and accessible to everyone around the world.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* SEO & AI SEARCH OPTIMIZED FAQ SECTION */}
+        {/* COLLAPSIBLE FAQ SECTION */}
         <section className="my-12 bg-white rounded-3xl p-8 md:p-10 border border-[#E2E8F0] shadow-sm">
           <h2 className="text-2xl md:text-3xl font-extrabold text-[#0F172A] mb-2 text-center">
             Frequently Asked Questions
           </h2>
           <p className="text-[#64748B] text-center mb-8 text-sm md:text-base">
-            Everything you need to know about Otterleo, Otto, and our gamified learning approach.
+            Click on any question to view the answer.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-4 max-w-2xl mx-auto">
             {faqs.map((faq, idx) => (
-              <div key={idx} className="bg-[#F8FAFC] p-6 rounded-2xl border border-[#E2E8F0]">
-                <h3 className="font-bold text-base text-[#0F172A] mb-2 flex items-start gap-2">
-                  <span className="text-[#2563EB]">Q:</span> {faq.q}
-                </h3>
-                <p className="text-sm text-[#475569] leading-relaxed pl-6">
+              <details key={idx} className="group bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl transition-all [&_summary::-webkit-details-marker]:hidden">
+                <summary className="flex justify-between items-center cursor-pointer p-5 font-bold text-[#0F172A] text-base select-none">
+                  <span className="flex items-center gap-2">
+                    <span className="text-[#2563EB]">Q:</span> {faq.q}
+                  </span>
+                  <ChevronDown className="w-5 h-5 text-[#64748B] transition-transform duration-300 group-open:rotate-180 flex-shrink-0" />
+                </summary>
+                <div className="px-5 pb-5 pt-1 text-sm text-[#475569] leading-relaxed border-t border-[#E2E8F0] mt-2">
                   {faq.a}
-                </p>
-              </div>
+                </div>
+              </details>
             ))}
           </div>
         </section>
@@ -333,15 +278,9 @@ export default function AboutPage() {
         {/* CONTACT US SECTION */}
         <section className="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-[#E2E8F0] text-center">
           <h2 className="text-2xl font-bold text-[#0F172A] mb-2">Have Questions or Feedback?</h2>
-          <p className="text-[#64748B] mb-6">Reach out to Harjas Digga & the Otterleo team anytime.</p>
+          <p className="text-[#64748B] mb-6">Reach out to the Otterleo team anytime.</p>
           
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 text-sm font-medium">
-            <a 
-              href="mailto:harjasdigga@gmail.com" 
-              className="w-full sm:w-auto bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] px-6 py-3 rounded-xl border border-[#CBD5E1] transition-all"
-            >
-              harjasdigga@gmail.com
-            </a>
+          <div className="flex justify-center items-center gap-4 text-sm font-medium">
             <a 
               href="mailto:otterleosupport@gmail.com" 
               className="w-full sm:w-auto bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] px-6 py-3 rounded-xl border border-[#CBD5E1] transition-all"
