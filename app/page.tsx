@@ -1,401 +1,247 @@
-"use client";
+'use client';
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
-import { RotateCcw, Pencil, Highlighter, Eraser, Undo2, Redo2 } from "lucide-react";
+import React, { useRef } from 'react';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-type ToolType = "pencil" | "highlighter" | "eraser";
+export default function HomePage() {
+  const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png';
+  const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png';
 
-const HIGHLIGHTER_COLORS = [
-  { name: "Yellow", value: "rgba(234, 179, 8, 0.4)" },
-  { name: "Orange", value: "rgba(249, 115, 22, 0.4)" },
-  { name: "Pink", value: "rgba(236, 72, 153, 0.4)" },
-  { name: "Green", value: "rgba(34, 197, 94, 0.4)" },
-  { name: "Brown", value: "rgba(120, 53, 15, 0.4)" },
-  { name: "Blue", value: "rgba(59, 130, 246, 0.4)" },
-  { name: "Red", value: "rgba(239, 68, 68, 0.4)" },
-  { name: "Grey", value: "rgba(107, 114, 128, 0.4)" },
-  { name: "White", value: "rgba(255, 255, 255, 0.8)" },
-];
+  // Carousel images with proper encoded URLs
+  const sketches = [
+    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567428738.png',
+    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567954822%20%281%29.png',
+    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567813703.png',
+    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789568212852.png',
+  ];
 
-export default function PracticeCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
 
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [lineWidth, setLineWidth] = useState(3);
-  const [activeTool, setActiveTool] = useState<ToolType>("pencil");
-  const [highlighterColor, setHighlighterColor] = useState(HIGHLIGHTER_COLORS[0].value);
-
-  // History Stack for Undo & Redo
-  const [history, setHistory] = useState<ImageData[]>([]);
-  const [historyIndex, setHistoryIndex] = useState<number>(-1);
-
-  // Drawing Path Points Ref to prevent overlapping patches
-  const currentPathRef = useRef<{ x: number; y: number }[]>([]);
-  const baseImageDataRef = useRef<ImageData | null>(null);
-
-  // Save State to History Stack
-  const saveState = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-    setHistory((prev) => {
-      const newHistory = prev.slice(0, historyIndex + 1);
-      return [...newHistory, imageData];
-    });
-    setHistoryIndex((prev) => prev + 1);
-  }, [historyIndex]);
-
-  // Init Canvas Dimensions
-  const initCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
-
-    canvas.width = rect.width;
-    canvas.height = rect.height;
-
-    // Fill Solid White Background
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    setHistory([imageData]);
-    setHistoryIndex(0);
-  }, []);
-
-  useEffect(() => {
-    initCanvas();
-    window.addEventListener("resize", initCanvas);
-    return () => window.removeEventListener("resize", initCanvas);
-  }, [initCanvas]);
-
-  // Undo Function
-  const handleUndo = () => {
-    if (historyIndex <= 0) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const newIndex = historyIndex - 1;
-    ctx.putImageData(history[newIndex], 0, 0);
-    setHistoryIndex(newIndex);
-  };
-
-  // Redo Function
-  const handleRedo = () => {
-    if (historyIndex >= history.length - 1) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const newIndex = historyIndex + 1;
-    ctx.putImageData(history[newIndex], 0, 0);
-    setHistoryIndex(newIndex);
-  };
-
-  // Accurate Coordinate Helper
-  const getCoordinates = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    const rect = canvas.getBoundingClientRect();
-
-    let clientX = 0;
-    let clientY = 0;
-
-    if ("touches" in e) {
-      if (e.touches.length > 0) {
-        clientX = e.touches[0].clientX;
-        clientY = e.touches[0].clientY;
-      } else if (e.changedTouches.length > 0) {
-        clientX = e.changedTouches[0].clientX;
-        clientY = e.changedTouches[0].clientY;
-      }
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
+  const scroll = (direction: 'left' | 'right') => {
+    if (carouselRef.current) {
+      const { scrollLeft, clientWidth } = carouselRef.current;
+      const scrollAmount = clientWidth * 0.75;
+      
+      carouselRef.current.scrollTo({
+        left: direction === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: 'smooth',
+      });
     }
-
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-
-    return {
-      x: (clientX - rect.left) * scaleX,
-      y: (clientY - rect.top) * scaleY,
-    };
-  };
-
-  // Start Drawing Stroke
-  const startDrawing = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
-    if ("touches" in e && e.cancelable) {
-      e.preventDefault();
-    }
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Store base canvas state before drawing current stroke
-    baseImageDataRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-    const coords = getCoordinates(e);
-    currentPathRef.current = [coords];
-    setIsDrawing(true);
-  };
-
-  // Render Whole Stroke Continuously
-  const draw = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
-  ) => {
-    if ("touches" in e && e.cancelable) {
-      e.preventDefault();
-    }
-
-    if (!isDrawing || !baseImageDataRef.current) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const coords = getCoordinates(e);
-    currentPathRef.current.push(coords);
-
-    const points = currentPathRef.current;
-    if (points.length < 2) return;
-
-    // Restore base image before redraw to avoid opacity stacking/patches
-    ctx.putImageData(baseImageDataRef.current, 0, 0);
-
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
-    }
-
-    if (activeTool === "pencil") {
-      // REAL PENCIL FEEL
-      ctx.strokeStyle = "#334155";
-      ctx.lineWidth = lineWidth;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.globalAlpha = 0.85;
-    } else if (activeTool === "highlighter") {
-      // SMOOTH HIGHLIGHTER
-      ctx.strokeStyle = highlighterColor;
-      ctx.lineWidth = lineWidth * 4.5;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.globalAlpha = 1.0;
-    } else if (activeTool === "eraser") {
-      // SMOOTH WORKING ERASER (Restores White Canvas Smoothly)
-      ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = lineWidth * 5; // Scaled according to size slider
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.globalAlpha = 1.0;
-    }
-
-    ctx.stroke();
-    ctx.globalAlpha = 1.0; // Reset
-  };
-
-  // Finish Stroke & Commit
-  const stopDrawing = () => {
-    if (isDrawing) {
-      setIsDrawing(false);
-      currentPathRef.current = [];
-      baseImageDataRef.current = null;
-      saveState();
-    }
-  };
-
-  const clearCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.fillStyle = "#FFFFFF";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    saveState();
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full max-w-full overflow-hidden">
-      {/* Big Sketchbook Canvas Container */}
-      <div 
-        ref={containerRef}
-        className="relative w-full max-w-2xl bg-white border-4 border-slate-200 rounded-[2rem] p-2 sm:p-3 shadow-md"
-      >
-        {/* Sketchbook Top Rings */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10 opacity-30 pointer-events-none">
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-        </div>
+    <div 
+      style={{
+        background: 'radial-gradient(circle at top, #F1F5F9 0%, #F8FAFC 50%, #FFFFFF 100%)',
+        minHeight: '100vh',
+      }}
+      className="relative selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased flex flex-col justify-between text-[#0F172A] overflow-x-hidden"
+    >
+      <style jsx global>{`
+        @keyframes slideInWithShadow {
+          0% {
+            opacity: 0;
+            transform: translate3d(-60px, 0, 0);
+          }
+          100% {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+          }
+        }
 
-        {/* 2nd Image Overlay inside Sketchbook */}
-        <div className="absolute top-4 left-4 z-10 pointer-events-none opacity-90 flex items-center gap-2 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-2xl border border-slate-200 shadow-sm">
+        .animate-slide-left-1 {
+          animation: slideInWithShadow 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          will-change: transform, opacity;
+        }
+        .animate-slide-left-2 {
+          animation: slideInWithShadow 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+          opacity: 0;
+          will-change: transform, opacity;
+        }
+        .animate-slide-left-3 {
+          animation: slideInWithShadow 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+          opacity: 0;
+          will-change: transform, opacity;
+        }
+
+        .otto-bubble-tail {
+          position: absolute;
+          bottom: -7px;
+          right: 12px;
+          width: 0;
+          height: 0;
+          border-left: 8px solid transparent;
+          border-right: 2px solid transparent;
+          border-top: 8px solid #60A5FA;
+        }
+        .otto-bubble-tail-inner {
+          position: absolute;
+          bottom: -5px;
+          right: 13px;
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 2px solid transparent;
+          border-top: 6px solid #F0F7FF;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+
+      {/* Header */}
+      <header className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-2 flex justify-center items-center z-10">
+        <div className="relative w-44 h-14 sm:w-48 sm:h-16 flex items-center justify-center">
           <img
-            src="https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789570157001.png"
-            alt="Practice Drawing Reference"
-            className="h-6 w-auto object-contain"
+            src={logoUrl}
+            alt="Otterleo Logo"
+            className="object-contain max-h-full max-w-full"
           />
         </div>
+      </header>
 
-        <canvas
-          ref={canvasRef}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
-          className={`w-full h-[380px] sm:h-[450px] bg-white rounded-[1.5rem] touch-none border border-slate-100 block ${
-            activeTool === "eraser" ? "cursor-cell" : "cursor-crosshair"
-          }`}
-        />
-      </div>
+      {/* Main Hero Section */}
+      <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center my-auto z-10 pb-6">
 
-      {/* Control Panel */}
-      <div className="flex flex-col gap-2.5 w-full max-w-2xl p-3 bg-slate-50 rounded-2xl border border-slate-200">
-        
-        {/* Tool Switcher, Undo/Redo & Clear Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
-          
-          {/* Pencil, Highlighter & Eraser Tool Buttons */}
-          <div className="flex items-center bg-slate-200/70 p-1 rounded-xl shrink-0 gap-1">
-            <button
-              type="button"
-              onClick={() => setActiveTool("pencil")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
-                activeTool === "pencil"
-                  ? "bg-white text-slate-800 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Pencil className="w-3.5 h-3.5" /> Pencil
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTool("highlighter")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
-                activeTool === "highlighter"
-                  ? "bg-white text-blue-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Highlighter className="w-3.5 h-3.5" /> Highlighter
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTool("eraser")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
-                activeTool === "eraser"
-                  ? "bg-white text-rose-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Eraser className="w-3.5 h-3.5" /> Eraser
-            </button>
+        {/* Left Column */}
+        <div className="lg:col-span-7 space-y-4 sm:space-y-6 text-left">
+          <h1 className="font-sans text-5xl sm:text-7xl font-black text-[#0F172A] leading-[1.08] tracking-tight flex flex-col items-start">
+            <span className="inline-block animate-slide-left-1">
+              Learn
+            </span>
+            <span className="inline-block animate-slide-left-2">
+              drawing
+            </span>
+            <span className="text-[#2563EB] inline-block animate-slide-left-3">
+              the fun way.
+            </span>
+          </h1>
+
+          <p className="font-sans text-base sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
+            Get AI feedback, complete challenges, earn XP, and improve your drawing skills every day.
+          </p>
+        </div>
+
+        {/* Right Column */}
+        <div className="lg:col-span-5 relative pt-12 w-full max-w-md mx-auto lg:max-w-none">
+
+          {/* Speech Bubble */}
+          <div className="absolute -top-3 right-20 sm:right-24 z-30">
+            <div className="relative px-3 py-1 sm:px-3.5 sm:py-1 rounded-full text-xs sm:text-sm font-extrabold text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-sm">
+              Hi, I'm <span className="text-[#2563EB] font-black">Otto</span>
+              <div className="otto-bubble-tail"></div>
+              <div className="otto-bubble-tail-inner"></div>
+            </div>
           </div>
 
-          {/* Size Slider (Applies to Pencil, Highlighter, and Eraser) */}
-          <div className="flex items-center gap-2 grow max-w-[150px] min-w-[100px]">
-            <span className="text-[11px] font-black text-slate-500 shrink-0">Size:</span>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value={lineWidth}
-              onChange={(e) => setLineWidth(Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
+          {/* Mascot Image */}
+          <div className="absolute -top-1 right-0 sm:right-1 z-20 w-24 h-24 sm:w-28 sm:h-28 pointer-events-none drop-shadow-md">
+            <img
+              src={mascotUrl}
+              alt="Otto Mascot"
+              className="w-full h-full object-contain"
             />
           </div>
 
-          {/* Undo & Redo Actions */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={handleUndo}
-              disabled={historyIndex <= 0}
-              className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer"
-              title="Undo"
+          {/* Card */}
+          <div className="bg-white rounded-3xl sm:rounded-[2rem] p-5 sm:p-8 border-2 border-slate-200/95 shadow-[0_12px_40px_rgba(0,0,0,0.06)] relative z-10 space-y-4 sm:space-y-5 pt-10 sm:pt-12 w-full">
+            
+            <Link 
+              href="/signup" 
+              className="font-sans block w-full text-center py-3.5 sm:py-4 rounded-2xl font-black text-base sm:text-lg text-white uppercase tracking-wider transition-transform active:scale-[0.98] bg-[#2563EB] shadow-[0px_6px_0px_#1D4ED8] active:shadow-none"
             >
-              <Undo2 className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleRedo}
-              disabled={historyIndex >= history.length - 1}
-              className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer"
-              title="Redo"
+              GET STARTED
+            </Link>
+
+            <Link 
+              href="/login" 
+              className="font-sans block w-full text-center py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-base uppercase tracking-wider transition-transform active:scale-[0.98] bg-white text-[#2563EB] border-[2.5px] border-[#CBD5E1] shadow-[0px_6px_0px_#94A3B8] active:shadow-none"
             >
-              <Redo2 className="w-4 h-4" />
-            </button>
-          </div>
+              I ALREADY HAVE AN ACCOUNT
+            </Link>
 
-          {/* Clear Button */}
-          <button
-            type="button"
-            onClick={clearCanvas}
-            className="flex items-center gap-1 text-xs font-black bg-white text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-slate-200 transition shrink-0 ml-auto cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" /> Clear
-          </button>
-        </div>
-
-        {/* Highlighter Color Palette */}
-        {activeTool === "highlighter" && (
-          <div className="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 w-full">
-            <span className="text-[11px] font-black text-slate-500 shrink-0">Highlighter Color:</span>
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
-              {HIGHLIGHTER_COLORS.map((c) => (
-                <button
-                  type="button"
-                  key={c.name}
-                  title={c.name}
-                  onClick={() => setHighlighterColor(c.value)}
-                  style={{ backgroundColor: c.value.replace(/0\.\d+/, "0.9") }}
-                  className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${
-                    highlighterColor === c.value
-                      ? "border-slate-800 scale-110 shadow-sm"
-                      : "border-slate-300 hover:scale-105"
-                  }`}
-                />
-              ))}
+            <div className="text-center pt-2 space-y-1.5">
+              <p className="text-xs sm:text-sm text-slate-500 font-bold tracking-wide font-sans">
+                Join 150+ artists already learning
+              </p>
+              <p className="text-[11px] sm:text-xs text-[#475569] font-semibold leading-relaxed">
+                By continuing you agree to our{' '}
+                <Link href="/terms" className="underline hover:text-[#2563EB]">
+                  Terms
+                </Link>{' '}
+                &{' '}
+                <Link href="/privacy" className="underline hover:text-[#2563EB]">
+                  Privacy Policy
+                </Link>.
+              </p>
             </div>
           </div>
-        )}
 
-      </div>
+        </div>
+      </main>
 
-      {/* OTTERLEO LOGO BRANDING AT LAST / FOOTER POSITION */}
-      <div className="flex items-center justify-center gap-2 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-2xl border border-slate-200 shadow-sm mt-1">
-        <img
-          src="https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png"
-          alt="Otterleo Logo"
-          className="h-5 w-auto object-contain"
-        />
-      </div>
+      {/* NON-MOVING MANUAL SKETCH CAROUSEL SECTION */}
+      <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 my-8 z-10">
+        <div className="text-center mb-6">
+          <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
+            Some of the most liked sketches this month
+          </h2>
+        </div>
+
+        <div className="relative group">
+          <button
+            onClick={() => scroll('left')}
+            aria-label="Previous sketch"
+            className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-[#2563EB] transition-all active:scale-95 cursor-pointer"
+          >
+            <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+          </button>
+
+          <div
+            ref={carouselRef}
+            className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth py-2 px-1"
+          >
+            {sketches.map((url, idx) => (
+              <div
+                key={idx}
+                className="flex-none w-[280px] sm:w-[340px] h-[200px] sm:h-[230px] bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden p-3 flex items-center justify-center relative hover:shadow-md transition-shadow"
+              >
+                <img
+                  src={url}
+                  alt={`Liked sketch ${idx + 1}`}
+                  className="w-full h-full object-contain block"
+                />
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={() => scroll('right')}
+            aria-label="Next sketch"
+            className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-[#2563EB] transition-all active:scale-95 cursor-pointer"
+          >
+            <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+          </button>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="w-full py-6 text-center text-xs text-slate-400 font-medium z-10 mt-auto">
+        <div className="flex justify-center items-center gap-4">
+          <Link href="/about" className="hover:text-slate-600 transition-colors">About Us</Link>
+          <span>•</span>
+          <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
+          <span>•</span>
+          <Link href="/privacy" className="hover:text-slate-600 transition-colors">Privacy</Link>
+        </div>
+      </footer>
+
     </div>
   );
 }
