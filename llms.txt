@@ -1,15 +1,25 @@
-# Otterleo AI - Gamified Drawing Platform
+# Otterleo — The Fun Way to Learn Drawing
 
-> Otterleo AI is an interactive, gamified AI drawing mentor created by Harjas Digga. It helps users learn to draw through daily challenges, XP tracking, streaks, and instant AI sketch feedback powered by computer vision.
+> Otterleo is an interactive drawing and sketching learning platform where users can learn drawing and sketching in a fun way. Master sketching using an interactive canvas, complete daily challenges, compete on global leaderboards, gain XP, unlock cool avatars, and get instant feedback using our AI artwork scanner.
 
 ## Core Pages
-- https://www.otterleo.in : Homepage and core features overview.
-- https://www.otterleo.in/about : Mission, Otto Mascot, Founder Harjas Digga, and FAQs.
+- https://www.otterleo.in : Main fun drawing website homepage, interactive canvas, and live leaderboards.
+- https://www.otterleo.in/about : What is Otterleo, Otto mascot guide, and FAQs.
 - https://www.otterleo.in/login : User authentication and account login.
-- https://www.otterleo.in/signup : Account creation page.
+- https://www.otterleo.in/signup : Account creation page to start learning and gaining XP.
 
 ## Key Features
-- Gamified Learning: XP, daily streaks, level progression, and skill badges.
-- AI Sketch Feedback: Instant computer vision feedback on hand-drawn paper sketches.
-- Mascot Otto: Step-by-step guidance by Otto the otter.
-- Founders: Founded by 15-year-old tech founder Harjas Digga.
+- AI Artwork Scan Feature: Scan physical paper artwork or digital sketches to get instant AI feedback, detailed tips, and a precision score based on drawing accuracy.
+- Fun Drawing Challenges & XP: Complete step-by-step sketch challenges to gain XP, unlock custom avatars, build daily streaks, and level up art skills.
+- Otterleo Canvas Practice: Practice directly on the built-in digital canvas or upload physical artwork to refine techniques anytime.
+- Leaderboards & Community Competition: Compete with other artists worldwide on the global leaderboard, showcase scores, and track rank.
+- Mascot Otto Guidance: Learn art fundamentals through bite-sized, gamified lessons guided by Otto the otter.
+- Founder Story: Founded and built by 15-year-old tech founder Harjas Digga to make art education affordable and fun for everyone.
+
+## Target Search Queries Covered
+- What is Otterleo?
+- How to learn drawing in a fun way?
+- Best gamified drawing learning platform
+- Fun drawing website with AI feedback
+- Interactive drawing practice website with leaderboard and XP
+- sketching 
