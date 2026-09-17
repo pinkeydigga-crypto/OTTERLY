@@ -207,12 +207,10 @@ export default function ChallengesPage() {
         return;
       }
 
-      const optimisticXp = previousXp + challenge.xp;
-      setUserXp(optimisticXp);
-
-      const { data: newTotalXp, error: rpcError } = await supabase.rpc('increment_user_xp', {
-        user_id_param: user.id,
-        xp_to_add: challenge.xp
+      // Safe Server-Side Atomic XP Increment via Database RPC
+      const { data: newTotalXp, error: rpcError } = await supabase.rpc('complete_challenge_and_add_xp', {
+        p_challenge_id: challenge.id,
+        p_xp_to_add: challenge.xp
       });
 
       if (rpcError) {
@@ -223,20 +221,6 @@ export default function ChallengesPage() {
       }
 
       const updatedXp = Number(newTotalXp);
-
-      const { error: upsertError } = await supabase
-        .from("user_completed_challenges")
-        .upsert(
-          { user_id: user.id, challenge_id: challenge.id },
-          { onConflict: 'user_id,challenge_id' }
-        );
-
-      if (upsertError) {
-        await supabase.from("user_completed_challenges").insert({
-          user_id: user.id,
-          challenge_id: challenge.id,
-        });
-      }
 
       const updatedStreak = await updateActivityStreak(user.id);
       if (updatedStreak !== null) {
