@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, User, Mail, Lock } from 'lucide-react';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME_MS = 60 * 1000;
@@ -21,6 +21,7 @@ export default function SignupPage() {
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
 
   const [step, setStep] = useState<1 | 2>(1);
+  const [animatedSteps, setAnimatedSteps] = useState<Record<number, boolean>>({});
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -32,7 +33,15 @@ export default function SignupPage() {
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
   useEffect(() => {
-    const fullText = step === 1 ? "Choose your avatar!" : "Create your account!";
+    const fullText = step === 1 ? "Choose your avatar!" : "Create your profile";
+
+    // Agar current step pehle se animate ho chuka hai toh typewriter dobara mat chalao
+    if (animatedSteps[step]) {
+      setTypedText(fullText);
+      setIsTypingComplete(true);
+      return;
+    }
+
     setTypedText('');
     setIsTypingComplete(false);
     let index = 0;
@@ -42,12 +51,13 @@ export default function SignupPage() {
         index++;
       } else {
         setIsTypingComplete(true);
+        setAnimatedSteps((prev) => ({ ...prev, [step]: true }));
         clearInterval(timer);
       }
     }, 70);
 
     return () => clearInterval(timer);
-  }, [step]);
+  }, [step, animatedSteps]);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -263,8 +273,12 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
       
+      {/* BACKGROUND DECORATIVE SHAPES */}
+      <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-100/70 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute top-1/2 -left-20 -translate-y-1/2 w-64 h-64 bg-indigo-100/60 rounded-full blur-2xl pointer-events-none" />
+
       {/* Speech Bubble Tail Pointing Left */}
       <style jsx global>{`
         .speech-bubble-tail-left {
@@ -304,7 +318,7 @@ export default function SignupPage() {
 
       <div className="relative max-w-md w-full pt-10">
         
-        {/* Main Card Container */}
+        {/* Main Outer Card Container */}
         <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
           
           {/* STEP INDICATOR DOTS & BACK BUTTON */}
@@ -401,68 +415,78 @@ export default function SignupPage() {
 
           {/* STEP 2: USER DETAILS FORM */}
           {step === 2 && (
-            <form onSubmit={handleSignup} className="space-y-3">
-              <div>
-                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  disabled={lockoutSeconds > 0 || loading}
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="John"
-                  className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
-                />
-                <p className="text-[10px] text-[#0F172A]/40 mt-1 pl-1 font-medium">
-                  Must be between 2 and 8 characters long.
-                </p>
+            <form onSubmit={handleSignup} className="space-y-3.5 pt-1">
+              
+              {/* 2-COLUMN LAYOUT FOR NAME & USERNAME */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
+                  <div className="relative flex items-center">
+                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="text"
+                      name="name"
+                      disabled={lockoutSeconds > 0 || loading}
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="John Doe"
+                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Username</label>
+                  <div className="relative flex items-center">
+                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="text"
+                      name="username"
+                      disabled={lockoutSeconds > 0 || loading}
+                      value={formData.username}
+                      onChange={handleChange}
+                      placeholder="john12"
+                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Username</label>
-                <input
-                  type="text"
-                  name="username"
-                  disabled={lockoutSeconds > 0 || loading}
-                  value={formData.username}
-                  onChange={handleChange}
-                  placeholder="john12"
-                  className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
-                />
-                <p className="text-[10px] text-[#0F172A]/40 mt-1 pl-1 font-medium">
-                  Must be 2-8 characters long (letters, numbers, underscores).
-                </p>
-              </div>
-
+              {/* EMAIL FIELD */}
               <div>
                 <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
-                <input
-                  type="email"
-                  name="email"
-                  disabled={lockoutSeconds > 0 || loading}
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="youremail@gmail.com"
-                  className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
-                />
+                <div className="relative flex items-center">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="email"
+                    name="email"
+                    disabled={lockoutSeconds > 0 || loading}
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="youremail@gmail.com"
+                    className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                  />
+                </div>
               </div>
 
+              {/* PASSWORD FIELD */}
               <div>
                 <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Set Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  disabled={lockoutSeconds > 0 || loading}
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-2 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50 transition"
-                />
-                <p className="text-[10px] text-[#0F172A]/40 mt-1 pl-1 font-medium">
-                  At least 8 characters. Avoid simple sequences or weak passwords.
-                </p>
+                <div className="relative flex items-center">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="password"
+                    name="password"
+                    disabled={lockoutSeconds > 0 || loading}
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="At least 8 characters"
+                    className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                  />
+                </div>
               </div>
 
+              {/* CONSENT CHECKBOX */}
               <div className="flex items-start gap-2 pt-1">
                 <input
                   type="checkbox"
@@ -470,7 +494,7 @@ export default function SignupPage() {
                   disabled={lockoutSeconds > 0 || loading}
                   checked={consent}
                   onChange={(e) => setConsent(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
+                  className="mt-0.5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
                 />
                 <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
                   I consent to the collection and processing of my personal data in accordance with our{' '}
@@ -484,6 +508,7 @@ export default function SignupPage() {
                 </label>
               </div>
 
+              {/* SUBMIT BUTTON */}
               <button
                 type="submit"
                 disabled={loading || lockoutSeconds > 0}
