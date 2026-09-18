@@ -6,18 +6,46 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, ChevronRight,
-  Sparkles, Check, ShieldAlert, Palette, Pencil, FastForward
+  Sparkles, Check, ShieldAlert, Palette, FastForward
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
 import PracticeCanvas from "@/components/PracticeCanvas";
+
+// Typewriter Text Effect Component
+function TypewriterText({ text, speed = 50 }: { text: string; speed?: number }) {
+  const [displayedText, setDisplayedText] = useState("");
+
+  useEffect(() => {
+    setDisplayedText("");
+    let i = 0;
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setDisplayedText((prev) => text.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(timer);
+      }
+    }, speed);
+
+    return () => clearInterval(timer);
+  }, [text, speed]);
+
+  return (
+    <span className="font-mono text-slate-800 tracking-wide inline-block">
+      {displayedText}
+      <span className="animate-pulse text-blue-600 font-bold ml-0.5">|</span>
+    </span>
+  );
+}
 
 interface TutorialStep {
   step: number;
   title: string;
   instruction: string;
   tips: string[];
-  imageUrl: string;
+  imageUrl?: string;
+  typewriterText?: string;
 }
 
 interface LocalChallenge {
@@ -33,10 +61,11 @@ interface LocalChallenge {
 const EYE_STEPS: TutorialStep[] = [
   {
     step: 1,
-    title: "Step 1: Get Your Materials Ready 📝",
-    instruction: "Take a pencil and paper ready with you before starting the step-by-step drawing session.",
+    title: "Step 1: Get Your Materials Ready",
+    instruction: "",
     tips: ["Use a light HB pencil for sketching", "Keep an eraser handy"],
-    imageUrl: ""
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "take pencil and paper"
   },
   {
     step: 2,
@@ -82,7 +111,6 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
 
 export default function ChallengesPage() {
   const router = useRouter();
-  const [selectedTab] = useState<"intermediate">("intermediate");
   const [userXp, setUserXp] = useState<number>(0);
   const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,10 +118,8 @@ export default function ChallengesPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Auth Verification States
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
-  // Active Flow State
   const [activeView, setActiveView] = useState<'hub' | 'challenge-flow'>('hub');
   const [activeChallengeId, setActiveChallengeId] = useState<string>("eye-drawing-1min");
   const [currentStep, setCurrentStep] = useState<number>(0);
@@ -111,13 +137,7 @@ export default function ChallengesPage() {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
 
-      if (!user) {
-        setIsVerified(false);
-        setLoading(false);
-        return;
-      }
-
-      if (!user.email_confirmed_at) {
+      if (!user || !user.email_confirmed_at) {
         setIsVerified(false);
         setLoading(false);
         return;
@@ -214,7 +234,6 @@ export default function ChallengesPage() {
         return;
       }
 
-      // Safe Server-Side Atomic XP Increment via Database RPC
       const { data: newTotalXp, error: rpcError } = await supabase.rpc('complete_challenge_and_add_xp', {
         p_challenge_id: challenge.id,
         p_xp_to_add: challenge.xp
@@ -296,7 +315,6 @@ export default function ChallengesPage() {
 
   const isLastStep = currentStep === activeStepList.length - 1;
 
-  // Exact Sidebar items list
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Practice", path: "/practice", icon: Palette },
@@ -309,7 +327,6 @@ export default function ChallengesPage() {
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
-  // Exact Mobile bottom bar items list
   const mobileNavItems = [
     { name: "Home", path: "/dashboard", icon: LayoutDashboard },
     { name: "Practice", path: "/practice", icon: Palette },
@@ -417,7 +434,7 @@ export default function ChallengesPage() {
       </aside>
 
       {/* Main Area */}
-      <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-5 overflow-y-auto">
+      <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-4 overflow-y-auto">
         
         {/* Top Desktop Navigation */}
         <div className="hidden md:flex items-center justify-between">
@@ -508,8 +525,8 @@ export default function ChallengesPage() {
           </>
         ) : (
           /* STEP-BY-STEP TUTORIAL VIEW */
-          <div className="bg-white rounded-[2rem] p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-5">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+          <div className="bg-white rounded-[2rem] p-4 sm:p-5 border border-slate-200/80 shadow-2xs space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2.5">
               <span className="text-[11px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-xl">
                 Step {currentStep + 1} of {activeStepList.length}
               </span>
@@ -522,74 +539,98 @@ export default function ChallengesPage() {
             </div>
 
             <div>
-              <h3 className="text-lg font-black text-slate-900">{activeStepList[currentStep].title}</h3>
-              <p className="text-xs font-bold text-slate-500 mt-1 leading-relaxed">
-                {activeStepList[currentStep].instruction}
-              </p>
+              <h3 className="text-base sm:text-lg font-black text-slate-900">{activeStepList[currentStep].title}</h3>
+              {activeStepList[currentStep].instruction && (
+                <p className="text-xs font-bold text-slate-500 mt-0.5 leading-relaxed">
+                  {activeStepList[currentStep].instruction}
+                </p>
+              )}
             </div>
 
-            {/* Step Content: Step 0 (Paper/Pencil), Step 1-N (Image Reference), or Final Step (Practice Canvas) */}
-            {currentStep === 0 ? (
-              <div className="bg-blue-50/60 border-2 border-blue-200 p-8 rounded-[2rem] text-center space-y-3">
-                <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
-                  <Pencil className="w-8 h-8 stroke-[2.5]" />
-                </div>
-                <h4 className="text-base font-black text-slate-900">Take Pencil and Paper 📝</h4>
-                <p className="text-xs font-bold text-slate-500 max-w-sm mx-auto">
-                  Grab your drawing paper and HB pencil to practice this drawing session step-by-step.
-                </p>
-              </div>
-            ) : isLastStep ? (
+            {/* Step Content Rendering */}
+            {isLastStep ? (
               <div className="space-y-3">
-                <div className="text-center bg-indigo-50 border border-indigo-200 py-2.5 px-4 rounded-xl">
+                <div className="text-center bg-indigo-50 border border-indigo-200 py-2 px-3 rounded-xl">
                   <p className="text-xs font-black text-indigo-700 uppercase tracking-wide flex items-center justify-center gap-1.5">
-                    <Palette className="w-4 h-4" />
+                    <Palette className="w-3.5 h-3.5" />
                     You can also practice it on digital canvas
                   </p>
                 </div>
                 <PracticeCanvas />
               </div>
+            ) : activeStepList[currentStep].typewriterText ? (
+              /* LAPTOP: MASCOT ON RIGHT, BUBBLE ON LEFT | MOBILE: VERTICAL STACK */
+              <div className="w-full flex flex-col sm:flex-row-reverse items-center justify-center gap-3 sm:gap-5 py-2 px-1">
+                
+                {/* Mascot GIF */}
+                <div className="w-48 h-48 sm:w-56 sm:h-56 shrink-0 flex items-center justify-center">
+                  <img
+                    src={activeStepList[currentStep].imageUrl}
+                    alt="Otto Mascot"
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+
+                {/* Speech Bubble with Responsive Pointer Tail */}
+                <div className="relative bg-blue-50/80 border border-blue-200 rounded-2xl px-5 py-3 shadow-2xs max-w-xs text-center sm:text-left">
+                  {/* Tail pointing right towards mascot (Desktop) */}
+                  <div className="hidden sm:block absolute -right-2.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-t-transparent border-l-[10px] border-l-blue-200 border-b-8 border-b-transparent">
+                    <div className="absolute right-[1px] -top-[7px] w-0 h-0 border-t-[7px] border-t-transparent border-l-[9px] border-l-blue-50 border-b-[7px] border-b-transparent" />
+                  </div>
+
+                  {/* Tail pointing top towards mascot (Mobile) */}
+                  <div className="block sm:hidden absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-b-[10px] border-b-blue-200 border-r-8 border-r-transparent">
+                    <div className="absolute -left-[7px] top-[1px] w-0 h-0 border-l-[7px] border-l-transparent border-b-[9px] border-b-blue-50 border-r-[7px] border-r-transparent" />
+                  </div>
+
+                  <p className="text-sm font-extrabold text-blue-950">
+                    <TypewriterText text={activeStepList[currentStep].typewriterText || ""} speed={50} />
+                  </p>
+                </div>
+
+              </div>
             ) : (
-              <div className="w-full h-56 sm:h-64 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-3 overflow-hidden shadow-inner">
+              <div className="w-full h-48 sm:h-56 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-2 overflow-hidden shadow-inner">
                 {mounted && (
                   <img
                     src={activeStepList[currentStep].imageUrl}
                     alt="Tutorial step reference"
-                    className="max-h-full max-w-full object-contain scale-125 sm:scale-135 transition-transform duration-300 transform-gpu"
+                    className="max-h-full max-w-full object-contain scale-110 sm:scale-125 transition-transform duration-300 transform-gpu"
                   />
                 )}
               </div>
             )}
 
-            {/* Tips Section */}
-            <div className="bg-amber-50/60 border border-amber-200/60 p-4 rounded-2xl space-y-2">
-              <h4 className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5" /> Pro Tips:
-              </h4>
-              <ul className="space-y-1">
-                {activeStepList[currentStep].tips.map((tip, idx) => (
-                  <li key={idx} className="text-xs font-bold text-slate-600 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* Tips Section - Step 1 (`currentStep !== 0`) par hide rahega */}
+            {currentStep !== 0 && activeStepList[currentStep].tips?.length > 0 && (
+              <div className="bg-amber-50/60 border border-amber-200/60 p-3 rounded-2xl space-y-1.5">
+                <h4 className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" /> Pro Tips:
+                </h4>
+                <ul className="space-y-1">
+                  {activeStepList[currentStep].tips.map((tip, idx) => (
+                    <li key={idx} className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {/* Step Actions */}
-            <div className="flex justify-between items-center pt-2">
+            <div className="flex justify-between items-center pt-2 border-t border-slate-100">
               <button
                 onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
                 disabled={currentStep === 0}
-                className="px-4 py-2.5 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition"
+                className="px-4 py-2 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition"
               >
                 Previous
               </button>
 
-              {/* Show Next button for non-last steps. Show Finish/Skip on Last Step only */}
               {!isLastStep ? (
                 <button
                   onClick={() => setCurrentStep(prev => Math.min(activeStepList.length - 1, prev + 1))}
-                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-[#2563EB] text-white hover:bg-blue-600 border-b-2 border-blue-800 transition flex items-center gap-1"
+                  className="px-5 py-2 rounded-xl font-black text-xs bg-[#2563EB] text-white hover:bg-blue-600 border-b-2 border-blue-800 transition flex items-center gap-1"
                 >
                   <span>Next</span>
                   <ChevronRight className="w-4 h-4" />
@@ -598,7 +639,7 @@ export default function ChallengesPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setActiveView('hub')}
-                    className="px-4 py-2.5 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1"
+                    className="px-4 py-2 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1"
                   >
                     <FastForward className="w-3.5 h-3.5" />
                     <span>Skip</span>
@@ -607,7 +648,7 @@ export default function ChallengesPage() {
                   {isCurrentDone ? (
                     <button
                       onClick={handleReviewChallenge}
-                      className="px-5 py-2.5 rounded-xl font-black text-xs bg-slate-800 hover:bg-slate-900 text-white transition flex items-center gap-1.5 shadow-xs"
+                      className="px-5 py-2 rounded-xl font-black text-xs bg-slate-800 hover:bg-slate-900 text-white transition flex items-center gap-1.5 shadow-xs"
                     >
                       <Check className="w-4 h-4" />
                       <span>Return to Hub</span>
@@ -616,7 +657,7 @@ export default function ChallengesPage() {
                     <button
                       onClick={() => handleCompleteChallenge(currentChallenge)}
                       disabled={claimingId === currentChallenge.id}
-                      className="px-5 py-2.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-xs disabled:opacity-70"
+                      className="px-5 py-2 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-xs disabled:opacity-70"
                     >
                       {claimingId === currentChallenge.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

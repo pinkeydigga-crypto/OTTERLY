@@ -38,7 +38,7 @@ export default function PracticeCanvas() {
   const saveState = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -54,7 +54,7 @@ export default function PracticeCanvas() {
   const initCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const rect = canvas.getBoundingClientRect();
@@ -83,7 +83,7 @@ export default function PracticeCanvas() {
     if (historyIndex <= 0) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const newIndex = historyIndex - 1;
@@ -96,7 +96,7 @@ export default function PracticeCanvas() {
     if (historyIndex >= history.length - 1) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const newIndex = historyIndex + 1;
@@ -147,7 +147,7 @@ export default function PracticeCanvas() {
 
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     // Store base canvas state before drawing current stroke
@@ -169,7 +169,7 @@ export default function PracticeCanvas() {
     if (!isDrawing || !baseImageDataRef.current) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     const coords = getCoordinates(e);
@@ -203,9 +203,9 @@ export default function PracticeCanvas() {
       ctx.lineJoin = "round";
       ctx.globalAlpha = 1.0;
     } else if (activeTool === "eraser") {
-      // SMOOTH WORKING ERASER (Restores White Canvas Smoothly)
+      // SMOOTH WORKING ERASER
       ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = lineWidth * 5; // Scaled according to size slider
+      ctx.lineWidth = lineWidth * 5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.globalAlpha = 1.0;
@@ -228,7 +228,7 @@ export default function PracticeCanvas() {
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
     ctx.fillStyle = "#FFFFFF";
@@ -318,7 +318,7 @@ export default function PracticeCanvas() {
             </button>
           </div>
 
-          {/* Size Slider (Applies to Pencil, Highlighter, and Eraser) */}
+          {/* Size Slider */}
           <div className="flex items-center gap-2 grow max-w-[150px] min-w-[100px]">
             <span className="text-[11px] font-black text-slate-500 shrink-0">Size:</span>
             <input
