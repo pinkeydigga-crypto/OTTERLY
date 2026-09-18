@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import OfflinePopup from "@/components/offlinepopup";
 
@@ -21,11 +22,11 @@ export const metadata: Metadata = {
     "Otterleo",
     "Otterleo AI",
     "otterleo.in",
-    "Learn Drawing ",
-    " Drawing classes",
-    " Drawing Practice",
+    "Learn Drawing",
+    "Drawing classes",
+    "Drawing Practice",
     "Learn Drawing with AI",
-    " Sketching Feedback",
+    "Sketching Feedback",
     "Learn drawing the fun way"
   ],
   alternates: {
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Otterleo - Learn to Draw ",
+    title: "Otterleo - Learn to Draw",
     description: "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
     url: SITE_URL,
     siteName: "Otterleo AI",
@@ -62,7 +63,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Otterleo - Learn to Draw with AI",
-    description: "Improve your drawing skills daily in fun way through interactive challenges, step-by-step tutorials, and gamified online courses that make practice enjoyable and creative..",
+    description: "Improve your drawing skills daily in fun way through interactive challenges, step-by-step tutorials, and gamified online courses that make practice enjoyable and creative.",
     images: [FAVICON_URL],
   },
   robots: {
@@ -87,7 +88,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         "@id": `${SITE_URL}/#website`,
         "url": SITE_URL,
         "name": "Otterleo",
-        "description": "Learn drawing the fun way .",
+        "description": "Learn drawing the fun way.",
         "inLanguage": "en-US"
       },
       {
@@ -127,6 +128,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <OfflinePopup />
+        <Analytics />
       </body>
     </html>
   );
