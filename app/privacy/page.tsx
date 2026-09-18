@@ -1,4 +1,3 @@
-// app/privacy/page.tsx
 import React from "react";
 import Link from "next/link";
 import {
@@ -12,6 +11,10 @@ import {
   Mail,
   Phone,
   CheckCircle2,
+  Cpu,
+  Share2,
+  Cookie,
+  UserX,
 } from "lucide-react";
 
 export const dynamic = "force-static";
@@ -47,10 +50,10 @@ export default function PrivacyPolicyPage() {
             Your Privacy & Security First
           </h1>
           <p className="text-sm sm:text-base font-bold text-slate-500 max-w-2xl mx-auto leading-relaxed">
-            We prioritize the privacy and security of your personal data. Read below to learn how we collect, process, and safeguard your information.
+            We prioritize the privacy and security of your personal data. Read below to learn how we collect, process, share, and safeguard your information on Otterleo.
           </p>
           <p className="text-xs font-bold text-slate-400">
-            Last Updated: September 2026 • Version 2.5 (Secured)
+            Last Updated: September 2026 • Version 2.5 (Fully Compliant)
           </p>
         </div>
 
@@ -61,18 +64,18 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 text-blue-600">
               <ShieldCheck className="w-7 h-7" />
               <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                1. Security & Commitment Overview
+                1. Security & Infrastructure Overview
               </h2>
             </div>
             <p className="text-sm font-bold text-slate-600 leading-relaxed">
-              Your trust is our highest priority. We maintain absolute transparency regarding how we collect, store, and protect your data under strict security standards.
+              Your trust is our top priority. Otterleo is built on industry-standard security infrastructure, utilizing HTTPS/TLS encryption for data in transit and Row-Level Security (RLS) for data at rest. We do not sell, monetize, or trade your personal information.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-xs font-black text-emerald-900 uppercase">Protected Records</h3>
-                  <p className="text-xs font-bold text-emerald-700">Strict Database Security Active</p>
+                  <h3 className="text-xs font-black text-emerald-900 uppercase">DPA & Encryption</h3>
+                  <p className="text-xs font-bold text-emerald-700">GDPR Compliant Data Processing Agreements</p>
                 </div>
               </div>
               <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
@@ -90,75 +93,136 @@ export default function PrivacyPolicyPage() {
             <div className="flex items-center gap-3 text-blue-600">
               <Database className="w-7 h-7" />
               <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                2. Data We Collect
+                2. Information We Collect
               </h2>
             </div>
             <p className="text-sm font-bold text-slate-600 leading-relaxed">
-              To provide smooth application functionality, we collect minimal user details:
+              To deliver an interactive AI experience, we collect information across the following categories:
             </p>
             <ul className="space-y-3 text-xs sm:text-sm font-bold text-slate-600">
               <li className="flex items-start gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
                 <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <span>
-                  <strong className="text-[#0F172A]">Account Information:</strong> Full Name, Username, and Email Address for authentication.
+                  <strong className="text-[#0F172A]">Account & Credentials:</strong> Full Name, Username, and Email Address for authentication and account management.
                 </span>
               </li>
               <li className="flex items-start gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
                 <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0" />
                 <span>
-                  <strong className="text-[#0F172A]">Progress & Activity:</strong> XP points, Streaks, Challenges activity, and Leaderboard performance.
+                  <strong className="text-[#0F172A]">User-Generated Content:</strong> Canvas drawings, sketches, and profile avatars uploaded or submitted to the app.
+                </span>
+              </li>
+              <li className="flex items-start gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="w-2 h-2 rounded-full bg-blue-600 mt-2 shrink-0" />
+                <span>
+                  <strong className="text-[#0F172A]">Derivative & Device Logs:</strong> IP addresses, browser types, device information, and activity logs captured via infrastructure providers.
                 </span>
               </li>
             </ul>
           </section>
 
-          {/* Section 3 */}
+          {/* Section 3: Third Parties */}
           <section className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4">
             <div className="flex items-center gap-3 text-blue-600">
-              <Eye className="w-7 h-7" />
+              <Share2 className="w-7 h-7" />
               <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                3. How We Use Your Data
+                3. Third-Party Service Providers
               </h2>
             </div>
             <p className="text-sm font-bold text-slate-600 leading-relaxed">
-              Your information is used strictly for operational purposes like tracking Level status, XP progression, daily streaks, and displaying global leaderboards.
+              We do not share data with ad networks, affiliate programs, or business partners. We only disclose information to reliable service providers required to operate Otterleo:
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm font-bold text-slate-700">
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                • <strong>Cloud & Hosting:</strong> Vercel Inc.
+              </div>
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                • <strong>Database & Auth:</strong> Supabase Inc.
+              </div>
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                • <strong>AI Processing Platforms:</strong> Evaluation API Providers
+              </div>
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                • <strong>Analytics & Performance:</strong> Vercel Analytics
+              </div>
+            </div>
+          </section>
+
+          {/* Section 4: AI & Opt-Out */}
+          <section className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-3 text-blue-600">
+              <Cpu className="w-7 h-7" />
+              <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
+                4. AI Processing & Opt-Out Options
+              </h2>
+            </div>
+            <p className="text-sm font-bold text-slate-600 leading-relaxed">
+              Our core feature uses AI platforms to evaluate drawings and offer feedback. If you wish to opt out of AI-based personal information processing, you can:
+            </p>
+            <ul className="list-disc list-inside text-xs sm:text-sm font-bold text-slate-600 space-y-2">
+              <li>Manage your data preferences directly inside your <strong>Account Settings</strong>.</li>
+              <li>Submit an opt-out request by emailing us at <strong className="text-blue-600">pinkeydigga026@gmail.com</strong>.</li>
+            </ul>
+          </section>
+
+          {/* Section 5: Cookies */}
+          <section className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-3 text-blue-600">
+              <Cookie className="w-7 h-7" />
+              <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
+                5. Tracking Technologies & Cookies
+              </h2>
+            </div>
+            <p className="text-sm font-bold text-slate-600 leading-relaxed">
+              Otterleo uses standard essential cookies and local storage to keep you logged in securely (via Supabase Auth) and analyze minimal app traffic (via Vercel Analytics). You can disable cookies through your browser settings, though some authentication features may not function properly.
             </p>
           </section>
 
-          {/* Section 4 */}
+          {/* Section 6: User Rights */}
           <section className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4">
             <div className="flex items-center gap-3 text-blue-600">
               <UserCheck className="w-7 h-7" />
               <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                4. Your Rights & Data Control
+                6. Data Rights & Retention
               </h2>
             </div>
-            <ul className="list-disc list-inside text-xs sm:text-sm font-bold text-slate-600 space-y-2">
-              <li>Update profile details (Name, Username, Avatar) anytime.</li>
-              <li>Review all recorded activity data in real-time.</li>
-              <li>Initiate permanent account deletion directly from Profile Settings.</li>
-            </ul>
+            <p className="text-sm font-bold text-slate-600 leading-relaxed">
+              We retain your personal data for as long as your user account remains active. All users worldwide have the right to access, inspect, edit, or delete their personal information at any time.
+            </p>
           </section>
 
-          {/* Section 5 */}
+          {/* Section 7: Account Deletion */}
           <section className="bg-red-50/60 rounded-[2.5rem] p-6 sm:p-8 border-2 border-red-200 shadow-sm space-y-4">
             <div className="flex items-center gap-3 text-red-600">
               <Trash2 className="w-7 h-7" />
               <h2 className="text-xl sm:text-2xl font-black text-red-950">
-                5. Permanent Account & Data Deletion
+                7. Permanent Account & Data Deletion
               </h2>
             </div>
             <p className="text-xs sm:text-sm font-extrabold text-red-900 leading-relaxed">
-              Access the <strong>"Danger Zone"</strong> in Profile Settings and select <strong>"DELETE MY ACCOUNT"</strong> to erase all profile details, XP history, and auth sessions permanently.
+              You can initiate a complete wipe of your personal record. Go to <strong>"Danger Zone"</strong> in your Profile Settings and click <strong>"DELETE MY ACCOUNT"</strong> to immediately remove all auth records, drawings, XP history, and active sessions.
             </p>
           </section>
 
-          {/* Section 6 */}
+          {/* Section 8: DPO & Governance */}
+          <section className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4">
+            <div className="flex items-center gap-3 text-blue-600">
+              <UserX className="w-7 h-7" />
+              <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
+                8. Governance & Data Officer Notice
+              </h2>
+            </div>
+            <p className="text-sm font-bold text-slate-600 leading-relaxed">
+              Otterleo does not maintain a formally appointed Data Protection Officer (DPO). All privacy requests, access inquiries, and legal concerns are managed directly by our technical support team.
+            </p>
+          </section>
+
+          {/* Section 9: Contact */}
           <section className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-4">
             <div className="flex items-center gap-3 text-blue-600">
               <Mail className="w-7 h-7" />
               <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">
-                6. Contact Us
+                9. Contact Us
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
