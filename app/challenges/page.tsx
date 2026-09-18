@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, ChevronRight,
-  Sparkles, Check, ShieldAlert, Palette
+  Sparkles, Check, ShieldAlert, Palette, Pencil, FastForward
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
@@ -33,28 +33,35 @@ interface LocalChallenge {
 const EYE_STEPS: TutorialStep[] = [
   {
     step: 1,
-    title: "Step 1: Basic Eye Outline",
+    title: "Step 1: Get Your Materials Ready 📝",
+    instruction: "Take a pencil and paper ready with you before starting the step-by-step drawing session.",
+    tips: ["Use a light HB pencil for sketching", "Keep an eraser handy"],
+    imageUrl: ""
+  },
+  {
+    step: 2,
+    title: "Step 2: Basic Eye Outline",
     instruction: "Lightly sketch the almond shape of the eye, including the tear duct and defining the upper eyelid fold.",
     tips: ["Keep lines light", "Check symmetry"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_14463_chatgpt.com.jpeg"
   },
   {
-    step: 2,
-    title: "Step 2: Iris & Pupil Details",
+    step: 3,
+    title: "Step 3: Iris & Pupil Details",
     instruction: "Draw the inner circle for the iris and the central pupil. Begin adding basic shading and mark the highlight.",
     tips: ["Center the pupil", "Define the light source"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144627_chatgpt.com.jpeg"
   },
   {
-    step: 3,
-    title: "Step 3: Eyelashes & Depth",
+    step: 4,
+    title: "Step 4: Eyelashes & Depth",
     instruction: "Apply rich shading to the iris and add detailed, natural eyelashes along both the upper and lower lids.",
     tips: ["Vary lash thickness", "Deepen the shadows"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_10-9-2026_144810_chatgpt.com.jpeg"
   },
   {
-    step: 4,
-    title: "Step 4: Practice Drawing Canvas",
+    step: 5,
+    title: "Step 5: Practice Drawing Canvas",
     instruction: "Awesome work! Practice drawing your eye outline directly on the interactive canvas below.",
     tips: ["Focus on smooth curve lines", "Use line thickness settings"],
     imageUrl: ""
@@ -286,6 +293,8 @@ export default function ChallengesPage() {
   const activeStepList = currentChallenge.steps;
   const isCurrentDone = completedChallenges.includes(currentChallenge.id);
   const activeTabChallenge = LOCAL_CHALLENGES[0];
+
+  const isLastStep = currentStep === activeStepList.length - 1;
 
   // Exact Sidebar items list
   const navItems = [
@@ -519,8 +528,28 @@ export default function ChallengesPage() {
               </p>
             </div>
 
-            {/* Step Content: Image Reference OR Practice Drawing Canvas Component */}
-            {activeStepList[currentStep].imageUrl ? (
+            {/* Step Content: Step 0 (Paper/Pencil), Step 1-N (Image Reference), or Final Step (Practice Canvas) */}
+            {currentStep === 0 ? (
+              <div className="bg-blue-50/60 border-2 border-blue-200 p-8 rounded-[2rem] text-center space-y-3">
+                <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-md">
+                  <Pencil className="w-8 h-8 stroke-[2.5]" />
+                </div>
+                <h4 className="text-base font-black text-slate-900">Take Pencil and Paper 📝</h4>
+                <p className="text-xs font-bold text-slate-500 max-w-sm mx-auto">
+                  Grab your drawing paper and HB pencil to practice this drawing session step-by-step.
+                </p>
+              </div>
+            ) : isLastStep ? (
+              <div className="space-y-3">
+                <div className="text-center bg-indigo-50 border border-indigo-200 py-2.5 px-4 rounded-xl">
+                  <p className="text-xs font-black text-indigo-700 uppercase tracking-wide flex items-center justify-center gap-1.5">
+                    <Palette className="w-4 h-4" />
+                    You can also practice it on digital canvas
+                  </p>
+                </div>
+                <PracticeCanvas />
+              </div>
+            ) : (
               <div className="w-full h-56 sm:h-64 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-3 overflow-hidden shadow-inner">
                 {mounted && (
                   <img
@@ -530,8 +559,6 @@ export default function ChallengesPage() {
                   />
                 )}
               </div>
-            ) : (
-              <PracticeCanvas />
             )}
 
             {/* Tips Section */}
@@ -558,7 +585,8 @@ export default function ChallengesPage() {
                 Previous
               </button>
 
-              {currentStep < activeStepList.length - 1 ? (
+              {/* Show Next button for non-last steps. Show Finish/Skip on Last Step only */}
+              {!isLastStep ? (
                 <button
                   onClick={() => setCurrentStep(prev => Math.min(activeStepList.length - 1, prev + 1))}
                   className="px-5 py-2.5 rounded-xl font-black text-xs bg-[#2563EB] text-white hover:bg-blue-600 border-b-2 border-blue-800 transition flex items-center gap-1"
@@ -566,29 +594,41 @@ export default function ChallengesPage() {
                   <span>Next</span>
                   <ChevronRight className="w-4 h-4" />
                 </button>
-              ) : isCurrentDone ? (
-                <button
-                  onClick={handleReviewChallenge}
-                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-slate-800 hover:bg-slate-900 text-white transition flex items-center gap-1.5 shadow-xs"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Mission Accomplished (Return)</span>
-                </button>
               ) : (
-                <button
-                  onClick={() => handleCompleteChallenge(currentChallenge)}
-                  disabled={claimingId === currentChallenge.id}
-                  className="px-5 py-2.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-xs disabled:opacity-70"
-                >
-                  {claimingId === currentChallenge.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveView('hub')}
+                    className="px-4 py-2.5 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1"
+                  >
+                    <FastForward className="w-3.5 h-3.5" />
+                    <span>Skip</span>
+                  </button>
+
+                  {isCurrentDone ? (
+                    <button
+                      onClick={handleReviewChallenge}
+                      className="px-5 py-2.5 rounded-xl font-black text-xs bg-slate-800 hover:bg-slate-900 text-white transition flex items-center gap-1.5 shadow-xs"
+                    >
                       <Check className="w-4 h-4" />
-                      <span>Finish & Claim +{currentChallenge.xp} XP</span>
-                    </>
+                      <span>Return to Hub</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleCompleteChallenge(currentChallenge)}
+                      disabled={claimingId === currentChallenge.id}
+                      className="px-5 py-2.5 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-xs disabled:opacity-70"
+                    >
+                      {claimingId === currentChallenge.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Finish & Claim +{currentChallenge.xp} XP</span>
+                        </>
+                      )}
+                    </button>
                   )}
-                </button>
+                </div>
               )}
             </div>
           </div>
