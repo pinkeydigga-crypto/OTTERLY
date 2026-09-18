@@ -5,6 +5,19 @@ import { RotateCcw, Pencil, Highlighter, Eraser, Undo2, Redo2 } from "lucide-rea
 
 type ToolType = "pencil" | "highlighter" | "eraser";
 
+const PENCIL_COLORS = [
+  { name: "Black", value: "#0F172A" },
+  { name: "Pencil Grey", value: "#334155" },
+  { name: "Blue", value: "#2563EB" },
+  { name: "Red", value: "#EF4444" },
+  { name: "Green", value: "#22C55E" },
+  { name: "Yellow", value: "#EAB308" },
+  { name: "Orange", value: "#F97316" },
+  { name: "Pink", value: "#EC4899" },
+  { name: "Purple", value: "#A855F7" },
+  { name: "Brown", value: "#78350F" },
+];
+
 const HIGHLIGHTER_COLORS = [
   { name: "Yellow", value: "rgba(234, 179, 8, 0.4)" },
   { name: "Orange", value: "rgba(249, 115, 22, 0.4)" },
@@ -24,13 +37,14 @@ export default function PracticeCanvas() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [lineWidth, setLineWidth] = useState(3);
   const [activeTool, setActiveTool] = useState<ToolType>("pencil");
+  const [pencilColor, setPencilColor] = useState(PENCIL_COLORS[1].value);
   const [highlighterColor, setHighlighterColor] = useState(HIGHLIGHTER_COLORS[0].value);
 
   // History Stack for Undo & Redo
   const [history, setHistory] = useState<ImageData[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
 
-  // Drawing Path Points Ref to prevent overlapping patches
+  // Drawing Path Points Ref
   const currentPathRef = useRef<{ x: number; y: number }[]>([]);
   const baseImageDataRef = useRef<ImageData | null>(null);
 
@@ -104,7 +118,7 @@ export default function PracticeCanvas() {
     setHistoryIndex(newIndex);
   };
 
-  // Accurate Coordinate Helper
+  // Coordinate Helper
   const getCoordinates = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -150,9 +164,7 @@ export default function PracticeCanvas() {
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
 
-    // Store base canvas state before drawing current stroke
     baseImageDataRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
     const coords = getCoordinates(e);
     currentPathRef.current = [coords];
     setIsDrawing(true);
@@ -178,7 +190,6 @@ export default function PracticeCanvas() {
     const points = currentPathRef.current;
     if (points.length < 2) return;
 
-    // Restore base image before redraw to avoid opacity stacking/patches
     ctx.putImageData(baseImageDataRef.current, 0, 0);
 
     ctx.beginPath();
@@ -189,21 +200,18 @@ export default function PracticeCanvas() {
     }
 
     if (activeTool === "pencil") {
-      // REAL PENCIL FEEL
-      ctx.strokeStyle = "#334155";
+      ctx.strokeStyle = pencilColor;
       ctx.lineWidth = lineWidth;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.globalAlpha = 0.85;
+      ctx.globalAlpha = 0.9;
     } else if (activeTool === "highlighter") {
-      // SMOOTH HIGHLIGHTER
       ctx.strokeStyle = highlighterColor;
       ctx.lineWidth = lineWidth * 4.5;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.globalAlpha = 1.0;
     } else if (activeTool === "eraser") {
-      // SMOOTH WORKING ERASER
       ctx.strokeStyle = "#FFFFFF";
       ctx.lineWidth = lineWidth * 5;
       ctx.lineCap = "round";
@@ -212,10 +220,10 @@ export default function PracticeCanvas() {
     }
 
     ctx.stroke();
-    ctx.globalAlpha = 1.0; // Reset
+    ctx.globalAlpha = 1.0;
   };
 
-  // Finish Stroke & Commit
+  // Finish Stroke
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
@@ -238,12 +246,11 @@ export default function PracticeCanvas() {
 
   return (
     <div className="flex flex-col items-center gap-3 w-full max-w-full overflow-hidden">
-      {/* Big Sketchbook Canvas Container */}
+      {/* Canvas Container */}
       <div 
         ref={containerRef}
         className="relative w-full max-w-2xl bg-white border-4 border-slate-200 rounded-[2rem] p-2 sm:p-3 shadow-md"
       >
-        {/* Sketchbook Top Rings */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10 opacity-30 pointer-events-none">
           <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
           <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
@@ -265,7 +272,6 @@ export default function PracticeCanvas() {
           }`}
         />
 
-        {/* OTTERLEO LOGO BRANDING AT CANVAS FOOTER */}
         <div className="absolute bottom-4 right-4 z-10 pointer-events-none opacity-90 flex items-center gap-2 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-2xl border border-slate-200 shadow-sm">
           <img
             src="https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png"
@@ -278,10 +284,9 @@ export default function PracticeCanvas() {
       {/* Control Panel */}
       <div className="flex flex-col gap-2.5 w-full max-w-2xl p-3 bg-slate-50 rounded-2xl border border-slate-200">
         
-        {/* Tool Switcher, Undo/Redo & Clear Bar */}
+        {/* Tool Switcher Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
           
-          {/* Pencil, Highlighter & Eraser Tool Buttons */}
           <div className="flex items-center bg-slate-200/70 p-1 rounded-xl shrink-0 gap-1">
             <button
               type="button"
@@ -331,14 +336,13 @@ export default function PracticeCanvas() {
             />
           </div>
 
-          {/* Undo & Redo Actions */}
+          {/* Undo/Redo & Clear */}
           <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={handleUndo}
               disabled={historyIndex <= 0}
               className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer"
-              title="Undo"
             >
               <Undo2 className="w-4 h-4" />
             </button>
@@ -347,13 +351,11 @@ export default function PracticeCanvas() {
               onClick={handleRedo}
               disabled={historyIndex >= history.length - 1}
               className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-40 transition cursor-pointer"
-              title="Redo"
             >
               <Redo2 className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Clear Button */}
           <button
             type="button"
             onClick={clearCanvas}
@@ -363,7 +365,30 @@ export default function PracticeCanvas() {
           </button>
         </div>
 
-        {/* Highlighter Color Palette */}
+        {/* Dynamic Color Palette for Pencil */}
+        {activeTool === "pencil" && (
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 w-full">
+            <span className="text-[11px] font-black text-slate-500 shrink-0">Pencil Color:</span>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {PENCIL_COLORS.map((c) => (
+                <button
+                  type="button"
+                  key={c.name}
+                  title={c.name}
+                  onClick={() => setPencilColor(c.value)}
+                  style={{ backgroundColor: c.value }}
+                  className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${
+                    pencilColor === c.value
+                      ? "border-blue-600 scale-110 shadow-sm"
+                      : "border-slate-300 hover:scale-105"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic Color Palette for Highlighter */}
         {activeTool === "highlighter" && (
           <div className="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 w-full">
             <span className="text-[11px] font-black text-slate-500 shrink-0">Highlighter Color:</span>
