@@ -37,17 +37,16 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-// Global In-Memory Concurrency Queue / Semaphore
+// Global In-Memory Concurrency Queue
 let activeRequestsCount = 0;
-const MAX_CONCURRENT_HEAVY_JOBS = 3; // Maximum parallel Gemini calls allowed simultaneously
+const MAX_CONCURRENT_HEAVY_JOBS = 3;
 
 async function waitForServerCapacity(maxWaitMs = 15000): Promise<boolean> {
   const startTime = Date.now();
   while (activeRequestsCount >= MAX_CONCURRENT_HEAVY_JOBS) {
     if (Date.now() - startTime > maxWaitMs) {
-      return false; // Queue timeout
+      return false;
     }
-    // Wait for 500ms before checking capacity again
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   return true;
@@ -67,7 +66,6 @@ function isValidImageHeader(buffer: Buffer): boolean {
 
 export async function POST(req: Request) {
   try {
-    // ERR_100: Safe Production IP Extraction
     const forwardedFor = req.headers.get("x-forwarded-for");
     const realIp = req.headers.get("x-real-ip");
     const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "0.0.0.0";
@@ -83,7 +81,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Heavy Traffic Auto-Queueing (Crash Safeguard)
     const capacityAvailable = await waitForServerCapacity(12000);
     if (!capacityAvailable) {
       return NextResponse.json(
@@ -106,7 +103,6 @@ export async function POST(req: Request) {
     const cookieKey = userId ? `otto_last_scan_time_${userId}` : "otto_last_scan_time";
     const lastScanCookie = cookieStore.get(cookieKey);
 
-    // ERR_101A: 24-Hour User Cookie Lock
     if (lastScanCookie) {
       const lastScanTime = new Date(lastScanCookie.value).getTime();
       const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
@@ -126,7 +122,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // ERR_102: Missing API Key
     if (!apiKey) {
       return NextResponse.json(
         { isDrawing: false, message: "Server configuration issue: GEMINI_API_KEY missing.", errorCode: "ERR_102" },
@@ -134,7 +129,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // ERR_103: Empty Request Body
     if (!body || !body.image || typeof body.image !== "string") {
       return NextResponse.json(
         { isDrawing: false, message: "Please upload a valid artwork image payload.", errorCode: "ERR_103" },
@@ -142,7 +136,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // ERR_104: Image File Size Exceeded
     const imageStr = body.image;
     if (imageStr.length > 7 * 1024 * 1024) {
       return NextResponse.json(
@@ -160,7 +153,6 @@ export async function POST(req: Request) {
       base64Data = parts[1];
     }
 
-    // ERR_105A: Unsupported Mime Type
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       return NextResponse.json(
         { isDrawing: false, message: "Format not supported. Upload JPG, PNG, or WEBP.", errorCode: "ERR_105A" },
@@ -168,7 +160,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // ERR_105B: Invalid Image Header
     const buffer = Buffer.from(base64Data, "base64");
     if (!isValidImageHeader(buffer)) {
       return NextResponse.json(
@@ -177,16 +168,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // =========================================================================
-    // ATOMIC DATABASE ROW LOCK (PREVENTS RACE CONDITION / MULTI-USER SCANS)
-    // =========================================================================
     let supabaseAdmin = null;
     if (supabaseUrl && supabaseServiceKey) {
       supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
     }
 
     if (userId && supabaseAdmin) {
-      // Execute Atomic Stored Procedure Lock
       const { data: isAllowed, error: lockError } = await supabaseAdmin
         .rpc("check_and_lock_scan", { user_id_param: userId });
 
@@ -215,30 +202,21 @@ export async function POST(req: Request) {
       Return ONLY: {"isDrawing": false, "message": "Please upload a valid artwork, sketch, mandala, or drawing practice exercise. Otto AI only analyzes art."}
 
       CRITIQUE INSTRUCTIONS FOR VALID ARTWORK:
-      - TONE & LANGUAGE: Use clear, simple, professional English ONLY. Do NOT use Hinglish words (e.g., avoid "Wah", "Shabaash", "Dekho", etc.).
-      - DEEP CRITIQUE (areasToImprove): Be ultra-specific. Identify exact technical flaws such as minor pressure inconsistency, line weight variation, perspective misalignment, uneven spacing, or shading gradients. Avoid generic praise here.
-      - DAILY PRACTICE (practiceRecommendation): Provide a highly custom, practical 10-15 minute step-by-step drill directly tailored to fix the specific mistakes found in the artwork.
+      - TONE & LANGUAGE: Use clear, simple, professional English ONLY. Do NOT use Hinglish words.
+      - DEEP CRITIQUE (areasToImprove): Be ultra-specific. Identify exact technical flaws.
+      - DAILY PRACTICE (practiceRecommendation): Provide a highly custom 10-15 minute step-by-step drill.
 
       RETURN STRICTLY VALID JSON ONLY:
       {
         "isDrawing": true,
-        "artCategory": "Detected Category Name (e.g., Mehndi Art / Perspective Sketch / Pencil Portrait)",
-        "score": number_between_1_to_100,
-        "skillLevel": "Beginner" | "Intermediate" | "Advanced",
-        "strengths": [
-          "1-line highly specific point on technical execution or clean work",
-          "1-line point on contrast, composition, or line confidence"
-        ],
-        "areasToImprove": [
-          "1-line detailed technical critique pointing out precise line/shading/symmetry flaws",
-          "1-line precise observation on proportional or pressure inconsistency"
-        ],
-        "actionableImprovements": [
-          "Step 1: Immediate mechanical adjustment (e.g., grip position, cone angle, light-source alignment)",
-          "Step 2: Practical corrective exercise technique"
-        ],
-        "practiceRecommendation": "A detailed 15-minute daily exercise designed to fix the exact weak points identified.",
-        "motivationalFeedback": "A professional, warm, and clear 1-line encouraging closing statement in simple English.",
+        "artCategory": "Detected Category Name",
+        "score": 85,
+        "skillLevel": "Intermediate",
+        "strengths": ["Clear line structure"],
+        "areasToImprove": ["Minor shading imbalance"],
+        "actionableImprovements": ["Step 1: Adjust pencil pressure"],
+        "practiceRecommendation": "15-minute daily shading drill",
+        "motivationalFeedback": "Great progress, keep practicing daily!",
         "message": ""
       }
     `;
@@ -246,7 +224,6 @@ export async function POST(req: Request) {
     let jsonResult = null;
     let lastApiStatus = 0;
 
-    // Increment Active Processing counter before hitting Gemini API
     activeRequestsCount++;
 
     try {
@@ -291,11 +268,10 @@ export async function POST(req: Request) {
             }
           }
         } catch (err) {
-          console.warn(`[Otto AI Fetch Warning] Model ${modelName} call failed. Trying next model...`);
+          console.warn(`[Otto AI Fetch Warning] Model ${modelName} call failed.`);
         }
       }
     } finally {
-      // Decrement Active Processing counter (Guaranteed Release)
       activeRequestsCount = Math.max(0, activeRequestsCount - 1);
     }
 
@@ -329,12 +305,18 @@ export async function POST(req: Request) {
         secure: process.env.NODE_ENV === "production",
       });
 
-      // UPDATE SUPABASE TABLE WITH TIMESTAMP ON SUCCESSFUL DRAWING SCAN
+      // FIX: UPSERT QUERY FIXES NULL VALUE ISSUE IN DATABASE
       if (userId && supabaseAdmin) {
-        await supabaseAdmin
+        const { error: dbError } = await supabaseAdmin
           .from("profiles")
-          .update({ last_scanned_at: now.toISOString() })
-          .eq("id", userId);
+          .upsert(
+            { id: userId, last_scanned_at: now.toISOString() },
+            { onConflict: "id" }
+          );
+
+        if (dbError) {
+          console.error("Supabase Scan Update Error:", dbError.message);
+        }
       }
 
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
