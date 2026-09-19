@@ -27,6 +27,7 @@ import {
   Loader2,
   Star,
   Palette,
+  Grid,
 } from "lucide-react";
 
 interface AIAnalysisResult {
@@ -328,6 +329,7 @@ export default function ScanPage() {
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Practice", path: "/practice", icon: Palette },
+    { name: "Grid Maker", path: "/grid-maker", icon: Grid },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", active: true, icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
@@ -372,7 +374,7 @@ export default function ScanPage() {
         </div>
       </header>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer Sidebar */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
@@ -395,7 +397,7 @@ export default function ScanPage() {
                 </button>
               </div>
 
-              <nav className="space-y-1.5">
+              <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)]">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -405,7 +407,7 @@ export default function ScanPage() {
                       onClick={() => setIsMobileSidebarOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                         item.active
-                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
+                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
                           : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
@@ -433,7 +435,7 @@ export default function ScanPage() {
       )}
 
       {/* Desktop Sidebar Navigation */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
+      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0 h-screen sticky top-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <img
@@ -452,7 +454,7 @@ export default function ScanPage() {
                   key={item.name}
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                     item.active
-                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
+                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
@@ -838,30 +840,45 @@ export default function ScanPage() {
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-2 flex justify-around items-center z-40 shadow-lg">
-        {[
-          { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-          { name: "Practice", path: "/practice", icon: Palette },
-          { name: "Scan", path: "/scan", active: true, icon: Scan },
-          { name: "Challenges", path: "/challenges", icon: Swords },
-          { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-          { name: "Profile", path: "/profile", icon: User },
-        ].map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.path}
-              className={`flex flex-col items-center gap-1 p-1.5 rounded-xl text-xs font-black ${
-                item.active ? "text-[#2563EB]" : "text-slate-400"
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-[9px]">{item.name}</span>
-            </Link>
-          );
-        })}
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
+        <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          {[
+            { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+            { name: "Challenges", path: "/challenges", icon: Swords },
+            { name: "Grid", path: "/grid-maker", icon: Grid },
+            { name: "Scan", path: "/scan", icon: Scan, active: true },
+            { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = item.active;
+
+            return (
+              <Link
+                key={item.name}
+                href={item.path}
+                className="group relative flex flex-1 flex-col items-center gap-0.5 py-1 transition-all"
+              >
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
+                    isActive
+                      ? "bg-[#2563EB] text-white shadow-md shadow-blue-500/30"
+                      : "text-slate-400 group-hover:text-slate-700"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span
+                  className={`text-[10px] font-bold leading-tight transition-colors ${
+                    isActive ? "text-[#2563EB]" : "text-slate-400"
+                  }`}
+                >
+                  {item.name}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );

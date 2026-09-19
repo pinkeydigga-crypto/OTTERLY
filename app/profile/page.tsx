@@ -6,24 +6,14 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
 import {
-  LayoutDashboard,
-  Swords,
-  Scan,
-  Trophy,
-  Compass,
-  Award,
-  User,
-  Settings,
+  ArrowLeft,
   Flame,
   Star,
-  PanelLeft,
-  X,
   Check,
   Save,
   LogOut,
   Trash2,
   AlertTriangle,
-  Palette,
 } from "lucide-react";
 
 const AVATARS = [
@@ -45,8 +35,6 @@ interface Profile {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const logoUrl =
-    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,7 +48,6 @@ export default function ProfilePage() {
   const [selectedAvatar, setSelectedAvatar] = useState("");
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     fetchProfile();
@@ -200,152 +187,29 @@ export default function ProfilePage() {
   const userXp = profile?.xp || 0;
   const userStreak = profile?.streak || 0;
 
-  // Exact Navigation Lists matching Dashboard
-  const desktopNavItems = [
-    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Practice", path: "/practice", icon: Palette },
-    { name: "Challenges", path: "/challenges", icon: Swords },
-    { name: "Scan", path: "/scan", icon: Scan },
-    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-    { name: "Learning Path", path: "/learning-path", icon: Compass },
-    { name: "Achievements", path: "/achievements", icon: Award },
-    { name: "Profile", path: "/profile", active: true, icon: User },
-    { name: "Settings", path: "/settings", icon: Settings },
-  ];
-
-  const mobileNavItems = [
-    { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Practice", path: "/practice", icon: Palette },
-    { name: "Scan", path: "/scan", icon: Scan },
-    { name: "Challenges", path: "/challenges", icon: Swords },
-    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-    { name: "Profile", path: "/profile", active: true, icon: User },
-  ];
-
   return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-24 md:pb-0 font-sans">
-      {/* Mobile Top Header */}
-      <header className="md:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
-            aria-label="Open sidebar"
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col tracking-tight font-sans">
+      
+      {/* Main Content Area */}
+      <main className="flex-1 p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-6 overflow-y-auto">
+        
+        {/* Top Header Navigation & XP Badge */}
+        <div className="flex items-center justify-between mb-2 bg-white p-3 sm:p-4 rounded-2xl border-2 border-slate-100 shadow-xs">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-black text-sm hover:bg-slate-200 transition-all cursor-pointer"
           >
-            <PanelLeft className="w-5 h-5" />
-          </button>
-
-          <img src={logoUrl} alt="Otterleo Logo" className="h-9 w-auto object-contain" />
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 px-3 py-1 rounded-full text-orange-600 font-extrabold text-xs">
-          <Flame className="w-4 h-4 fill-orange-500 stroke-orange-500" />
-          <span>{userStreak}</span>
-        </div>
-      </header>
-
-      {/* Mobile Sidebar */}
-      {isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
-
-          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10 overflow-y-auto">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="Otterleo Logo" className="h-9 w-auto object-contain" />
-                <button
-                  onClick={() => setIsMobileSidebarOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <nav className="space-y-1.5">
-                {desktopNavItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.path}
-                      onClick={() => setIsMobileSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                        item.active
-                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-
-            {/* Mobile Sidebar Bottom Profile Card */}
-            <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
-              <img
-                src={selectedAvatar || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
-                alt="User Avatar"
-                className="w-10 h-10 rounded-xl object-cover border border-slate-200"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-black text-[#0F172A] truncate">{name || "Artist"}</p>
-                <p className="text-[10px] font-bold text-slate-400">{userXp} XP</p>
-              </div>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      {/* Exact Desktop Sidebar Navigation */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0 h-screen sticky top-0">
-        <div className="space-y-8">
-          <div className="flex items-center gap-3">
-            <img src={logoUrl} alt="Otterleo Logo" className="h-12 w-auto object-contain" />
-          </div>
-
-          <nav className="space-y-1.5">
-            {desktopNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                    item.active
-                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Exact Desktop Bottom Profile Card */}
-        <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
-          <img
-            src={selectedAvatar || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
-            alt="User Avatar"
-            className="w-10 h-10 rounded-xl object-cover border border-slate-200"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-black text-[#0F172A] truncate">{name || "Artist"}</p>
-            <p className="text-[10px] font-bold text-slate-400">{userXp} XP</p>
+            <ArrowLeft className="w-4 h-4 stroke-[3]" />
+            Dashboard
+          </Link>
+          
+          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-4 py-2 rounded-full text-amber-600 font-black text-xs sm:text-sm">
+            <Star className="w-4 h-4 fill-amber-400 stroke-amber-400" />
+            <span>{userXp} XP</span>
           </div>
         </div>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 p-4 sm:p-8 max-w-4xl mx-auto space-y-6 overflow-y-auto w-full">
+        {/* Page Title & Logout Action Bar */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A]">Your Profile</h1>
@@ -364,7 +228,7 @@ export default function ProfilePage() {
         </div>
 
         {/* User Stats Card Header */}
-        <div className="bg-white rounded-[2.5rem] p-6 border-2 border-slate-100 shadow-sm flex flex-col sm:flex-row items-center gap-6">
+        <div className="bg-white rounded-[2.5rem] p-6 border-2 border-slate-100 shadow-xs flex flex-col sm:flex-row items-center gap-6">
           <div className="relative">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-blue-50 border-4 border-[#2563EB] p-1 shadow-md overflow-hidden flex items-center justify-center">
               <img src={selectedAvatar} alt="Current Avatar" className="w-full h-full object-contain rounded-2xl" />
@@ -392,7 +256,7 @@ export default function ProfilePage() {
         {/* Edit Form Card */}
         <form
           onSubmit={handleSaveProfile}
-          className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-sm space-y-6"
+          className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-xs space-y-6"
         >
           {message && (
             <div
@@ -532,7 +396,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 py-3.5 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs uppercase tracking-wider hover:bg-slate-200 transition-all"
+                className="flex-1 py-3.5 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs uppercase tracking-wider hover:bg-slate-200 transition-all cursor-pointer"
               >
                 Cancel
               </button>
@@ -540,7 +404,7 @@ export default function ProfilePage() {
                 type="button"
                 onClick={handleDeleteAccount}
                 disabled={deleting}
-                className="flex-1 py-3.5 rounded-2xl bg-red-600 text-white font-black text-xs uppercase tracking-wider hover:bg-red-700 border-b-4 border-red-800 active:border-b-0 active:translate-y-1 transition-all disabled:opacity-50"
+                className="flex-1 py-3.5 rounded-2xl bg-red-600 text-white font-black text-xs uppercase tracking-wider hover:bg-red-700 border-b-4 border-red-800 active:border-b-0 active:translate-y-1 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {deleting ? "Deleting..." : "Yes, Delete"}
               </button>
@@ -549,24 +413,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Exact Mobile Bottom Navigation Section */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-2 flex justify-around items-center z-40 shadow-lg">
-        {mobileNavItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.path}
-              className={`flex flex-col items-center gap-1 p-1.5 rounded-xl text-xs font-black ${
-                item.active ? "text-[#2563EB]" : "text-slate-400"
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px]">{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
     </div>
   );
 }

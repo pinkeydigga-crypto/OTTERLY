@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, ComponentType } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { 
-  ArrowLeft, PanelLeft, X, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings,
-  Flame, Star, Target, Image as ImageIcon, BarChart3, CheckCircle2, Lock, Loader2, Check
+  ArrowLeft,
+  Trophy,
+  Award,
+  Flame,
+  Star,
+  Target,
+  Image as ImageIcon,
+  BarChart3,
+  CheckCircle2,
+  Lock,
+  Loader2,
+  Check,
+  LucideProps
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -18,7 +28,7 @@ interface Achievement {
   requiredChallenges?: number;
   requiredScans?: number;
   requiredStreak?: number;
-  icon: any;
+  icon: ComponentType<LucideProps>;
   badgeBg: string;
   iconColor: string;
 }
@@ -77,7 +87,6 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
 ];
 
 function AchievementsContent() {
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [userXp, setUserXp] = useState<number>(0);
 
   const [scansCount, setScansCount] = useState<number>(0);
@@ -86,7 +95,6 @@ function AchievementsContent() {
   const [claimedAchievements, setClaimedAchievements] = useState<string[]>([]);
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_11-9-2026_144618_chatgpt.com-removebg-preview.png";
 
   useEffect(() => {
@@ -210,142 +218,41 @@ function AchievementsContent() {
       setUserXp(newTotalXp);
       localStorage.setItem("user_xp_cache", newTotalXp.toString());
       setClaimedAchievements((prev) => Array.from(new Set([...prev, achievement.id])));
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Claim Exception:", err);
     } finally {
       setClaimingId(null);
     }
   };
 
-  const navItems = [
-    { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Challenges", path: "/challenges", icon: Swords },
-    { name: "Scan", path: "/scan", icon: Scan },
-    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-    { name: "Learning Path", path: "/learning-path", icon: Compass },
-    { name: "Achievements", path: "/achievements", active: true, icon: Award },
-    { name: "Profile", path: "/profile", icon: User },
-    { name: "Settings", path: "/settings", icon: Settings },
-  ];
-
   const totalAchievements = ALL_ACHIEVEMENTS.length;
   const unlockedCount = claimedAchievements.length;
   const progressPercentage = Math.round((unlockedCount / totalAchievements) * 100);
 
   return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0">
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col tracking-tight font-sans">
       
-      {/* Mobile Top Header */}
-      <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
-          >
-            <PanelLeft className="w-5 h-5" />
-          </button>
-          
-          <img src={logoUrl} alt="Otterleo Logo" className="h-10 w-auto object-contain" />
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-full text-amber-600 font-black text-xs">
-          <Star className="w-4 h-4 fill-amber-400 stroke-amber-400" />
-          <span>{userXp} XP</span>
-        </div>
-      </header>
-
-      {/* Mobile Drawer Navigation */}
-      {isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div 
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
-          
-          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <img src={logoUrl} alt="Otterleo Logo" className="h-10 w-auto object-contain" />
-                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <nav className="space-y-1.5">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.path}
-                      onClick={() => setIsMobileSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                        item.active
-                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                      }`}
-                    >
-                      <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.name}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      {/* Desktop Sidebar Navigation */}
-      <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
-        <div className="space-y-8">
-          <div className="flex items-center">
-            <img src={logoUrl} alt="Otterleo Logo" className="h-11 w-auto object-contain" />
-          </div>
-
-          <nav className="space-y-1.5">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.path}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                    item.active
-                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span>{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      </aside>
-
       {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-8 max-w-5xl mx-auto w-full space-y-6 overflow-y-auto">
         
         {/* Top Header Navigation & XP */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 bg-white p-3 sm:p-4 rounded-2xl border-2 border-slate-100 shadow-xs">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border-2 border-slate-100 text-slate-700 font-black text-sm hover:bg-slate-50 transition-all shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-black text-sm hover:bg-slate-200 transition-all cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 stroke-[3]" />
-            Back to Dashboard
+            Dashboard
           </Link>
           
-          <div className="hidden sm:flex items-center gap-2 bg-amber-50 border border-amber-200/80 px-4 py-1.5 rounded-full text-amber-600 font-black text-xs">
+          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-4 py-2 rounded-full text-amber-600 font-black text-xs sm:text-sm">
             <Star className="w-4 h-4 fill-amber-400 stroke-amber-400" />
             <span>{userXp} XP</span>
           </div>
         </div>
 
         {/* Hero Mascot Banner */}
-        <div className="bg-white px-6 sm:px-8 py-7 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex flex-row items-center justify-between relative overflow-hidden">
+        <div className="bg-white px-6 sm:px-8 py-7 rounded-[2.5rem] border-2 border-slate-100 shadow-xs flex flex-row items-center justify-between relative overflow-hidden">
           <div className="space-y-2 z-10 max-w-sm sm:max-w-md">
             <h1 className="text-3xl sm:text-4xl font-black text-[#0F172A]">Achievements</h1>
             <p className="text-sm font-bold text-slate-500">
@@ -363,7 +270,7 @@ function AchievementsContent() {
         </div>
 
         {/* Dynamic Progress Card */}
-        <div className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 shadow-sm space-y-4">
+        <div className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 shadow-xs space-y-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 shrink-0">
               <BarChart3 className="w-5 h-5 stroke-[2.5]" />
@@ -387,7 +294,7 @@ function AchievementsContent() {
         </div>
 
         {/* Achievements Cards Grid */}
-        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm space-y-6">
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg sm:text-xl font-black text-[#0F172A]">Recent Achievements</h2>
           </div>
@@ -402,7 +309,7 @@ function AchievementsContent() {
               return (
                 <div
                   key={item.id}
-                  className={`bg-white p-6 rounded-[2rem] border-2 shadow-sm flex flex-col items-center text-center space-y-3 relative transition-all ${
+                  className={`bg-white p-6 rounded-[2rem] border-2 shadow-xs flex flex-col items-center text-center space-y-3 relative transition-all ${
                     isClaimed
                       ? "border-emerald-200 bg-emerald-50/20"
                       : isEligible
@@ -420,7 +327,7 @@ function AchievementsContent() {
                     )}
                   </div>
 
-                  <div className={`w-20 h-20 rounded-3xl ${isEligible || isClaimed ? item.badgeBg : "bg-slate-100 border-slate-200"} border-2 flex items-center justify-center transform rotate-45 my-2 shadow-sm`}>
+                  <div className={`w-20 h-20 rounded-3xl ${isEligible || isClaimed ? item.badgeBg : "bg-slate-100 border-slate-200"} border-2 flex items-center justify-center transform rotate-45 my-2 shadow-xs`}>
                     <div className="transform -rotate-45">
                       <IconComponent className={`w-9 h-9 ${isEligible || isClaimed ? item.iconColor : "text-slate-400"} stroke-[2.2]`} />
                     </div>
@@ -476,25 +383,6 @@ function AchievementsContent() {
         </div>
 
       </main>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-4 flex justify-around items-center z-40 shadow-lg">
-        {[
-          { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-          { name: "Scan", path: "/scan", icon: Scan },
-          { name: "Challenges", path: "/challenges", icon: Swords },
-          { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-          { name: "Achievements", path: "/achievements", active: true, icon: Award },
-        ].map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link key={item.name} href={item.path} className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-black ${item.active ? "text-[#2563EB]" : "text-slate-400"}`}>
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px]">{item.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
     </div>
   );
 }

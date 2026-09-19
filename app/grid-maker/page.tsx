@@ -49,7 +49,7 @@ export default function GridMakerPage() {
     reader.readAsDataURL(file);
   };
 
-  // Render Grid on Canvas
+  // Render Grid on Canvas (Fixed Exact Rows & Columns Calculation)
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !image) return;
@@ -60,7 +60,7 @@ export default function GridMakerPage() {
     canvas.width = image.width;
     canvas.height = image.height;
 
-    // Draw uploaded image
+    // Clear and draw uploaded image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(image, 0, 0);
 
@@ -73,23 +73,25 @@ export default function GridMakerPage() {
       const cellWidth = canvas.width / cols;
       const cellHeight = canvas.height / rows;
 
-      // Draw Vertical Lines
+      // Draw Vertical Lines (Exact Cols)
       for (let i = 1; i < cols; i++) {
+        const x = Math.round(i * cellWidth);
         ctx.beginPath();
-        ctx.moveTo(i * cellWidth, 0);
-        ctx.lineTo(i * cellWidth, canvas.height);
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
         ctx.stroke();
       }
 
-      // Draw Horizontal Lines
+      // Draw Horizontal Lines (Exact Rows)
       for (let j = 1; j < rows; j++) {
+        const y = Math.round(j * cellHeight);
         ctx.beginPath();
-        ctx.moveTo(0, j * cellHeight);
-        ctx.lineTo(canvas.width, j * cellHeight);
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
         ctx.stroke();
       }
 
-      // Draw Diagonals only if enabled
+      // Draw Diagonals inside each cell if enabled
       if (showDiagonals) {
         for (let i = 0; i < cols; i++) {
           for (let j = 0; j < rows; j++) {
@@ -98,13 +100,13 @@ export default function GridMakerPage() {
             const endX = startX + cellWidth;
             const endY = startY + cellHeight;
 
-            // Top-Left to Bottom-Right Line
+            // Top-Left to Bottom-Right
             ctx.beginPath();
             ctx.moveTo(startX, startY);
             ctx.lineTo(endX, endY);
             ctx.stroke();
 
-            // Bottom-Left to Top-Right Line
+            // Bottom-Left to Top-Right
             ctx.beginPath();
             ctx.moveTo(startX, endY);
             ctx.lineTo(endX, startY);
@@ -121,10 +123,9 @@ export default function GridMakerPage() {
     drawCanvas();
   }, [drawCanvas]);
 
-  // Download Image with Rate Limiting (5 downloads per minute)
+  // Download Image with Rate Limiting
   const handleDownload = () => {
     const now = Date.now();
-    // Filter timestamps from the last 60 seconds
     const recentDownloads = downloadTimesRef.current.filter(
       (time) => now - time < 60000
     );
@@ -134,7 +135,6 @@ export default function GridMakerPage() {
       return;
     }
 
-    // Record this download attempt
     downloadTimesRef.current = [...recentDownloads, now];
 
     const canvas = canvasRef.current;
@@ -212,7 +212,7 @@ export default function GridMakerPage() {
           /* Active State: Image on Top, Controls Below */
           <div className="flex flex-col gap-4">
             
-            {/* Canvas Preview Box (Always on Top for Mobile & Desktop) */}
+            {/* Canvas Preview Box */}
             <div
               ref={containerRef}
               className="bg-white p-2 sm:p-4 rounded-2xl border border-slate-200 shadow-xs overflow-auto flex items-center justify-center min-h-[300px] order-1"
@@ -225,7 +225,7 @@ export default function GridMakerPage() {
               </div>
             </div>
 
-            {/* Controls Panel (Placed Below the Image) */}
+            {/* Controls Panel */}
             <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4 order-2">
               
               {/* Sliders Grid */}
@@ -235,7 +235,7 @@ export default function GridMakerPage() {
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between text-xs font-bold text-slate-700">
                     <span>Rows:</span>
-                    <span className="text-blue-600">{rows}</span>
+                    <span className="text-blue-600 font-black">{rows}</span>
                   </div>
                   <input
                     type="range"
@@ -251,7 +251,7 @@ export default function GridMakerPage() {
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between text-xs font-bold text-slate-700">
                     <span>Columns:</span>
-                    <span className="text-blue-600">{cols}</span>
+                    <span className="text-blue-600 font-black">{cols}</span>
                   </div>
                   <input
                     type="range"
@@ -267,7 +267,7 @@ export default function GridMakerPage() {
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between text-xs font-bold text-slate-700">
                     <span>Opacity:</span>
-                    <span className="text-blue-600">{opacity}%</span>
+                    <span className="text-blue-600 font-black">{opacity}%</span>
                   </div>
                   <input
                     type="range"
@@ -283,7 +283,7 @@ export default function GridMakerPage() {
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between text-xs font-bold text-slate-700">
                     <span>Line Width:</span>
-                    <span className="text-blue-600">{lineWidth}px</span>
+                    <span className="text-blue-600 font-black">{lineWidth}px</span>
                   </div>
                   <input
                     type="range"

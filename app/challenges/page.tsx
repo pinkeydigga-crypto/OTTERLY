@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, ChevronRight,
-  Sparkles, Check, ShieldAlert, Palette, FastForward
+  Sparkles, Check, ShieldAlert, Palette, FastForward, Grid
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
@@ -112,6 +112,7 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
 export default function ChallengesPage() {
   const router = useRouter();
   const [userXp, setUserXp] = useState<number>(0);
+  const [userProfile, setUserProfile] = useState<{ name: string; avatar_url: string } | null>(null);
   const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -152,14 +153,25 @@ export default function ChallengesPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("xp")
+        .select("name, username, avatar_url, xp")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profile && profile.xp !== null && profile.xp !== undefined) {
-        const dbXp = profile.xp;
-        setUserXp(dbXp);
-        localStorage.setItem("user_xp_cache", dbXp.toString());
+      if (profile) {
+        if (profile.xp !== null && profile.xp !== undefined) {
+          const dbXp = profile.xp;
+          setUserXp(dbXp);
+          localStorage.setItem("user_xp_cache", dbXp.toString());
+        }
+        setUserProfile({
+          name: (profile.name || profile.username || "Artist").replace(/<[^>]*>?/gm, "").trim(),
+          avatar_url: profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`
+        });
+      } else {
+        setUserProfile({
+          name: user.email?.split("@")[0] || "Artist",
+          avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`
+        });
       }
 
       const { data: completed } = await supabase
@@ -278,7 +290,7 @@ export default function ChallengesPage() {
 
   if (isVerified === false) {
     return (
-      <div className="min-h-screen bg-[#F6FAFF] flex flex-col items-center justify-center p-4 tracking-tight">
+      <div className="min-h-screen bg-[#F6FAFF] flex flex-col items-center justify-center p-4 tracking-tight font-sans">
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 max-w-md w-full text-center space-y-5 shadow-sm">
           <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto border border-amber-200">
             <ShieldAlert className="w-8 h-8" />
@@ -318,6 +330,7 @@ export default function ChallengesPage() {
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Practice", path: "/practice", icon: Palette },
+    { name: "Grid Maker", path: "/grid-maker", icon: Grid },
     { name: "Challenges", path: "/challenges", active: true, icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
@@ -325,15 +338,6 @@ export default function ChallengesPage() {
     { name: "Achievements", path: "/achievements", icon: Award },
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
-  ];
-
-  const mobileNavItems = [
-    { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Practice", path: "/practice", icon: Palette },
-    { name: "Scan", path: "/scan", icon: Scan },
-    { name: "Challenges", path: "/challenges", active: true, icon: Swords },
-    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-    { name: "Profile", path: "/profile", icon: User },
   ];
 
   return (
@@ -350,12 +354,14 @@ export default function ChallengesPage() {
             <PanelLeft className="w-5 h-5" />
           </button>
           
-          <Link href="/dashboard" className="flex items-center">
-            <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
-          </Link>
+          <img
+            src={logoUrl}
+            alt="Otterleo Logo"
+            className="h-14 w-auto object-contain max-h-16"
+          />
         </div>
 
-        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl text-amber-700 font-black text-xs">
+        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-3 py-1 rounded-full text-amber-700 font-extrabold text-xs">
           <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
           <span>{userXp} XP</span>
         </div>
@@ -368,18 +374,24 @@ export default function ChallengesPage() {
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setIsMobileSidebarOpen(false)}
           />
+          
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <Link href="/dashboard">
-                  <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain" />
-                </Link>
-                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-2 rounded-xl text-slate-400 hover:bg-slate-100">
+                <img
+                  src={logoUrl}
+                  alt="Otterleo Logo"
+                  className="h-14 w-auto object-contain"
+                />
+                <button
+                  onClick={() => setIsMobileSidebarOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <nav className="space-y-1.5">
+              <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)]">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -390,7 +402,7 @@ export default function ChallengesPage() {
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                         item.active
                           ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
-                          : "text-slate-500 hover:bg-slate-50"
+                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
                       <Icon className="w-5 h-5 shrink-0" />
@@ -400,6 +412,18 @@ export default function ChallengesPage() {
                 })}
               </nav>
             </div>
+
+            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+              <img
+                src={userProfile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
+                alt="User Avatar"
+                className="w-10 h-10 rounded-xl object-cover bg-blue-100"
+              />
+              <div className="overflow-hidden">
+                <p className="text-sm font-black text-[#0F172A] truncate">{userProfile?.name || "Artist"}</p>
+                <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
+              </div>
+            </div>
           </aside>
         </div>
       )}
@@ -407,9 +431,13 @@ export default function ChallengesPage() {
       {/* Desktop Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
         <div className="space-y-8">
-          <Link href="/dashboard">
-            <img src={logoUrl} alt="Logo" className="h-12 w-auto object-contain" />
-          </Link>
+          <div className="flex items-center gap-3">
+            <img
+              src={logoUrl}
+              alt="Otterleo Logo"
+              className="h-16 sm:h-20 w-auto object-contain"
+            />
+          </div>
 
           <nav className="space-y-1.5">
             {navItems.map((item) => {
@@ -421,7 +449,7 @@ export default function ChallengesPage() {
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                     item.active
                       ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
-                      : "text-slate-500 hover:bg-slate-50"
+                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   <Icon className="w-5 h-5 shrink-0" />
@@ -431,12 +459,24 @@ export default function ChallengesPage() {
             })}
           </nav>
         </div>
+
+        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
+          <img
+            src={userProfile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
+            alt="User Avatar"
+            className="w-10 h-10 rounded-xl object-cover bg-blue-100"
+          />
+          <div className="overflow-hidden">
+            <p className="text-sm font-black text-[#0F172A] truncate">{userProfile?.name || "Artist"}</p>
+            <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
+          </div>
+        </div>
       </aside>
 
       {/* Main Area */}
       <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-4 overflow-y-auto">
         
-        {/* Top Desktop Navigation */}
+        {/* Top Desktop Navigation Header */}
         <div className="hidden md:flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -601,7 +641,7 @@ export default function ChallengesPage() {
               </div>
             )}
 
-            {/* Tips Section - Step 1 (`currentStep !== 0`) par hide rahega */}
+            {/* Tips Section */}
             {currentStep !== 0 && activeStepList[currentStep].tips?.length > 0 && (
               <div className="bg-amber-50/60 border border-amber-200/60 p-3 rounded-2xl space-y-1.5">
                 <h4 className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
@@ -677,23 +717,45 @@ export default function ChallengesPage() {
 
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 py-2 px-4 flex justify-around items-center z-40">
-        {mobileNavItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.name}
-              href={item.path}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl text-xs font-black ${
-                item.active ? "text-[#2563EB]" : "text-slate-400"
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px]">{item.name}</span>
-            </Link>
-          );
-        })}
+      {/* Full Width Flush Bottom Navigation Bar */}
+      <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
+        <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+          {[
+            { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+            { name: "Challenges", path: "/challenges", active: true, icon: Swords },
+            { name: "Grid", path: "/grid-maker", icon: Grid },
+            { name: "Scan", path: "/scan", icon: Scan },
+            { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = item.active;
+
+            return (
+              <Link
+                key={item.name}
+                href={item.path}
+                className="group relative flex flex-1 flex-col items-center gap-0.5 py-1 transition-all"
+              >
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
+                    isActive
+                      ? "bg-[#2563EB] text-white shadow-md shadow-blue-500/30"
+                      : "text-slate-400 group-hover:text-slate-700"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span
+                  className={`text-[10px] font-bold leading-tight transition-colors ${
+                    isActive ? "text-[#2563EB]" : "text-slate-400"
+                  }`}
+                >
+                  {item.name}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
     </div>
