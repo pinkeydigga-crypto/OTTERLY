@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import LoadingScreen from "@/components/LoadingScreen";
 import {
   ArrowLeft,
   Grid,
@@ -16,6 +19,9 @@ import {
 } from "lucide-react";
 
 export default function GridMakerPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState<boolean>(true);
+
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [rows, setRows] = useState<number>(5);
   const [cols, setCols] = useState<number>(5);
@@ -31,6 +37,33 @@ export default function GridMakerPage() {
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // Authentication Check
+  const checkAuth = useCallback(async () => {
+    try {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error || !user) {
+        if (typeof window !== "undefined") {
+          localStorage.clear();
+        }
+        router.push("/login");
+        return;
+      }
+    } catch (err) {
+      console.error("Auth check failed:", err);
+      router.push("/login");
+    } finally {
+      setLoading(false);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // Handle Image Upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,8 +153,10 @@ export default function GridMakerPage() {
   }, [image, rows, cols, gridColor, lineWidth, opacity, showGrid, showDiagonals]);
 
   useEffect(() => {
-    drawCanvas();
-  }, [drawCanvas]);
+    if (!loading) {
+      drawCanvas();
+    }
+  }, [drawCanvas, loading]);
 
   // Download Image with Rate Limiting
   const handleDownload = () => {
@@ -158,10 +193,13 @@ export default function GridMakerPage() {
     setZoom(100);
   };
 
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <div className="min-h-screen bg-[#F6FAFF] p-3 sm:p-6 md:p-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-4">
-        
         {/* Top Navigation Header */}
         <div className="flex items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
           <Link
@@ -211,7 +249,6 @@ export default function GridMakerPage() {
         ) : (
           /* Active State: Image on Top, Controls Below */
           <div className="flex flex-col gap-4">
-            
             {/* Canvas Preview Box */}
             <div
               ref={containerRef}
@@ -227,10 +264,8 @@ export default function GridMakerPage() {
 
             {/* Controls Panel */}
             <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4 order-2">
-              
               {/* Sliders Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                
                 {/* Rows Control */}
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between text-xs font-bold text-slate-700">
@@ -296,88 +331,83 @@ export default function GridMakerPage() {
                 </div>
               </div>
 
-              {/* Action Buttons, Color Picker & Toggles */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-                
-                {/* Color Selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-700">Color:</span>
-                  <input
-                    type="color"
-                    value={gridColor}
-                    onChange={(e) => setGridColor(e.target.value)}
-                    className="w-8 h-8 rounded-lg border border-slate-200 cursor-pointer p-0.5 bg-white"
-                  />
-                </div>
-
-                {/* View Controls & Actions */}
-                <div className="flex flex-wrap items-center gap-2 ml-auto">
-                  
-                  {/* Diagonals Toggle Button */}
-                  <button
-                    onClick={() => setShowDiagonals(!showDiagonals)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer ${
-                      showDiagonals
-                        ? "bg-blue-50 text-blue-600 border border-blue-200"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    <Slash className="w-3.5 h-3.5" />
-                    <span>Diagonals</span>
-                  </button>
+              {/* Action Buttons & Toggles */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Grid Color Picker */}
+                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <span className="text-xs font-bold text-slate-600">Color:</span>
+                    <input
+                      type="color"
+                      value={gridColor}
+                      onChange={(e) => setGridColor(e.target.value)}
+                      className="w-6 h-6 rounded-md cursor-pointer border-0 bg-transparent"
+                    />
+                  </div>
 
                   {/* Toggle Grid */}
                   <button
                     onClick={() => setShowGrid(!showGrid)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      showGrid ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                    }`}
                   >
-                    {showGrid ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showGrid ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     <span>{showGrid ? "Hide Grid" : "Show Grid"}</span>
                   </button>
 
-                  {/* Zoom Controls */}
+                  {/* Toggle Diagonals */}
                   <button
-                    onClick={() => setZoom((prev) => Math.max(50, prev - 10))}
-                    className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
-                    title="Zoom Out"
+                    onClick={() => setShowDiagonals(!showDiagonals)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      showDiagonals ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
+                    }`}
                   >
-                    <ZoomOut className="w-4 h-4" />
+                    <Slash className="w-4 h-4" />
+                    <span>Diagonals</span>
                   </button>
-                  <span className="text-xs font-bold text-slate-600 w-9 text-center">
-                    {zoom}%
-                  </span>
-                  <button
-                    onClick={() => setZoom((prev) => Math.min(200, prev + 10))}
-                    className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition cursor-pointer"
-                    title="Zoom In"
-                  >
-                    <ZoomIn className="w-4 h-4" />
-                  </button>
+                </div>
 
-                  {/* Reset/Clear */}
+                {/* Zoom & Utility Actions */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
+                    <button
+                      onClick={() => setZoom((z) => Math.max(50, z - 10))}
+                      className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-white transition cursor-pointer"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <span className="text-xs font-black text-slate-700 px-1">{zoom}%</span>
+                    <button
+                      onClick={() => setZoom((z) => Math.min(200, z + 10))}
+                      className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-white transition cursor-pointer"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                  </div>
+
                   <button
                     onClick={handleClear}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-xl transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
+                    <RotateCcw className="w-4 h-4" />
                     <span>Reset</span>
                   </button>
 
-                  {/* Download Button */}
                   <button
                     onClick={handleDownload}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 rounded-xl transition cursor-pointer shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-4 h-4" />
                     <span>Download</span>
                   </button>
                 </div>
               </div>
             </div>
-
           </div>
         )}
-
       </div>
     </div>
   );

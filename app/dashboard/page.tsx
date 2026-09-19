@@ -78,6 +78,7 @@ export default function DashboardPage() {
 
   const fetchDashboardData = useCallback(async () => {
     try {
+      // 1. Auth check
       const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
@@ -88,6 +89,7 @@ export default function DashboardPage() {
         return;
       }
 
+      // 2. Fetch specific profile fields only (Optimized Egress)
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
         .select("id, name, username, email, avatar_url, xp, streak, last_login")
@@ -134,6 +136,7 @@ export default function DashboardPage() {
         });
       }
 
+      // 3. Today's Challenge (Only 1 item with specific fields)
       const { data: challengeData } = await supabase
         .from("challenges")
         .select("id, title, description, xp_reward, image_url")
@@ -155,6 +158,7 @@ export default function DashboardPage() {
         }
       }
 
+      // 4. Recent Achievements (Limited to 3)
       const { data: userAchData, error: achError } = await supabase
         .from("user_completed_achievements")
         .select("id, achievement_id, created_at")
@@ -188,9 +192,12 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
+      // 5. Optimized Leaderboard (Limit to Top 10 to drastically reduce Egress)
       const { data: profiles, error: leadError } = await supabase
         .from("profiles")
-        .select("id, name, username, xp, streak, avatar_url");
+        .select("id, name, username, xp, streak, avatar_url")
+        .order("xp", { ascending: false })
+        .limit(10);
 
       if (!leadError && profiles) {
         let mapped = profiles.map((p: any) => {
@@ -206,13 +213,6 @@ export default function DashboardPage() {
             streak: userStreak,
             avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.id}`,
           };
-        });
-
-        mapped.sort((a, b) => {
-          if (b.xp !== a.xp) {
-            return b.xp - a.xp;
-          }
-          return b.streak - a.streak;
         });
 
         setLeaderboard(mapped.slice(0, 3));
@@ -506,7 +506,7 @@ export default function DashboardPage() {
 
       </main>
 
-      {/* Full Width Flush Bottom Navigation Bar - Updated Order */}
+      {/* Full Width Flush Bottom Navigation Bar */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {[

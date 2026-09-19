@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
@@ -12,7 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
 import PracticeCanvas from "@/components/PracticeCanvas";
 
-// Typewriter Text Effect Component
+// Typewriter Text Effect Component with Safe Cleanup
 function TypewriterText({ text, speed = 50 }: { text: string; speed?: number }) {
   const [displayedText, setDisplayedText] = useState("");
 
@@ -304,13 +305,13 @@ export default function ChallengesPage() {
           <div className="pt-2 space-y-2">
             <Link
               href="/login"
-              className="block w-full py-3.5 bg-[#2563EB] hover:bg-blue-600 text-white font-black text-xs rounded-2xl border-b-2 border-blue-800 transition"
+              className="block w-full py-3.5 bg-[#2563EB] hover:bg-blue-600 text-white font-black text-xs rounded-2xl border-b-2 border-blue-800 transition text-center"
             >
               Log In / Verify Account
             </Link>
             <Link
               href="/dashboard"
-              className="block w-full py-3 text-slate-500 font-black text-xs hover:bg-slate-50 rounded-2xl transition"
+              className="block w-full py-3 text-slate-500 font-black text-xs hover:bg-slate-50 rounded-2xl transition text-center"
             >
               Back to Dashboard
             </Link>
@@ -354,10 +355,13 @@ export default function ChallengesPage() {
             <PanelLeft className="w-5 h-5" />
           </button>
           
-          <img
+          <Image
             src={logoUrl}
             alt="Otterleo Logo"
-            className="h-14 w-auto object-contain max-h-16"
+            width={120}
+            height={48}
+            className="h-12 w-auto object-contain"
+            priority
           />
         </div>
 
@@ -378,10 +382,12 @@ export default function ChallengesPage() {
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <img
+                <Image
                   src={logoUrl}
                   alt="Otterleo Logo"
-                  className="h-14 w-auto object-contain"
+                  width={120}
+                  height={48}
+                  className="h-12 w-auto object-contain"
                 />
                 <button
                   onClick={() => setIsMobileSidebarOpen(false)}
@@ -414,9 +420,11 @@ export default function ChallengesPage() {
             </div>
 
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-              <img
+              <Image
                 src={userProfile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
                 alt="User Avatar"
+                width={40}
+                height={40}
                 className="w-10 h-10 rounded-xl object-cover bg-blue-100"
               />
               <div className="overflow-hidden">
@@ -432,10 +440,13 @@ export default function ChallengesPage() {
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
-            <img
+            <Image
               src={logoUrl}
               alt="Otterleo Logo"
-              className="h-16 sm:h-20 w-auto object-contain"
+              width={160}
+              height={64}
+              className="h-16 w-auto object-contain"
+              priority
             />
           </div>
 
@@ -461,9 +472,11 @@ export default function ChallengesPage() {
         </div>
 
         <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-          <img
+          <Image
             src={userProfile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
             alt="User Avatar"
+            width={40}
+            height={40}
             className="w-10 h-10 rounded-xl object-cover bg-blue-100"
           />
           <div className="overflow-hidden">
@@ -502,7 +515,13 @@ export default function ChallengesPage() {
                   Complete step-by-step challenges, earn XP and level up your skills!
                 </p>
               </div>
-              <img src={mascotImageUrl} alt="Mascot" className="w-32 sm:w-36 h-auto object-contain shrink-0" />
+              <Image
+                src={mascotImageUrl}
+                alt="Mascot"
+                width={128}
+                height={128}
+                className="w-32 sm:w-36 h-auto object-contain shrink-0"
+              />
             </div>
 
             {/* Challenge Card */}
@@ -518,11 +537,12 @@ export default function ChallengesPage() {
               )}
 
               {/* Preview Image Frame */}
-              <div className="w-full h-32 sm:h-36 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 flex items-center justify-center p-2">
-                <img
+              <div className="w-full h-32 sm:h-36 bg-slate-50 rounded-2xl overflow-hidden border border-slate-100 flex items-center justify-center p-2 relative">
+                <Image
                   src={activeTabChallenge.previewImage}
                   alt={activeTabChallenge.title}
-                  className="max-h-full max-w-full object-contain hover:scale-105 transition-all duration-300"
+                  fill
+                  className="object-contain p-2 hover:scale-105 transition-all duration-300"
                 />
               </div>
 
@@ -599,26 +619,27 @@ export default function ChallengesPage() {
                 <PracticeCanvas />
               </div>
             ) : activeStepList[currentStep].typewriterText ? (
-              /* LAPTOP: MASCOT ON RIGHT, BUBBLE ON LEFT | MOBILE: VERTICAL STACK */
               <div className="w-full flex flex-col sm:flex-row-reverse items-center justify-center gap-3 sm:gap-5 py-2 px-1">
                 
-                {/* Mascot GIF */}
-                <div className="w-48 h-48 sm:w-56 sm:h-56 shrink-0 flex items-center justify-center">
-                  <img
-                    src={activeStepList[currentStep].imageUrl}
-                    alt="Otto Mascot"
-                    className="max-h-full max-w-full object-contain"
-                  />
+                {/* Mascot Image */}
+                <div className="w-48 h-48 sm:w-56 sm:h-56 shrink-0 flex items-center justify-center relative">
+                  {activeStepList[currentStep].imageUrl && (
+                    <Image
+                      src={activeStepList[currentStep].imageUrl!}
+                      alt="Otto Mascot"
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  )}
                 </div>
 
-                {/* Speech Bubble with Responsive Pointer Tail */}
+                {/* Speech Bubble */}
                 <div className="relative bg-blue-50/80 border border-blue-200 rounded-2xl px-5 py-3 shadow-2xs max-w-xs text-center sm:text-left">
-                  {/* Tail pointing right towards mascot (Desktop) */}
                   <div className="hidden sm:block absolute -right-2.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-t-transparent border-l-[10px] border-l-blue-200 border-b-8 border-b-transparent">
                     <div className="absolute right-[1px] -top-[7px] w-0 h-0 border-t-[7px] border-t-transparent border-l-[9px] border-l-blue-50 border-b-[7px] border-b-transparent" />
                   </div>
 
-                  {/* Tail pointing top towards mascot (Mobile) */}
                   <div className="block sm:hidden absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-b-[10px] border-b-blue-200 border-r-8 border-r-transparent">
                     <div className="absolute -left-[7px] top-[1px] w-0 h-0 border-l-[7px] border-l-transparent border-b-[9px] border-b-blue-50 border-r-[7px] border-r-transparent" />
                   </div>
@@ -630,12 +651,13 @@ export default function ChallengesPage() {
 
               </div>
             ) : (
-              <div className="w-full h-48 sm:h-56 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-2 overflow-hidden shadow-inner">
-                {mounted && (
-                  <img
-                    src={activeStepList[currentStep].imageUrl}
+              <div className="w-full h-48 sm:h-56 bg-slate-900/5 border border-slate-200/80 rounded-2xl flex items-center justify-center p-2 overflow-hidden shadow-inner relative">
+                {mounted && activeStepList[currentStep].imageUrl && (
+                  <Image
+                    src={activeStepList[currentStep].imageUrl!}
                     alt="Tutorial step reference"
-                    className="max-h-full max-w-full object-contain scale-110 sm:scale-125 transition-transform duration-300 transform-gpu"
+                    fill
+                    className="object-contain scale-100 transition-transform duration-300"
                   />
                 )}
               </div>
@@ -717,7 +739,7 @@ export default function ChallengesPage() {
 
       </main>
 
-      {/* Full Width Flush Bottom Navigation Bar */}
+      {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {[
