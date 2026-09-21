@@ -90,7 +90,7 @@ export default function DashboardPage() {
         return;
       }
 
-      // 2. Fetch specific profile fields
+      // 2. Fetch profile
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
         .select("*")
@@ -101,8 +101,6 @@ export default function DashboardPage() {
         console.error("Dashboard profile fetch exception:", profError.message);
       }
 
-      let currentProfileXp = 0;
-
       if (profileData) {
         const todayStr = getLocalDateString();
         const lastLoginRaw = profileData.last_login;
@@ -110,7 +108,6 @@ export default function DashboardPage() {
 
         const userXP = Number(profileData.xp_points ?? profileData.xp ?? 0);
         const userStreak = Number(profileData.streak ?? profileData.current_streak ?? 0);
-        currentProfileXp = userXP;
 
         if (lastLoginStr !== todayStr) {
           const newStreak = userStreak + 1;
@@ -207,17 +204,13 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // 5. FIXED & EXACT RANK CALCULATION
-      // Step A: Fetch Top 3 users directly sorted by Database
-      const { data: topProfiles, error: leadError } = await supabase
+      // 5. Leaderboard Sync & Exact Rank Calculation
+      const { data: allProfiles, error: leadError } = await supabase
         .from("profiles")
-        .select("id, name, username, xp, xp_points, streak, current_streak, avatar_url, avatar")
-        .order("xp", { ascending: false })
-        .order("streak", { ascending: false })
-        .limit(3);
+        .select("*");
 
-      if (!leadError && topProfiles) {
-        const mappedTop3 = topProfiles.map((p: any) => {
+      if (!leadError && allProfiles) {
+        let sortedProfiles = allProfiles.map((p: any) => {
           const totalXP = Number(p.xp_points ?? p.xp ?? 0);
           const userStreak = Number(p.streak ?? p.current_streak ?? 0);
           const rawName = p.name || p.username || "Artist";
@@ -232,19 +225,21 @@ export default function DashboardPage() {
           };
         });
 
-        setLeaderboard(mappedTop3);
-      }
+        // Exact leaderboard sorting: XP -> Streak -> ID
+        sortedProfiles.sort((a, b) => {
+          if (b.xp !== a.xp) return b.xp - a.xp;
+          if (b.streak !== a.streak) return b.streak - a.streak;
+          return a.id.localeCompare(b.id);
+        });
 
-      // Step B: Calculate exact global rank using count of users having greater XP
-      const { count, error: rankError } = await supabase
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .gt("xp", currentProfileXp);
+        setLeaderboard(sortedProfiles.slice(0, 3));
 
-      if (!rankError && count !== null) {
-        setUserRank(`#${count + 1}`);
-      } else {
-        setUserRank("-");
+        const myRankIndex = sortedProfiles.findIndex((u) => u.id === user.id);
+        if (myRankIndex !== -1) {
+          setUserRank(`#${myRankIndex + 1}`);
+        } else {
+          setUserRank("-");
+        }
       }
 
     } catch (err) {
