@@ -52,6 +52,7 @@ interface LeaderboardUser {
   id: string;
   name: string;
   xp: number;
+  streak: number;
   avatar_url: string;
 }
 
@@ -89,10 +90,10 @@ export default function DashboardPage() {
         return;
       }
 
-      // 2. Fetch specific profile fields only (Optimized Egress)
+      // 2. Fetch specific profile fields
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
-        .select("id, name, username, email, avatar_url, xp, streak, last_login")
+        .select("*")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -105,9 +106,11 @@ export default function DashboardPage() {
         const lastLoginRaw = profileData.last_login;
         const lastLoginStr = lastLoginRaw ? lastLoginRaw.split("T")[0] : null;
 
+        const userXP = Number(profileData.xp_points ?? profileData.xp ?? 0);
+        const userStreak = Number(profileData.streak ?? profileData.current_streak ?? 0);
+
         if (lastLoginStr !== todayStr) {
-          const currentStreak = Number(profileData.streak) || 0;
-          const newStreak = currentStreak + 1;
+          const newStreak = userStreak + 1;
 
           const { data: updatedProfile } = await supabase
             .from("profiles")
@@ -116,12 +119,21 @@ export default function DashboardPage() {
               last_login: todayStr
             })
             .eq("id", user.id)
-            .select("id, name, username, email, avatar_url, xp, streak, last_login")
+            .select("*")
             .maybeSingle();
 
-          setProfile(updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr });
+          setProfile(updatedProfile || {
+            ...profileData,
+            xp: userXP,
+            streak: newStreak,
+            last_login: todayStr
+          });
         } else {
-          setProfile(profileData);
+          setProfile({
+            ...profileData,
+            xp: userXP,
+            streak: userStreak
+          });
         }
       } else {
         setProfile({
@@ -136,7 +148,7 @@ export default function DashboardPage() {
         });
       }
 
-      // 3. Today's Challenge (Only 1 item with specific fields)
+      // 3. Today's Challenge
       const { data: challengeData } = await supabase
         .from("challenges")
         .select("id, title, description, xp_reward, image_url")
@@ -158,7 +170,7 @@ export default function DashboardPage() {
         }
       }
 
-      // 4. Recent Achievements (Limited to 3)
+      // 4. Recent Achievements
       const { data: userAchData, error: achError } = await supabase
         .from("user_completed_achievements")
         .select("id, achievement_id, created_at")
@@ -192,31 +204,42 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // 5. Optimized Leaderboard (Limit to Top 10 to drastically reduce Egress)
+      // 5. Correct & Synced Leaderboard + Rank Calculation (FIXED RANK MISMATCH)
       const { data: profiles, error: leadError } = await supabase
         .from("profiles")
-        .select("id, name, username, xp, streak, avatar_url")
-        .order("xp", { ascending: false })
-        .limit(10);
+        .select("*");
 
       if (!leadError && profiles) {
         let mapped = profiles.map((p: any) => {
-          const totalXP = Number(p.xp ?? 0);
-          const userStreak = Number(p.streak ?? 0);
-          const rawName = p.name || p.username || "Artist";
-          const cleanName = rawName.replace(/<[^>]*>?/gm, "").trim();
+          const totalXP = Number(p.xp_points ?? p.xp ?? 0);
+          const userStreak = Number(p.streak ?? p.current_streak ?? 0);
+          const rawName = p.name || p.username || p.full_name || "Artist";
+          const cleanName = String(rawName).replace(/<[^>]*>?/gm, "").trim();
 
           return {
             id: p.id,
             name: cleanName,
             xp: totalXP,
             streak: userStreak,
-            avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.id}`,
+            avatar_url: p.avatar_url || p.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.id}`,
           };
         });
 
+        // Exact Sequential Sorting: 1. XP -> 2. Streak -> 3. ID Tiebreaker
+        mapped.sort((a, b) => {
+          if (b.xp !== a.xp) {
+            return b.xp - a.xp;
+          }
+          if (b.streak !== a.streak) {
+            return b.streak - a.streak;
+          }
+          return a.id.localeCompare(b.id);
+        });
+
+        // Set Top 3 users for Dashboard Display
         setLeaderboard(mapped.slice(0, 3));
 
+        // Exact User Rank Calculation
         const rankIndex = mapped.findIndex((u) => u.id === user.id);
         if (rankIndex !== -1) {
           setUserRank(`#${rankIndex + 1}`);
