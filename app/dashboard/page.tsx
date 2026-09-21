@@ -101,6 +101,8 @@ export default function DashboardPage() {
         console.error("Dashboard profile fetch exception:", profError.message);
       }
 
+      let currentProfileXp = 0;
+
       if (profileData) {
         const todayStr = getLocalDateString();
         const lastLoginRaw = profileData.last_login;
@@ -108,6 +110,7 @@ export default function DashboardPage() {
 
         const userXP = Number(profileData.xp_points ?? profileData.xp ?? 0);
         const userStreak = Number(profileData.streak ?? profileData.current_streak ?? 0);
+        currentProfileXp = userXP;
 
         if (lastLoginStr !== todayStr) {
           const newStreak = userStreak + 1;
@@ -204,16 +207,20 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // 5. Correct & Synced Leaderboard + Rank Calculation (FIXED RANK MISMATCH)
-      const { data: profiles, error: leadError } = await supabase
+      // 5. FIXED & EXACT RANK CALCULATION
+      // Step A: Fetch Top 3 users directly sorted by Database
+      const { data: topProfiles, error: leadError } = await supabase
         .from("profiles")
-        .select("*");
+        .select("id, name, username, xp, xp_points, streak, current_streak, avatar_url, avatar")
+        .order("xp", { ascending: false })
+        .order("streak", { ascending: false })
+        .limit(3);
 
-      if (!leadError && profiles) {
-        let mapped = profiles.map((p: any) => {
+      if (!leadError && topProfiles) {
+        const mappedTop3 = topProfiles.map((p: any) => {
           const totalXP = Number(p.xp_points ?? p.xp ?? 0);
           const userStreak = Number(p.streak ?? p.current_streak ?? 0);
-          const rawName = p.name || p.username || p.full_name || "Artist";
+          const rawName = p.name || p.username || "Artist";
           const cleanName = String(rawName).replace(/<[^>]*>?/gm, "").trim();
 
           return {
@@ -225,27 +232,19 @@ export default function DashboardPage() {
           };
         });
 
-        // Exact Sequential Sorting: 1. XP -> 2. Streak -> 3. ID Tiebreaker
-        mapped.sort((a, b) => {
-          if (b.xp !== a.xp) {
-            return b.xp - a.xp;
-          }
-          if (b.streak !== a.streak) {
-            return b.streak - a.streak;
-          }
-          return a.id.localeCompare(b.id);
-        });
+        setLeaderboard(mappedTop3);
+      }
 
-        // Set Top 3 users for Dashboard Display
-        setLeaderboard(mapped.slice(0, 3));
+      // Step B: Calculate exact global rank using count of users having greater XP
+      const { count, error: rankError } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .gt("xp", currentProfileXp);
 
-        // Exact User Rank Calculation
-        const rankIndex = mapped.findIndex((u) => u.id === user.id);
-        if (rankIndex !== -1) {
-          setUserRank(`#${rankIndex + 1}`);
-        } else {
-          setUserRank("-");
-        }
+      if (!rankError && count !== null) {
+        setUserRank(`#${count + 1}`);
+      } else {
+        setUserRank("-");
       }
 
     } catch (err) {
