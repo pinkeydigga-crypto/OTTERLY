@@ -204,7 +204,7 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // 5. Leaderboard Sync & Exact Rank Calculation
+      // 5. EXACT LEADERBOARD & RANK SYNC
       const { data: allProfiles, error: leadError } = await supabase
         .from("profiles")
         .select("*");
@@ -225,15 +225,16 @@ export default function DashboardPage() {
           };
         });
 
-        // Exact leaderboard sorting: XP -> Streak -> ID
+        // Exact sorting match: XP (desc) -> Streak (desc) -> ID (asc)
         sortedProfiles.sort((a, b) => {
           if (b.xp !== a.xp) return b.xp - a.xp;
           if (b.streak !== a.streak) return b.streak - a.streak;
-          return a.id.localeCompare(b.id);
+          return String(a.id).localeCompare(String(b.id));
         });
 
         setLeaderboard(sortedProfiles.slice(0, 3));
 
+        // Find exact position in sorted leaderboard
         const myRankIndex = sortedProfiles.findIndex((u) => u.id === user.id);
         if (myRankIndex !== -1) {
           setUserRank(`#${myRankIndex + 1}`);
