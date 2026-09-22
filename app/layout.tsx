@@ -17,7 +17,10 @@ const SITE_URL = "https://www.otterleo.in";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Otterleo - Learn to Draw with AI Feedback & Challenges",
+  title: {
+    default: "Otterleo - Learn to Draw with AI Feedback & Challenges",
+    template: "%s | Otterleo", // Har child page (Signup, Blog, etc.) ka title automatically unique ho jayega
+  },
   description: "Learn to draw with AI-powered feedback, gamified daily challenges, and instant sketch analysis. Master drawing step-by-step with Otto, your AI drawing coach.",
   keywords: [
     "Otterleo",
@@ -46,7 +49,10 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: "Otterleo - Learn to Draw",
+    title: {
+      default: "Otterleo - Learn to Draw",
+      template: "%s | Otterleo",
+    },
     description: "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
     url: SITE_URL,
     siteName: "Otterleo AI",
@@ -63,7 +69,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Otterleo - Learn to Draw with AI",
+    title: {
+      default: "Otterleo - Learn to Draw with AI",
+      template: "%s | Otterleo",
+    },
     description: "Improve your drawing skills daily in fun way through interactive challenges, step-by-step tutorials, and gamified online courses that make practice enjoyable and creative.",
     images: [FAVICON_URL],
   },

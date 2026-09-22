@@ -1,9 +1,9 @@
 import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ShieldCheck,
   Lock,
-  Eye,
   Database,
   UserCheck,
   Trash2,
@@ -17,11 +17,99 @@ import {
   UserX,
 } from "lucide-react";
 
+const SITE_URL = "https://Otterleo.in";
+const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: "Privacy Policy",
+  description:
+    "Read the official Otterleo Privacy Policy. Learn how we protect, process, and secure your personal data, artwork, and account information.",
+  keywords: [
+    "Otterleo Privacy Policy",
+    "Otterleo Data Security",
+    "Otterleo Terms and Privacy",
+    "Drawing App Privacy Policy",
+    "AI Drawing Data Protection",
+  ],
+  alternates: {
+    canonical: "/privacy-policy",
+  },
+  openGraph: {
+    title: "Privacy Policy — Otterleo",
+    description:
+      "Learn how Otterleo protects your personal information, drawings, and account privacy.",
+    url: `${SITE_URL}/privacy-policy`,
+    siteName: "Otterleo",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: LOGO_URL,
+        width: 1200,
+        height: 630,
+        alt: "Otterleo Privacy Policy",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy — Otterleo",
+    description: "Your privacy & security first. Official Privacy Policy of Otterleo.",
+    images: [LOGO_URL],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
 export const dynamic = "force-static";
 
 export default function PrivacyPolicyPage() {
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/privacy-policy/#webpage`,
+        "url": `${SITE_URL}/privacy-policy`,
+        "name": "Privacy Policy — Otterleo",
+        "description": "Official Privacy Policy and Data Security documentation for Otterleo.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "@id": `${SITE_URL}/#website`,
+          "name": "Otterleo",
+          "url": SITE_URL
+        },
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": SITE_URL
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Privacy Policy",
+              "item": `${SITE_URL}/privacy-policy`
+            }
+          ]
+        }
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen bg-[#F6FAFF] text-[#0F172A] font-sans">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      />
+
       {/* Top Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <Link
@@ -161,7 +249,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc list-inside text-xs sm:text-sm font-bold text-slate-600 space-y-2">
               <li>Manage your data preferences directly inside your <strong>Account Settings</strong>.</li>
-              <li>Submit an opt-out request by emailing us at <strong className="text-blue-600">pinkeydigga026@gmail.com</strong>.</li>
+              <li>Submit an opt-out request by emailing us at <strong className="text-blue-600">otterleosupport@gmail.com</strong>.</li>
             </ul>
           </section>
 
@@ -232,8 +320,8 @@ export default function PrivacyPolicyPage() {
                 </div>
                 <div className="overflow-hidden">
                   <p className="text-xs font-black text-slate-400 uppercase">Support Email</p>
-                  <a href="mailto:pinkeydigga026@gmail.com" className="text-xs sm:text-sm font-black text-blue-600 truncate block hover:underline">
-                    pinkeydigga026@gmail.com
+                  <a href="mailto:otterleosupport@gmail.com" className="text-xs sm:text-sm font-black text-blue-600 truncate block hover:underline">
+                    otterleosupport@gmail.com
                   </a>
                 </div>
               </div>

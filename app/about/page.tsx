@@ -10,8 +10,8 @@ const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/p
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'Otterleo — The Fun Way to Learn Drawing & Sketching',
-  description: 'Otterleo is the best online platform to learn drawing and sketching in a fun way. Practice on interactive canvas, compete on leaderboards, gain XP, set avatars, and get AI feedback.',
+  title: 'About Us & Mission',
+  description: 'Learn drawing and sketching in a fun way with Otterleo. Discover our mission, meet Otto our mascot, and practice with gamified daily art challenges.',
   keywords: [
     'Otterleo',
     'What is Otterleo',
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     canonical: '/about',
   },
   openGraph: {
-    title: 'Otterleo — The Fun Way to Learn Drawing & Sketching',
+    title: 'About Otterleo — The Fun Way to Learn Drawing & Sketching',
     description: 'Learn drawing and sketching with Otterleo and Otto. Make art fun, affordable, and accessible.',
     url: `${SITE_URL}/about`,
     siteName: 'Otterleo',
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Otterleo — The Fun Way to Learn Drawing & Sketching',
+    title: 'About Otterleo — The Fun Way to Learn Drawing & Sketching',
     description: 'Gamified drawing and sketching learning platform. Master art with instant AI feedback.',
     images: [LOGO_URL],
   },

@@ -1,14 +1,99 @@
-"use client";
-
+import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ShieldCheck, Mail, Phone, Sparkles } from "lucide-react";
 
+const SITE_URL = "https://Otterleo.in";
+const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: "Terms & Conditions",
+  description:
+    "Read the official Terms and Conditions for using Otterleo. Understand our usage rules, daily scan limits, content policies, and service guidelines.",
+  keywords: [
+    "Otterleo Terms and Conditions",
+    "Otterleo Terms of Service",
+    "Otterleo Usage Rules",
+    "Drawing App Terms",
+    "AI Drawing Coach Guidelines",
+  ],
+  alternates: {
+    canonical: "/terms",
+  },
+  openGraph: {
+    title: "Terms & Conditions — Otterleo",
+    description: "Official Terms & Conditions and Usage Policy for Otterleo.",
+    url: `${SITE_URL}/terms`,
+    siteName: "Otterleo",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: LOGO_URL,
+        width: 1200,
+        height: 630,
+        alt: "Otterleo Terms & Conditions",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Terms & Conditions — Otterleo",
+    description: "Official Terms and Conditions for Otterleo.",
+    images: [LOGO_URL],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
 export default function TermsPage() {
-  const logoUrl =
-    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/terms/#webpage`,
+        "url": `${SITE_URL}/terms`,
+        "name": "Terms & Conditions — Otterleo",
+        "description": "Official Terms and Conditions for Otterleo drawing platform.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "@id": `${SITE_URL}/#website`,
+          "name": "Otterleo",
+          "url": SITE_URL
+        },
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": SITE_URL
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Terms & Conditions",
+              "item": `${SITE_URL}/terms`
+            }
+          ]
+        }
+      }
+    ]
+  };
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] font-sans tracking-tight text-slate-800 pb-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      />
+
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 backdrop-blur-md bg-white/90">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
@@ -19,9 +104,12 @@ export default function TermsPage() {
             <ArrowLeft className="w-4 h-4 stroke-[3]" />
             <span>Back to Home</span>
           </Link>
-          <img
-            src={logoUrl}
+          <Image
+            src={LOGO_URL}
             alt="Otterleo Logo"
+            width={120}
+            height={40}
+            priority
             className="h-10 w-auto object-contain"
           />
         </div>
@@ -49,7 +137,7 @@ export default function TermsPage() {
               <span className="text-[#2563EB]">1.</span> Acceptance of Terms
             </h2>
             <p>
-              By accessing, browsing, or creating an account on **Otterleo** ("Learn to Draw"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please refrain from using our platform and AI evaluation services.
+              By accessing, browsing, or creating an account on <strong>Otterleo</strong> ("Learn to Draw"), you agree to be bound by these Terms and Conditions. If you do not agree to these terms, please refrain from using our platform and AI evaluation services.
             </p>
           </section>
 
@@ -125,11 +213,11 @@ export default function TermsPage() {
                 <span>+91 9991257182</span>
               </a>
               <a
-                href="mailto:support@Otterleo.com"
+                href="mailto:otterleosupport@gmail.com"
                 className="inline-flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-blue-200 text-slate-700 font-black text-sm shadow-sm hover:bg-slate-100 transition-all"
               >
                 <Mail className="w-4 h-4 text-slate-500" />
-                <span>harjasdigga@gmail.com</span>
+                <span>otterleosupport@gmail.com</span>
               </a>
             </div>
           </section>
