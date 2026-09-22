@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, ChangeEvent, useCallback } from "react";
+import { useState, useEffect, useMemo, ChangeEvent, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -53,6 +53,52 @@ interface Profile {
   xp: number;
 }
 
+// Sub-component: Play GIF once and freeze on the final frame
+function OneTimeGifMascot({ gifUrl, durationMs = 3000 }: { gifUrl: string; durationMs?: number }) {
+  const [isFrozen, setIsFrozen] = useState(false);
+  const [frozenFrame, setFrozenFrame] = useState<string | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (imgRef.current) {
+        const img = imgRef.current;
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width || 300;
+        canvas.height = img.naturalHeight || img.height || 300;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          setFrozenFrame(canvas.toDataURL("image/png"));
+          setIsFrozen(true);
+        }
+      }
+    }, durationMs);
+
+    return () => clearTimeout(timer);
+  }, [gifUrl, durationMs]);
+
+  if (isFrozen && frozenFrame) {
+    return (
+      <img
+        src={frozenFrame}
+        alt="Otto Mascot Frozen"
+        className="w-full max-w-[280px] sm:max-w-[320px] h-auto object-contain block align-bottom"
+      />
+    );
+  }
+
+  return (
+    <img
+      ref={imgRef}
+      src={gifUrl}
+      alt="Otto Mascot GIF"
+      crossOrigin="anonymous"
+      className="w-full max-w-[280px] sm:max-w-[320px] h-auto object-contain block align-bottom"
+    />
+  );
+}
+
 export default function ScanPage() {
   const router = useRouter();
   const [authLoading, setAuthLoading] = useState(true);
@@ -69,8 +115,9 @@ export default function ScanPage() {
     seconds: number;
   } | null>(null);
 
-  const mascotImageUrl =
-    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20scan.jpeg";
+  // Aapka Supabase Storage Wala Updated GIF URL
+  const mascotGifUrl =
+    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/WhatsAppVideo2026-09-22at14.44.02online-video-cutter.com-ezgif.com-video-to-gif-converter__1__transparent.gif";
   const logoUrl =
     "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
@@ -497,7 +544,7 @@ export default function ScanPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Mascot Container */}
+          {/* Left Column: Mascot GIF Container (Plays 1 time & stops) */}
           <div className="md:col-span-5 bg-white p-6 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex flex-col items-center justify-between min-h-[440px] relative">
             <div className="text-center z-10 space-y-2">
               <h2 className="text-2xl font-black text-[#0F172A]">
@@ -510,11 +557,8 @@ export default function ScanPage() {
             </div>
 
             <div className="flex-1 flex items-end justify-center w-full mt-4 -mb-6 z-20">
-              <img
-                src={mascotImageUrl}
-                alt="Otto Mascot"
-                className="w-full max-w-[280px] sm:max-w-[320px] h-auto object-contain block align-bottom"
-              />
+              {/* GIF Mascot Component (3 second play time, then freezes) */}
+              <OneTimeGifMascot gifUrl={mascotGifUrl} durationMs={3000} />
             </div>
           </div>
 

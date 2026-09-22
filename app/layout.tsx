@@ -4,11 +4,12 @@ import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import OfflinePopup from "@/components/offlinepopup";
 
+// Next.js Turbopack safe Google Font configuration
 const nunito = Nunito({
   subsets: ["latin"],
-  weight: ["400", "600", "700", "800", "900"],
   variable: "--font-nunito",
   display: "swap",
+  adjustFontFallback: false,
 });
 
 const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
@@ -125,7 +126,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="min-h-full flex flex-col font-sans">
+      <body className={`${nunito.className} min-h-full flex flex-col font-sans`}>
         {children}
         <OfflinePopup />
         <Analytics />
