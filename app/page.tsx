@@ -8,7 +8,6 @@ export default function HomePage() {
   const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png';
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png';
 
-  // Carousel images with proper encoded URLs
   const sketches = [
     'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789570157001.png',
     'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567428738.png',
@@ -39,7 +38,8 @@ export default function HomePage() {
       }}
       className="relative selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased flex flex-col justify-between text-[#0F172A] overflow-x-hidden"
     >
-      <style jsx global>{`
+      {/* Native style tag without styled-jsx */}
+      <style>{`
         @keyframes slideInWithShadow {
           0% {
             opacity: 0;
@@ -187,7 +187,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* NON-MOVING MANUAL SKETCH CAROUSEL SECTION */}
+      {/* SKETCH CAROUSEL SECTION */}
       <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 my-8 z-10">
         <div className="text-center mb-6">
           <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
@@ -225,21 +225,34 @@ export default function HomePage() {
           <button
             onClick={() => scroll('right')}
             aria-label="Next sketch"
-            className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-[#2563EB] transition-all active:scale-95 cursor-pointer"
+            className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-md flex items-center justify-center text-[#2563EB] transition-all active:scale-95 cursor-pointer"
           >
             <ChevronRight className="w-6 h-6 stroke-[2.5]" />
           </button>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* FOOTER */}
       <footer className="w-full py-6 text-center text-xs text-slate-400 font-medium z-10 mt-auto">
-        <div className="flex justify-center items-center gap-4">
-          <Link href="/about" className="hover:text-slate-600 transition-colors">About Us</Link>
+        <div className="flex justify-center items-center gap-4 flex-wrap">
+          <Link href="/about" className="hover:text-slate-600 transition-colors">
+            About Us
+          </Link>
           <span>•</span>
-          <Link href="/terms" className="hover:text-slate-600 transition-colors">Terms</Link>
+          <Link href="/terms" className="hover:text-slate-600 transition-colors">
+            Terms
+          </Link>
           <span>•</span>
-          <Link href="/privacy" className="hover:text-slate-600 transition-colors">Privacy</Link>
+          <Link href="/privacy" className="hover:text-slate-600 transition-colors">
+            Privacy
+          </Link>
+          <span>•</span>
+          <Link 
+            href="/blog" 
+            className="hover:text-slate-600 transition-colors font-bold text-[#2563EB]"
+          >
+            Blog
+          </Link>
         </div>
       </footer>
 
