@@ -148,7 +148,7 @@ export default function TermsPage() {
               <span className="text-[#2563EB]">2.</span> Services Offered & AI Coach "Otto"
             </h2>
             <p>
-              Otterleo provides an interactive drawing education platform allowing users to upload artwork for structured evaluation by our AI Coach ("Otto"), participate in art challenges, track XP, and engage with community features.
+              Otterleo provides an interactive drawing education platform allowing users to upload artwork for structured evaluation by our AI Coach ("Otto"), participate in art challenges, track XP, and engage.
             </p>
           </section>
 
