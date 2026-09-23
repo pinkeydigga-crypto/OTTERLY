@@ -17,7 +17,7 @@ import {
   UserX,
 } from "lucide-react";
 
-const SITE_URL = "https://Otterleo.in";
+const SITE_URL = "https://www.otterleo.in";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
 export const metadata: Metadata = {
@@ -33,13 +33,13 @@ export const metadata: Metadata = {
     "AI Drawing Data Protection",
   ],
   alternates: {
-    canonical: "/privacy-policy",
+    canonical: "/privacy",
   },
   openGraph: {
     title: "Privacy Policy — Otterleo",
     description:
       "Learn how Otterleo protects your personal information, drawings, and account privacy.",
-    url: `${SITE_URL}/privacy-policy`,
+    url: `${SITE_URL}/privacy`,
     siteName: "Otterleo",
     locale: "en_US",
     type: "website",
@@ -72,8 +72,8 @@ export default function PrivacyPolicyPage() {
     "@graph": [
       {
         "@type": "WebPage",
-        "@id": `${SITE_URL}/privacy-policy/#webpage`,
-        "url": `${SITE_URL}/privacy-policy`,
+        "@id": `${SITE_URL}/privacy/#webpage`,
+        "url": `${SITE_URL}/privacy`,
         "name": "Privacy Policy — Otterleo",
         "description": "Official Privacy Policy and Data Security documentation for Otterleo.",
         "isPartOf": {
@@ -95,7 +95,7 @@ export default function PrivacyPolicyPage() {
               "@type": "ListItem",
               "position": 2,
               "name": "Privacy Policy",
-              "item": `${SITE_URL}/privacy-policy`
+              "item": `${SITE_URL}/privacy`
             }
           ]
         }
