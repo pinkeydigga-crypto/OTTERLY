@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, Trophy, Flame, Shield, Lock, 
@@ -68,30 +69,35 @@ export default function SettingsPage() {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        localStorage.clear();
+        if (typeof window !== "undefined") {
+          localStorage.clear();
+        }
         router.replace("/login");
         return;
       }
 
-      // 2. Fetch authenticated user's specific profile
+      // 2. Fetch authenticated user's specific profile (Optimized Column Selection to Reduce Direct Egress)
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, name, full_name, avatar_url, scans_count, scans, challenges_completed, completed_challenges, challenges_count, xp_points, xp, streak, current_streak, total_score")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError || !profile) {
-        localStorage.clear();
+        if (typeof window !== "undefined") {
+          localStorage.clear();
+        }
         router.replace("/login");
         return;
       }
 
       let completedChallengesCount = profile?.challenges_completed ?? profile?.completed_challenges ?? profile?.challenges_count ?? 0;
 
+      // Fetch count efficiently without row-payload transfer
       if (!completedChallengesCount) {
         const { count } = await supabase
           .from("user_challenges")
-          .select("*", { count: 'exact', head: true })
+          .select("id", { count: 'exact', head: true })
           .eq("user_id", user.id)
           .eq("status", "completed");
 
@@ -119,7 +125,9 @@ export default function SettingsPage() {
 
     } catch (err) {
       console.error("Security check or settings fetch failed:", err);
-      localStorage.clear();
+      if (typeof window !== "undefined") {
+        localStorage.clear();
+      }
       router.replace("/login");
     } finally {
       setLoading(false);
@@ -132,7 +140,9 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    localStorage.clear();
+    if (typeof window !== "undefined") {
+      localStorage.clear();
+    }
     router.replace("/login");
   };
 
@@ -221,10 +231,13 @@ export default function SettingsPage() {
           <>
             {/* User Profile Header */}
             <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 border-2 border-slate-100 shadow-xs flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-              <img
+              <Image
                 src={userStats.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${userStats.id || 'default'}`}
                 alt={userStats.full_name || "User Profile"}
+                width={80}
+                height={80}
                 className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-200 bg-blue-50 shrink-0"
+                unoptimized
               />
               <div className="space-y-1 min-w-0">
                 <h2 className="text-xl font-black text-slate-900 truncate">{userStats.full_name}</h2>

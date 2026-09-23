@@ -2,20 +2,22 @@
 
 import React, { useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+const SITE_URL = "https://www.otterleo.in";
+const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png";
+
+const SKETCHES = [
+  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789570157001.png',
+  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567428738.png',
+  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567954822%20%281%29.png',
+  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567813703.png',
+  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789568212852.png',
+];
+
 export default function HomePage() {
-  const logoUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png';
-  const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png';
-
-  const sketches = [
-    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789570157001.png',
-    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567428738.png',
-    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567954822%20%281%29.png',
-    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567813703.png',
-    'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789568212852.png',
-  ];
-
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -30,6 +32,40 @@ export default function HomePage() {
     }
   };
 
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": `${SITE_URL}/#website`,
+        "url": SITE_URL,
+        "name": "Otterleo",
+        "description": "Learn drawing online in a fun way with gamified challenges, AI sketch feedback, and interactive art courses.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Otterleo",
+          "url": SITE_URL,
+          "logo": {
+            "@type": "ImageObject",
+            "url": LOGO_URL
+          }
+        }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${SITE_URL}/#application`,
+        "name": "Otterleo Drawing App",
+        "operatingSystem": "Web Browser",
+        "applicationCategory": "EducationalApplication",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
+      }
+    ]
+  };
+
   return (
     <div 
       style={{
@@ -38,7 +74,11 @@ export default function HomePage() {
       }}
       className="relative selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased flex flex-col justify-between text-[#0F172A] overflow-x-hidden"
     >
-      {/* Native style tag without styled-jsx */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
+      />
+
       <style>{`
         @keyframes slideInWithShadow {
           0% {
@@ -99,9 +139,12 @@ export default function HomePage() {
       {/* Header */}
       <header className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-2 flex justify-center items-center z-10">
         <div className="relative w-44 h-14 sm:w-48 sm:h-16 flex items-center justify-center">
-          <img
-            src={logoUrl}
-            alt="Otterleo Logo"
+          <Image
+            src={LOGO_URL}
+            alt="Otterleo Logo - Learn Drawing Online Platform"
+            width={192}
+            height={64}
+            priority
             className="object-contain max-h-full max-w-full"
           />
         </div>
@@ -135,7 +178,7 @@ export default function HomePage() {
           {/* Speech Bubble */}
           <div className="absolute -top-3 right-20 sm:right-24 z-30">
             <div className="relative px-3 py-1 sm:px-3.5 sm:py-1 rounded-full text-xs sm:text-sm font-extrabold text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-sm">
-              Hi, I'm <span className="text-[#2563EB] font-black">Otto</span>
+              Hi, I&apos;m <span className="text-[#2563EB] font-black">Otto</span>
               <div className="otto-bubble-tail"></div>
               <div className="otto-bubble-tail-inner"></div>
             </div>
@@ -143,9 +186,12 @@ export default function HomePage() {
 
           {/* Mascot Image */}
           <div className="absolute -top-1 right-0 sm:right-1 z-20 w-24 h-24 sm:w-28 sm:h-28 pointer-events-none drop-shadow-md">
-            <img
-              src={mascotUrl}
-              alt="Otto Mascot"
+            <Image
+              src={MASCOT_URL}
+              alt="Otto Mascot - Otterleo Drawing Assistant"
+              width={112}
+              height={112}
+              priority
               className="w-full h-full object-contain"
             />
           </div>
@@ -208,14 +254,16 @@ export default function HomePage() {
             ref={carouselRef}
             className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth py-2 px-1"
           >
-            {sketches.map((url, idx) => (
+            {SKETCHES.map((url, idx) => (
               <div
                 key={idx}
                 className="flex-none w-[280px] sm:w-[340px] h-[200px] sm:h-[230px] bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden p-3 flex items-center justify-center relative hover:shadow-md transition-shadow"
               >
-                <img
+                <Image
                   src={url}
-                  alt={`Liked sketch ${idx + 1}`}
+                  alt={`Popular community sketch ${idx + 1} on Otterleo drawing platform`}
+                  width={340}
+                  height={230}
                   className="w-full h-full object-contain block"
                 />
               </div>

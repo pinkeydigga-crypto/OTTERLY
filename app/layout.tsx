@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "Otterleo - Learn to Draw with AI Feedback & Challenges",
-    template: "%s | Otterleo", // Har child page (Signup, Blog, etc.) ka title automatically unique ho jayega
+    template: "%s | Otterleo",
   },
   description: "Learn to draw with AI-powered feedback, gamified daily challenges, and instant sketch analysis. Master drawing step-by-step with Otto, your AI drawing coach.",
   keywords: [
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     "Learn drawing the fun way"
   ],
   alternates: {
-    canonical: SITE_URL,
+    canonical: './', // Automatically updates for every sub-page (/about, /blog, etc.)
   },
   icons: {
     icon: [
@@ -73,7 +73,7 @@ export const metadata: Metadata = {
       default: "Otterleo - Learn to Draw with AI",
       template: "%s | Otterleo",
     },
-    description: "Improve your drawing skills daily in fun way through interactive challenges, step-by-step tutorials, and gamified online courses that make practice enjoyable and creative.",
+    description: "Improve your drawing skills daily in fun way through interactive challenges, step-by-step tutorials, and gamified online courses.",
     images: [FAVICON_URL],
   },
   robots: {
@@ -90,6 +90,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // Fully Google-compliant JSON-LD Schema Structure
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -98,26 +99,39 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         "@id": `${SITE_URL}/#website`,
         "url": SITE_URL,
         "name": "Otterleo",
-        "description": "Learn drawing the fun way.",
-        "inLanguage": "en-US"
+        "description": "Learn drawing the fun way with AI-powered feedback.",
+        "inLanguage": "en-US",
+        "publisher": {
+          "@id": `${SITE_URL}/#organization`
+        }
       },
       {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
         "name": "Otterleo AI",
         "url": SITE_URL,
-        "logo": FAVICON_URL,
+        "logo": {
+          "@type": "ImageObject",
+          "url": FAVICON_URL
+        },
+        "image": FAVICON_URL
       },
       {
         "@type": "SoftwareApplication",
         "@id": `${SITE_URL}/#application`,
         "name": "Otterleo AI",
+        "url": SITE_URL,
         "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Web",
+        "operatingSystem": "All",
+        "image": FAVICON_URL,
+        "author": {
+          "@id": `${SITE_URL}/#organization`
+        },
         "offers": {
           "@type": "Offer",
           "price": "0",
-          "priceCurrency": "INR"
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
         }
       }
     ]
@@ -126,10 +140,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
       <head>
-        <link rel="icon" href={FAVICON_URL} sizes="48x48" type="image/png" />
-        <link rel="icon" href={FAVICON_URL} sizes="192x192" type="image/png" />
-        <link rel="apple-touch-icon" href={FAVICON_URL} />
-        
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

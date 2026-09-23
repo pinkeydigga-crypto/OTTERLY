@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, User, Home, Camera } from 'lucide-react';
 
-const SITE_URL = "https://Otterleo.in";
+const SITE_URL = "https://www.otterleo.in";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 const MASCOT_GIF_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif";
 const FOUNDER_IMAGE_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/harjas.jpg";
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Harjas Digga' }],
   creator: 'Harjas Digga',
   alternates: {
-    canonical: '/blog',
+    canonical: `${SITE_URL}/blog`,
   },
   openGraph: {
     title: 'How to Learn Drawing in a Fun Way Online | Otterleo',
@@ -66,6 +66,7 @@ export default function BlogPage() {
         "@id": `${SITE_URL}/blog/#article`,
         "headline": "How to Learn Drawing in a Fun Way Online in 2026: Beginner's Guide",
         "description": "Learn drawing online in an interactive way with daily gamified challenges, feedback, and structured drawing courses on Otterleo.",
+        "image": FOUNDER_IMAGE_URL,
         "author": {
           "@type": "Person",
           "name": "Harjas Digga",
@@ -75,9 +76,12 @@ export default function BlogPage() {
         },
         "publisher": {
           "@type": "Organization",
-          "name": "Otterleo",
+          "name": "Otterleo AI",
           "url": SITE_URL,
-          "logo": LOGO_URL
+          "logo": {
+            "@type": "ImageObject",
+            "url": LOGO_URL
+          }
         },
         "datePublished": "2026-09-10",
         "dateModified": "2026-09-10",
@@ -85,6 +89,7 @@ export default function BlogPage() {
       },
       {
         "@type": "FAQPage",
+        "@id": `${SITE_URL}/blog/#faq`,
         "mainEntity": [
           {
             "@type": "Question",
@@ -106,6 +111,7 @@ export default function BlogPage() {
       },
       {
         "@type": "BreadcrumbList",
+        "@id": `${SITE_URL}/blog/#breadcrumb`,
         "itemListElement": [
           {
             "@type": "ListItem",

@@ -1,4 +1,14 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Page Not Found | Otterleo',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export const dynamic = 'force-static';
 
@@ -21,10 +31,13 @@ export default function NotFound() {
       {/* Header */}
       <header style={{ maxWidth: '80rem', width: '100%', margin: '0 auto', padding: '32px 24px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         <Link href="/">
-          <img
+          <Image
             src={logoUrl}
             alt="Otterleo Logo"
-            style={{ height: '70px', objectFit: 'contain', cursor: 'pointer' }}
+            width={180}
+            height={70}
+            style={{ objectFit: 'contain', cursor: 'pointer' }}
+            priority
           />
         </Link>
       </header>
@@ -45,11 +58,13 @@ export default function NotFound() {
           }}
         >
           {/* Mascot Image */}
-          <div style={{ width: '96px', height: '96px', margin: '0 auto 16px auto' }}>
-            <img
+          <div style={{ width: '96px', height: '96px', margin: '0 auto 16px auto', position: 'relative' }}>
+            <Image
               src={mascotUrl}
               alt="Otto Mascot"
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              width={96}
+              height={96}
+              style={{ objectFit: 'contain' }}
             />
           </div>
 
@@ -90,7 +105,7 @@ export default function NotFound() {
           <p style={{ margin: 0, color: '#ffffff' }}>© 2026 Otterleo. All rights reserved.</p>
           <div style={{ display: 'flex', gap: '12px' }}>
             <Link href="/about" style={{ backgroundColor: '#1D4ED8', color: '#ffffff', padding: '8px 16px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none' }}>About Us</Link>
-            <Link href="/privacy" style={{ backgroundColor: '#1D4ED8', color: '#ffffff', padding: '8px 16px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none' }}>Privacy Policy</Link>
+            <Link href="/terms" style={{ backgroundColor: '#1D4ED8', color: '#ffffff', padding: '8px 16px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.2)', textDecoration: 'none' }}>Terms & Conditions</Link>
           </div>
         </div>
       </footer>

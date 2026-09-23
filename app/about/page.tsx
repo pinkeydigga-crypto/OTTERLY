@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 
-const SITE_URL = "https://Otterleo.in";
+const SITE_URL = "https://www.otterleo.in";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
 
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     'Drawing and Sketching App XP Streaks'
   ],
   alternates: {
-    canonical: '/about',
+    canonical: `${SITE_URL}/about`,
   },
   openGraph: {
     title: 'About Otterleo — The Fun Way to Learn Drawing & Sketching',
@@ -61,26 +61,44 @@ export default function AboutPage() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "SoftwareApplication",
-        "@id": `${SITE_URL}/#application`,
-        "name": "Otterleo",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Web",
-        "offers": {
-          "@type": "Offer",
-          "price": "299",
-          "priceCurrency": "INR"
-        }
-      },
-      {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
-        "name": "Otterleo",
+        "name": "Otterleo AI",
         "url": SITE_URL,
-        "logo": LOGO_URL,
+        "logo": {
+          "@type": "ImageObject",
+          "url": LOGO_URL
+        },
         "sameAs": [
           SITE_URL
         ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/about/#webpage`,
+        "url": `${SITE_URL}/about`,
+        "name": "About Otterleo & Otto Mascot",
+        "description": "Learn about Otterleo, the gamified drawing platform with AI visual feedback.",
+        "isPartOf": {
+          "@id": `${SITE_URL}/#website`
+        },
+        "breadcrumb": {
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": SITE_URL
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "About",
+              "item": `${SITE_URL}/about`
+            }
+          ]
+        }
       },
       {
         "@type": "FAQPage",
@@ -127,33 +145,6 @@ export default function AboutPage() {
             }
           }
         ]
-      },
-      {
-        "@type": "WebPage",
-        "@id": `${SITE_URL}/about/#webpage`,
-        "url": `${SITE_URL}/about`,
-        "name": "About Otterleo",
-        "description": "Information about Otterleo drawing and sketching platform and Otto mascot.",
-        "isPartOf": {
-          "@id": `${SITE_URL}/#website`
-        },
-        "breadcrumb": {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": SITE_URL
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "About",
-              "item": `${SITE_URL}/about`
-            }
-          ]
-        }
       }
     ]
   };
@@ -258,15 +249,15 @@ export default function AboutPage() {
             Why Start Your Drawing & Sketching Journey With Otterleo?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
+            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
               <h3 className="font-bold text-lg text-[#0F172A] mb-2">Fun Challenges & XP</h3>
               <p className="text-sm text-[#64748B] leading-relaxed">Complete daily drawing and sketching challenges, earn XP, build daily streaks, and set unique avatars.</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
+            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
               <h3 className="font-bold text-lg text-[#0F172A] mb-2">AI Artwork Scan</h3>
               <p className="text-sm text-[#64748B] leading-relaxed">Scan physical paper sketches to get instant precision scores, feedback, and improvement tips.</p>
             </div>
-            <div className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
+            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
               <h3 className="font-bold text-lg text-[#0F172A] mb-2">Canvas & Leaderboard</h3>
               <p className="text-sm text-[#64748B] leading-relaxed">Practice anytime on the interactive Otterleo canvas and compete with artists on the leaderboard.</p>
             </div>
