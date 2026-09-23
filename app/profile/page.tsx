@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -42,18 +42,14 @@ export default function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  // Editable Form States
+  // Editable Form States (Default Avatar initialized to prevent empty img src warning)
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const {
         data: { user },
@@ -78,17 +74,27 @@ export default function ProfilePage() {
         return;
       }
 
-      setProfile(data);
+      const userAvatar = data.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${data.id}`;
+
+      setProfile({
+        ...data,
+        avatar_url: userAvatar,
+      });
       setName(data.name || "");
       setUsername(data.username || "");
-      setSelectedAvatar(data.avatar_url || AVATARS[0].url);
-      setLoading(false);
-    } catch (err: any) {
+      setSelectedAvatar(userAvatar);
+    } catch (err: unknown) {
       console.error("Profile security check failed:", err);
       localStorage.clear();
       router.replace("/login");
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,8 +141,9 @@ export default function ProfilePage() {
       }
 
       setMessage({ type: "success", text: "Profile updated successfully!" });
-    } catch (err: any) {
-      setMessage({ type: "error", text: err.message || "Failed to update profile." });
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Failed to update profile.";
+      setMessage({ type: "error", text: errMsg });
     } finally {
       setSaving(false);
     }
@@ -152,6 +159,7 @@ export default function ProfilePage() {
         throw new Error("User session expired. Please log in again.");
       }
 
+      // Delete user profile data
       const { error: dbError } = await supabase
         .from("profiles")
         .delete()
@@ -159,14 +167,16 @@ export default function ProfilePage() {
 
       if (dbError) throw dbError;
 
+      // Sign out and clear local data
       await supabase.auth.signOut();
       localStorage.clear();
       router.replace("/login");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Delete Account Error:", err);
+      const errMsg = err instanceof Error ? err.message : "Failed to delete account. Please check Supabase RLS policies.";
       setMessage({
         type: "error",
-        text: err.message || "Failed to delete account. Please check Supabase RLS policies.",
+        text: errMsg,
       });
       setShowDeleteModal(false);
     } finally {
@@ -231,7 +241,11 @@ export default function ProfilePage() {
         <div className="bg-white rounded-[2.5rem] p-6 border-2 border-slate-100 shadow-xs flex flex-col sm:flex-row items-center gap-6">
           <div className="relative">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-blue-50 border-4 border-[#2563EB] p-1 shadow-md overflow-hidden flex items-center justify-center">
-              <img src={selectedAvatar} alt="Current Avatar" className="w-full h-full object-contain rounded-2xl" />
+              <img 
+                src={selectedAvatar || profile?.avatar_url || AVATARS[0].url} 
+                alt="Current Avatar" 
+                className="w-full h-full object-contain rounded-2xl" 
+              />
             </div>
           </div>
 

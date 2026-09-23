@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, Share2, Download, X, Loader2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, Award, User, Settings, Flame, PanelLeft,
-  Star, Heart, Palette, Grid
+  Star, Palette, Grid
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import html2canvas from "html2canvas";
@@ -153,10 +153,25 @@ export default function LeaderboardPage() {
           for (let i = 0; i < images.length; i++) {
             images[i].setAttribute("crossorigin", "anonymous");
           }
+
+          const elements = clonedDoc.querySelectorAll("*");
+          elements.forEach((el) => {
+            const htmlEl = el as HTMLElement;
+            const computedStyle = window.getComputedStyle(htmlEl);
+            
+            if (computedStyle.color && (computedStyle.color.includes("lab") || computedStyle.color.includes("oklab"))) {
+              htmlEl.style.color = "#1e3a8a";
+            }
+            if (computedStyle.backgroundColor && (computedStyle.backgroundColor.includes("lab") || computedStyle.backgroundColor.includes("oklab"))) {
+              htmlEl.style.backgroundColor = "#ffffff";
+            }
+            if (computedStyle.borderColor && (computedStyle.borderColor.includes("lab") || computedStyle.borderColor.includes("oklab"))) {
+              htmlEl.style.borderColor = "#cbd5e1";
+            }
+          });
         },
       });
     } catch (canvasErr) {
-      console.warn("html2canvas fallback trigger due to:", canvasErr);
       return generateFallbackCanvas();
     }
   };
@@ -177,34 +192,17 @@ export default function LeaderboardPage() {
     ctx.lineWidth = 12;
     ctx.stroke();
 
-    ctx.fillStyle = "#3b82f6";
-    ctx.beginPath();
-    ctx.arc(0, 0, 100, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(720, 960, 100, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#1e293b";
-    ctx.font = "900 32px sans-serif";
+    ctx.fillStyle = "#1e3a8a";
+    ctx.font = "900 36px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("MY LEADERBOARD RANK", 360, 160);
+    ctx.fillText("My Global Rank", 360, 160);
 
-    ctx.fillStyle = "#2563eb";
-    ctx.roundRect(260, 190, 200, 50, 25);
-    ctx.fill();
+    ctx.fillStyle = "#1e3a8a";
+    ctx.font = "900 80px sans-serif";
+    ctx.fillText(`${currentUser.rank || "N/A"}`, 360, 280);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "900 24px sans-serif";
-    ctx.fillText(`Top #${currentUser.rank || "N/A"}`, 360, 224);
-
-    ctx.fillStyle = "#0f172a";
-    ctx.font = "900 40px sans-serif";
-    ctx.fillText(currentUser.full_name, 360, 520);
-
-    ctx.fillStyle = "#f0f6ff";
-    ctx.roundRect(100, 580, 520, 140, 20);
+    ctx.fillStyle = "#e0f2fe";
+    ctx.roundRect(100, 580, 520, 140, 24);
     ctx.fill();
 
     ctx.fillStyle = "#0f172a";
@@ -232,7 +230,7 @@ export default function LeaderboardPage() {
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
-      link.download = `${currentUser?.full_name || "User"}_Leaderboard_Rank.png`;
+      link.download = `${currentUser?.full_name || "User"}_Global_Rank.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -263,15 +261,15 @@ export default function LeaderboardPage() {
           return;
         }
 
-        const file = new File([blob], `${currentUser?.full_name || "User"}_Leaderboard_Rank.png`, {
+        const file = new File([blob], `${currentUser?.full_name || "User"}_Global_Rank.png`, {
           type: "image/png",
         });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: "My Leaderboard Rank",
-            text: `Check out my rank on Otterleo Leaderboard! 🎨`,
+            title: "My Global Rank",
+            text: `Check out my rank on Otterleo! 🎨`,
           });
         } else {
           handleDownloadImage();
@@ -485,7 +483,7 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* Mascot Banner Section - Text Original & Mascot Bada */}
+        {/* Mascot Banner Section */}
         <div className="bg-white px-5 sm:px-8 pt-4 pb-0 rounded-[2rem] border-2 border-slate-100 shadow-xs flex flex-row items-end justify-center gap-4 sm:gap-6 text-left relative overflow-hidden min-h-[120px] sm:min-h-[140px]">
           <div className="w-32 sm:w-44 md:w-48 shrink-0 flex items-end justify-center -mb-1">
             <img
@@ -515,11 +513,11 @@ export default function LeaderboardPage() {
           </div>
         ) : (
           <>
-            {/* Top 3 Podium (Chote Pillars, Square Avatar, Niche Grey/Color Fade Effect) */}
+            {/* Top 3 Podium */}
             {leaderboardData.length > 0 ? (
               <div className="pt-4 pb-1 grid grid-cols-3 gap-2 sm:gap-4 md:gap-5 items-end w-full max-w-xl mx-auto">
                 
-                {/* RANK 2 - Left Pillar */}
+                {/* RANK 2 */}
                 <div className="flex flex-col items-center">
                   {rank2 ? (
                     <>
@@ -532,7 +530,6 @@ export default function LeaderboardPage() {
                       <h3 className="font-extrabold text-slate-800 text-[11px] sm:text-xs truncate max-w-[90px] sm:max-w-[120px] text-center">
                         {rank2.full_name}
                       </h3>
-                      {/* Gradient Fade to Bottom / Compact Height */}
                       <div className="w-full bg-gradient-to-b from-[#e2e8f0]/80 via-[#f1f5f9]/40 to-transparent rounded-t-2xl pt-3 pb-2 px-1 mt-1 text-center flex flex-col items-center min-h-[75px] sm:min-h-[90px] justify-start">
                         <span className="text-xs sm:text-base font-black text-[#475569] block">
                           {rank2.xp_points.toLocaleString()}
@@ -545,7 +542,7 @@ export default function LeaderboardPage() {
                   ) : <div className="h-24" />}
                 </div>
 
-                {/* RANK 1 - Middle Tall Pillar */}
+                {/* RANK 1 */}
                 <div className="flex flex-col items-center">
                   {rank1 ? (
                     <>
@@ -558,7 +555,6 @@ export default function LeaderboardPage() {
                       <h3 className="font-black text-slate-900 text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[130px] text-center">
                         {rank1.full_name}
                       </h3>
-                      {/* Gradient Fade to Bottom / Compact Height */}
                       <div className="w-full bg-gradient-to-b from-[#fef3c7] via-[#fffbeb]/50 to-transparent rounded-t-2xl pt-3.5 pb-2 px-1 mt-1 text-center flex flex-col items-center min-h-[95px] sm:min-h-[115px] justify-start">
                         <span className="text-sm sm:text-lg font-black text-[#d97706] block">
                           {rank1.xp_points.toLocaleString()}
@@ -571,7 +567,7 @@ export default function LeaderboardPage() {
                   ) : <div className="h-32" />}
                 </div>
 
-                {/* RANK 3 - Right Pillar */}
+                {/* RANK 3 */}
                 <div className="flex flex-col items-center">
                   {rank3 ? (
                     <>
@@ -584,7 +580,6 @@ export default function LeaderboardPage() {
                       <h3 className="font-extrabold text-slate-800 text-[11px] sm:text-xs truncate max-w-[90px] sm:max-w-[120px] text-center">
                         {rank3.full_name}
                       </h3>
-                      {/* Gradient Fade to Bottom / Compact Height */}
                       <div className="w-full bg-gradient-to-b from-[#ffedd5]/80 via-[#fff7ed]/40 to-transparent rounded-t-2xl pt-3 pb-2 px-1 mt-1 text-center flex flex-col items-center min-h-[60px] sm:min-h-[75px] justify-start">
                         <span className="text-xs sm:text-base font-black text-[#c2410c] block">
                           {rank3.xp_points.toLocaleString()}
@@ -694,7 +689,7 @@ export default function LeaderboardPage() {
       {/* Share Card Modal */}
       {isShareModalOpen && currentUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-[360px] p-4 sm:p-6 shadow-2xl relative border-2 border-slate-100 my-auto">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-[420px] p-4 sm:p-6 shadow-2xl relative border-2 border-slate-100 my-auto">
             <button
               onClick={() => setIsShareModalOpen(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 z-10 cursor-pointer"
@@ -702,79 +697,133 @@ export default function LeaderboardPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Target Card for Image Export */}
+            {/* Target Card for Export - Removed Bottom OTTERLEO Badge */}
             <div
               ref={cardRef}
-              className="w-full bg-white rounded-[2rem] p-5 text-center shadow-lg relative overflow-hidden mb-5 border-4 border-blue-500 flex flex-col items-center"
+              className="w-full relative overflow-hidden flex flex-col items-center justify-between p-5 sm:p-6 text-center select-none rounded-xl mb-4"
+              style={{
+                backgroundColor: "#e0f2fe",
+                backgroundImage: `
+                  linear-gradient(to right, rgba(147, 197, 253, 0.4) 1px, transparent 1px),
+                  linear-gradient(to bottom, rgba(147, 197, 253, 0.4) 1px, transparent 1px)
+                `,
+                backgroundSize: "22px 22px",
+                fontFamily: '"Comic Sans MS", "Chalkboard SE", "Caveat", "Architects Daughter", cursive, sans-serif',
+              }}
             >
-              <div className="absolute -top-8 -left-8 w-20 h-20 bg-blue-500 rounded-full pointer-events-none" />
-              <div className="absolute -bottom-8 -right-8 w-20 h-20 bg-blue-500 rounded-full pointer-events-none" />
-
-              <div className="relative z-10 flex flex-col items-center mb-2">
-                <img
-                  src={logoUrl}
-                  alt="Logo"
-                  className="h-9 w-auto object-contain mb-1"
-                  crossOrigin="anonymous"
+              {/* Inner Torn Paper Container */}
+              <div
+                className="w-full h-full bg-[#fdfbf7] rounded-sm p-6 sm:p-7 relative flex flex-col items-center justify-between min-h-[460px] border border-amber-100/60"
+                style={{
+                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)",
+                  clipPath: "polygon(0% 0.5%, 15% 0%, 30% 0.8%, 45% 0.2%, 60% 0.6%, 75% 0.1%, 90% 0.7%, 100% 0%, 99.5% 15%, 100% 30%, 99.2% 45%, 100% 60%, 99.6% 75%, 100% 90%, 99.4% 100%, 85% 99.5%, 70% 100%, 55% 99.2%, 40% 100%, 25% 99.6%, 10% 100%, 0% 99.3%, 0.5% 85%, 0% 70%, 0.8% 55%, 0.2% 40%, 0.6% 25%, 0.1% 10%)"
+                }}
+              >
+                {/* Blue Washi Tape (Top Left) */}
+                <div
+                  className="absolute -top-3 -left-4 w-20 h-7 -rotate-25 shadow-xs z-20 opacity-90 pointer-events-none"
+                  style={{
+                    backgroundColor: "#60a5fa",
+                    clipPath: "polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%)"
+                  }}
                 />
-              </div>
 
-              <div className="relative z-10 space-y-1 mb-3">
-                <h2 className="text-sm font-black text-[#1e293b] tracking-wide uppercase">
-                  MY LEADERBOARD RANK
-                </h2>
-
-                <div className="inline-flex items-center gap-1 bg-[#2563eb] text-white font-black text-xs px-3.5 py-1 rounded-full shadow-xs">
-                  Top #{currentUser.rank || "N/A"}
-                </div>
-              </div>
-
-              <div className="relative z-10 my-1">
-                <div className="relative inline-block bg-blue-500 p-1.5 rounded-2xl shadow-md">
+                {/* Top Otterleo Logo */}
+                <div className="pt-2 z-10 flex flex-col items-center">
                   <img
-                    src={currentUser.avatar_url}
-                    alt={currentUser.full_name}
-                    className="w-20 h-20 rounded-xl object-cover bg-white"
+                    src={logoUrl}
+                    alt="Otterleo"
+                    className="h-10 sm:h-12 w-auto object-contain mb-1"
                     crossOrigin="anonymous"
                   />
-                  <span className="absolute -bottom-2 -right-2 bg-white text-[#2563eb] font-black text-[10px] px-2 py-0.5 rounded-full shadow-md border border-blue-100">
-                    #{currentUser.rank || "N/A"}
-                  </span>
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: "#1e3a8a" }}>
+                    My Global Rank
+                  </h2>
                 </div>
-              </div>
 
-              <h3 className="relative z-10 font-black text-lg text-[#0f172a] mt-2 mb-3 truncate w-full px-2">
-                {currentUser.full_name}
-              </h3>
+                {/* Crown + Rank Number */}
+                <div className="relative my-auto py-2 flex flex-col items-center justify-center w-full z-10">
+                  {/* Crown */}
+                  <div className="mb-1">
+                    <svg className="w-10 h-10 sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" />
+                      <circle cx="2" cy="4" r="1" fill="#f59e0b" />
+                      <circle cx="12" cy="4" r="1" fill="#f59e0b" />
+                      <circle cx="22" cy="4" r="1" fill="#f59e0b" />
+                    </svg>
+                  </div>
 
-              <div className="relative z-10 w-full bg-[#f0f6ff] rounded-xl p-3 border border-blue-100 flex items-center justify-around mb-3">
-                <div className="flex items-center gap-2 text-left">
-                  <Star className="w-4 h-4 text-blue-600 fill-blue-600 shrink-0" />
-                  <div>
-                    <p className="text-[9px] text-slate-400 font-extrabold uppercase">TOTAL XP</p>
-                    <p className="text-sm font-black text-[#0f172a]">{currentUser.xp_points} XP</p>
+                  {/* Rank with Action Lines */}
+                  <div className="relative flex items-center justify-center">
+                    {/* Left Action Lines */}
+                    <div className="absolute -left-9 flex flex-col items-center gap-1.5 opacity-80" style={{ color: "#1e3a8a" }}>
+                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full rotate-25"></span>
+                      <span className="w-4 h-1 bg-[#1e3a8a] rounded-full"></span>
+                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full -rotate-25"></span>
+                    </div>
+
+                    {/* Big Rank Number */}
+                    <span className="text-7xl sm:text-8xl font-black leading-none tracking-tight" style={{ color: "#1e3a8a" }}>
+                      {currentUser?.rank || "5"}
+                    </span>
+
+                    {/* Right Action Lines */}
+                    <div className="absolute -right-9 flex flex-col items-center gap-1.5 opacity-80" style={{ color: "#1e3a8a" }}>
+                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full -rotate-25"></span>
+                      <span className="w-4 h-1 bg-[#1e3a8a] rounded-full"></span>
+                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full rotate-25"></span>
+                    </div>
+                  </div>
+
+                  {/* Underline Stroke */}
+                  <div className="w-28 h-2 rounded-full mt-2 -rotate-1 opacity-90" style={{ backgroundColor: "#93c5fd" }} />
+                </div>
+
+                {/* XP & Streak Box */}
+                <div
+                  className="w-full rounded-2xl py-3.5 px-4 flex items-center justify-around my-2 z-10"
+                  style={{ backgroundColor: "#e0f2fe", opacity: 0.9 }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Star className="w-5 h-5 fill-[#1e3a8a] text-[#1e3a8a]" />
+                    <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">XP</p>
+                      <p className="text-sm sm:text-base font-black text-slate-900">{currentUser?.xp_points || 0} XP</p>
+                    </div>
+                  </div>
+
+                  <div className="h-8 w-0.5 bg-blue-200/80" />
+
+                  <div className="flex items-center gap-3">
+                    <Flame className="w-5 h-5 fill-[#1e3a8a] text-[#1e3a8a]" />
+                    <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Streak</p>
+                      <p className="text-sm sm:text-base font-black text-slate-900">{currentUser?.streak || 0} Days</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="h-7 w-px bg-blue-200" />
+                {/* Footer Quote & Doodles */}
+                <div className="w-full pt-2 flex flex-col items-center justify-center relative z-10">
+                  <p className="text-xs sm:text-sm font-black italic tracking-wide" style={{ color: "#2563eb" }}>
+                    Keep drawing, keep growing!
+                  </p>
 
-                <div className="flex items-center gap-2 text-left">
-                  <Flame className="w-4 h-4 text-blue-600 fill-blue-600 shrink-0" />
-                  <div>
-                    <p className="text-[9px] text-slate-400 font-extrabold uppercase">STREAK</p>
-                    <p className="text-sm font-black text-[#0f172a] flex items-center gap-1">
-                      {currentUser.streak} <span className="text-amber-500">🔥</span>
-                    </p>
+                  {/* Underline for quote */}
+                  <div className="w-24 h-1 rounded-full mt-1 -rotate-2" style={{ backgroundColor: "#93c5fd" }} />
+
+                  {/* Bottom Right Heart & Pencil Doodle */}
+                  <div className="absolute right-0 bottom-0 flex items-center gap-1.5" style={{ color: "#2563eb" }}>
+                    <span className="text-xs font-black">♡</span>
+                    <div className="w-3.5 h-3.5 border-2 border-[#2563eb] rotate-45 rounded-xs flex items-center justify-center">
+                      <div className="w-1 h-1 bg-[#2563eb]" />
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div className="relative z-10 text-[11px] font-bold text-[#2563eb] italic flex items-center justify-center gap-1">
-                <span>Keep drawing, keep growing!</span>
-                <Heart className="w-3 h-3 fill-blue-600 stroke-none" />
               </div>
             </div>
 
+            {/* Modal Actions */}
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 onClick={handleShareImage}

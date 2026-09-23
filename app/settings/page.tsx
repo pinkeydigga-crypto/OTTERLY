@@ -48,12 +48,12 @@ export default function SettingsPage() {
     }
   }, []);
 
-  // User Stats State
+  // User Stats State (Default avatar_url fixed)
   const [userStats, setUserStats] = useState<UserStats>({
     id: "",
     email: "",
     full_name: "Artist",
-    avatar_url: "",
+    avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=default",
     scans_count: 0,
     challenges_completed: 0,
     xp_points: 0,
@@ -222,8 +222,8 @@ export default function SettingsPage() {
             {/* User Profile Header */}
             <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 border-2 border-slate-100 shadow-xs flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
               <img
-                src={userStats.avatar_url}
-                alt={userStats.full_name}
+                src={userStats.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${userStats.id || 'default'}`}
+                alt={userStats.full_name || "User Profile"}
                 className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-200 bg-blue-50 shrink-0"
               />
               <div className="space-y-1 min-w-0">
