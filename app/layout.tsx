@@ -90,7 +90,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  // Fully Google-compliant JSON-LD Schema Structure
+  // Global Schema for WebSite and Organization ONLY
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
@@ -115,24 +115,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           "url": FAVICON_URL
         },
         "image": FAVICON_URL
-      },
-      {
-        "@type": "SoftwareApplication",
-        "@id": `${SITE_URL}/#application`,
-        "name": "Otterleo AI",
-        "url": SITE_URL,
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "All",
-        "image": FAVICON_URL,
-        "author": {
-          "@id": `${SITE_URL}/#organization`
-        },
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD",
-          "availability": "https://schema.org/InStock"
-        }
       }
     ]
   };

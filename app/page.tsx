@@ -36,31 +36,35 @@ export default function HomePage() {
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        "name": "Otterleo",
+        "url": SITE_URL,
+        "logo": LOGO_URL
+      },
+      {
         "@type": "WebSite",
         "@id": `${SITE_URL}/#website`,
         "url": SITE_URL,
         "name": "Otterleo",
         "description": "Learn drawing online in a fun way with gamified challenges, AI sketch feedback, and interactive art courses.",
-        "publisher": {
-          "@type": "Organization",
-          "name": "Otterleo",
-          "url": SITE_URL,
-          "logo": {
-            "@type": "ImageObject",
-            "url": LOGO_URL
-          }
-        }
+        "publisher": { "@id": `${SITE_URL}/#organization` }
       },
       {
         "@type": "SoftwareApplication",
         "@id": `${SITE_URL}/#application`,
-        "name": "Otterleo Drawing App",
-        "operatingSystem": "Web Browser",
+        "name": "Otterleo - Learn Drawing Online",
+        "description": "Interactive web app to learn drawing with AI feedback, daily practice challenges, and gamified XP.",
+        "url": SITE_URL,
+        "image": LOGO_URL,
+        "operatingSystem": "All (Web Browser)",
         "applicationCategory": "EducationalApplication",
+        "author": { "@id": `${SITE_URL}/#organization` },
         "offers": {
           "@type": "Offer",
           "price": "0",
-          "priceCurrency": "INR"
+          "priceCurrency": "INR",
+          "availability": "https://schema.org/InStock"
         }
       }
     ]
