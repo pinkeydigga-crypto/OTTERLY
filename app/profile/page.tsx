@@ -42,7 +42,7 @@ export default function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  // Editable Form States (Default Avatar initialized to prevent empty img src warning)
+  // Editable Form States
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
@@ -62,9 +62,10 @@ export default function ProfilePage() {
         return;
       }
 
+      // ⚡ OPTIMIZATION: Fetch only required fields instead of select("*")
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, name, username, email, avatar_url, xp, streak")
         .eq("id", user.id)
         .single();
 
@@ -159,7 +160,6 @@ export default function ProfilePage() {
         throw new Error("User session expired. Please log in again.");
       }
 
-      // Delete user profile data
       const { error: dbError } = await supabase
         .from("profiles")
         .delete()
@@ -167,7 +167,6 @@ export default function ProfilePage() {
 
       if (dbError) throw dbError;
 
-      // Sign out and clear local data
       await supabase.auth.signOut();
       localStorage.clear();
       router.replace("/login");
@@ -199,11 +198,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col tracking-tight font-sans">
-      
-      {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-6 overflow-y-auto">
-        
-        {/* Top Header Navigation & XP Badge */}
         <div className="flex items-center justify-between mb-2 bg-white p-3 sm:p-4 rounded-2xl border-2 border-slate-100 shadow-xs">
           <Link
             href="/dashboard"
@@ -219,7 +214,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Page Title & Logout Action Bar */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A]">Your Profile</h1>
@@ -237,7 +231,6 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* User Stats Card Header */}
         <div className="bg-white rounded-[2.5rem] p-6 border-2 border-slate-100 shadow-xs flex flex-col sm:flex-row items-center gap-6">
           <div className="relative">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-blue-50 border-4 border-[#2563EB] p-1 shadow-md overflow-hidden flex items-center justify-center">
@@ -267,7 +260,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Edit Form Card */}
         <form
           onSubmit={handleSaveProfile}
           className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-2 border-slate-100 shadow-xs space-y-6"
@@ -284,7 +276,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Avatar Selector */}
           <div>
             <label className="block text-xs font-black text-[#0F172A] uppercase tracking-wider mb-3">
               Change Avatar
@@ -315,7 +306,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Full Name Input */}
           <div>
             <label className="block text-xs font-black text-[#0F172A] uppercase tracking-wider mb-2">
               Full Name
@@ -330,7 +320,6 @@ export default function ProfilePage() {
             />
           </div>
 
-          {/* Username Input */}
           <div>
             <label className="block text-xs font-black text-[#0F172A] uppercase tracking-wider mb-2">
               Username
@@ -345,7 +334,6 @@ export default function ProfilePage() {
             />
           </div>
 
-          {/* Email (Read Only) */}
           <div>
             <label className="block text-xs font-black text-[#0F172A] uppercase tracking-wider mb-2">
               Email Address (Cannot be changed)
@@ -358,7 +346,6 @@ export default function ProfilePage() {
             />
           </div>
 
-          {/* Save Button */}
           <button
             type="submit"
             disabled={saving}
@@ -369,7 +356,6 @@ export default function ProfilePage() {
           </button>
         </form>
 
-        {/* Danger Zone: Delete Account */}
         <div className="bg-red-50/70 border-2 border-red-200 rounded-[2.5rem] p-6 sm:p-8 space-y-4">
           <div className="flex items-center gap-3 text-red-700">
             <AlertTriangle className="w-6 h-6 shrink-0" />
@@ -391,7 +377,6 @@ export default function ProfilePage() {
         </div>
       </main>
 
-      {/* Confirmation Modal for Delete Account */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-[2rem] p-6 sm:p-8 max-w-md w-full border-2 border-slate-100 shadow-2xl space-y-5 text-center">
@@ -426,7 +411,6 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

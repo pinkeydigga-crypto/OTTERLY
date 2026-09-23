@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -35,14 +35,6 @@ interface Profile {
   last_login: string | null;
 }
 
-interface Challenge {
-  id: string;
-  title: string;
-  description: string;
-  xp_reward: number;
-  image_url: string;
-}
-
 interface Achievement {
   id: string;
   title: string;
@@ -53,6 +45,7 @@ interface LeaderboardUser {
   id: string;
   name: string;
   xp: number;
+  streak: number;
   avatar_url: string;
 }
 
@@ -70,14 +63,18 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [todayChallenge, setTodayChallenge] = useState<Challenge | null>(null);
-  const [isChallengeCompleted, setIsChallengeCompleted] = useState(false);
   const [recentAchievements, setRecentAchievements] = useState<Achievement[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [userRank, setUserRank] = useState<number | string>("-");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // Lock to avoid infinite re-fetching loops
+  const isFetchingRef = useRef(false);
+
   const fetchDashboardData = useCallback(async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     try {
       // 1. Strict Auth Verification Check
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -90,7 +87,7 @@ export default function DashboardPage() {
         return;
       }
 
-      // 2. Safe Fetch Profile Data
+      // 2. Safe & Optimized Profile Fetching
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
         .select("id, name, username, email, avatar_url, xp, streak, last_login")
@@ -98,8 +95,10 @@ export default function DashboardPage() {
         .maybeSingle();
 
       if (profError) {
-        console.error("Dashboard profile fetch exception:", profError.message, profError.details);
+        console.error("Dashboard profile fetch exception:", profError.message);
       }
+
+      let activeProfile: Profile;
 
       if (profileData) {
         const todayStr = getLocalDateString();
@@ -120,13 +119,13 @@ export default function DashboardPage() {
             .select("id, name, username, email, avatar_url, xp, streak, last_login")
             .maybeSingle();
 
-          setProfile(updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr });
+          activeProfile = updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr };
         } else {
-          setProfile(profileData);
+          activeProfile = profileData;
         }
       } else {
-        // Fallback profile object if DB record is temporarily missing
-        setProfile({
+        // Fallback object
+        activeProfile = {
           id: user.id,
           name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist",
           username: user.email?.split("@")[0] || "artist",
@@ -135,92 +134,46 @@ export default function DashboardPage() {
           xp: 0,
           streak: 1,
           last_login: getLocalDateString()
-        });
+        };
       }
 
-      // 3. Fetch Today's Challenge Safely
-      const { data: challengeData } = await supabase
-        .from("challenges")
-        .select("id, title, description, xp_reward, image_url")
-        .limit(1)
-        .maybeSingle();
+      setProfile(activeProfile);
 
-      if (challengeData) {
-        setTodayChallenge(challengeData);
-
-        const { data: userChall } = await supabase
-          .from("user_completed_challenges")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("challenge_id", challengeData.id)
-          .maybeSingle();
-
-        if (userChall) {
-          setIsChallengeCompleted(true);
-        }
-      }
-
-      // 4. Dynamic Achievements Retrieval
+      // 3. Dynamic Achievements (Optimized Single Foreign Join Query)
       const { data: userAchData, error: achError } = await supabase
         .from("user_completed_achievements")
-        .select("id, achievement_id, created_at")
+        .select("id, achievement_id, achievements(id, title, xp_reward)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(3);
 
-      if (!achError && userAchData && userAchData.length > 0) {
-        const { data: allAchievements } = await supabase
-          .from("achievements")
-          .select("id, title, xp_reward");
-
-        const formatted = userAchData.map((item) => {
-          const achKey = String(item.achievement_id || "").toLowerCase().trim();
-          
-          const detail = allAchievements?.find((a) => {
-            const dbId = String(a.id || "").toLowerCase().trim();
-            const dbTitleKey = String(a.title || "").toLowerCase().replace(/\s+/g, "_").trim();
-            return dbId === achKey || dbTitleKey === achKey;
-          });
-
-          return {
-            id: item.id,
-            title: detail?.title || item.achievement_id.replace(/_/g, " ").toUpperCase(),
-            xp_reward: detail?.xp_reward !== undefined ? detail.xp_reward : 50,
-          };
-        });
-
+      if (!achError && userAchData) {
+        const formatted = userAchData.map((item: any) => ({
+          id: item.id,
+          title: item.achievements?.title || String(item.achievement_id || "").replace(/_/g, " ").toUpperCase(),
+          xp_reward: item.achievements?.xp_reward ?? 50
+        }));
         setRecentAchievements(formatted);
       } else {
         setRecentAchievements([]);
       }
 
-      // 5. Sanitized Leaderboard Retrieval
-      const { data: profiles, error: leadError } = await supabase
+      // 4. Heavily Optimized Leaderboard (DB level Limit 10 & Sorting to control Egress)
+      const { data: topProfiles, error: leadError } = await supabase
         .from("profiles")
-        .select("id, name, username, xp, streak, avatar_url");
+        .select("id, name, username, xp, streak, avatar_url")
+        .order("xp", { ascending: false })
+        .order("streak", { ascending: false })
+        .limit(10);
 
-      if (!leadError && profiles) {
-        let mapped = profiles.map((p: any) => {
-          const totalXP = Number(p.xp ?? 0);
-          const userStreak = Number(p.streak ?? 0);
-          const rawName = p.name || p.username || "Artist";
-          const cleanName = rawName.replace(/<[^>]*>?/gm, "").trim();
-
-          return {
-            id: p.id,
-            name: cleanName,
-            xp: totalXP,
-            streak: userStreak,
-            avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.id}`,
-          };
-        });
-
-        mapped.sort((a, b) => {
-          if (b.xp !== a.xp) {
-            return b.xp - a.xp;
-          }
-          return b.streak - a.streak;
-        });
+      if (!leadError && topProfiles) {
+        const mapped: LeaderboardUser[] = topProfiles.map((p) => ({
+          id: p.id,
+          name: (p.name || p.username || "Artist").replace(/<[^>]*>?/gm, "").trim(),
+          xp: Number(p.xp ?? 0),
+          streak: Number(p.streak ?? 0),
+          avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.id}`
+        }));
 
         setLeaderboard(mapped.slice(0, 3));
 
@@ -228,14 +181,21 @@ export default function DashboardPage() {
         if (rankIndex !== -1) {
           setUserRank(`#${rankIndex + 1}`);
         } else {
-          setUserRank("-");
+          // Fetch exact rank count if outside top 10
+          const { count } = await supabase
+            .from("profiles")
+            .select("id", { count: "exact", head: true })
+            .gt("xp", activeProfile.xp || 0);
+
+          setUserRank(count !== null ? `#${count + 1}` : "-");
         }
       }
 
     } catch (err) {
-      console.error("Dashboard error occurred while processing request:", err);
+      console.error("Dashboard processing error:", err);
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, [router]);
 
@@ -246,45 +206,21 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!profile?.id) return;
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    const setupRealtime = () => {
-      try {
-        if (channel) supabase.removeChannel(channel);
-
-        channel = supabase
-          .channel(`dashboard_realtime_${profile.id}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "UPDATE",
-              schema: "public",
-              table: "profiles",
-              filter: `id=eq.${profile.id}`,
-            },
-            () => {
-              fetchDashboardData();
-            }
-          )
-          .on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "user_completed_achievements",
-              filter: `user_id=eq.${profile.id}`,
-            },
-            () => {
-              fetchDashboardData();
-            }
-          )
-          .subscribe();
-      } catch (e) {
-        console.error("Subscription sync failure.");
-      }
-    };
-
-    setupRealtime();
+    const channel = supabase
+      .channel(`dashboard_realtime_${profile.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${profile.id}`
+        },
+        () => {
+          fetchDashboardData();
+        }
+      )
+      .subscribe();
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
@@ -295,7 +231,7 @@ export default function DashboardPage() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      if (channel) supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [profile?.id, fetchDashboardData]);
@@ -319,7 +255,7 @@ export default function DashboardPage() {
     { name: "Learning Path", path: "/learning-path", icon: Compass },
     { name: "Achievements", path: "/achievements", icon: Award },
     { name: "Profile", path: "/profile", icon: User },
-    { name: "Settings", path: "/settings", icon: Settings },
+    { name: "Settings", path: "/settings", icon: Settings }
   ];
 
   return (
