@@ -17,11 +17,16 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+// Updated Avatar list with bottts and lorelei avatars
 const AVATARS = [
   { id: 1, name: "Blue Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot&backgroundColor=0284c7" },
   { id: 2, name: "Green Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=GreenBot&backgroundColor=16a34a" },
   { id: 3, name: "Yellow Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=YellowBot&backgroundColor=eab308" },
   { id: 4, name: "Purple Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=PurpleBot&backgroundColor=9333ea" },
+  { id: 5, name: "Lorelei Girl 1", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiLady1&backgroundColor=f1f5f9" },
+  { id: 6, name: "Lorelei Girl 2", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiLady2&backgroundColor=f1f5f9" },
+  { id: 7, name: "Lorelei Boy 1", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiBoy1&backgroundColor=f1f5f9" },
+  { id: 8, name: "Lorelei Boy 2", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiBoy2&backgroundColor=f1f5f9" },
 ];
 
 interface Profile {
@@ -69,7 +74,6 @@ export default function ProfilePage() {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        // Only redirect to login if online and actually unauthenticated
         if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
           localStorage.clear();
           router.replace("/login");
@@ -77,7 +81,7 @@ export default function ProfilePage() {
         return;
       }
 
-      // ⚡ OPTIMIZATION: Fetch only required fields instead of select("*")
+      // ⚡ OPTIMIZATION: Fetch required fields
       const { data, error } = await supabase
         .from("profiles")
         .select("id, name, username, email, avatar_url, xp, streak")
@@ -116,7 +120,6 @@ export default function ProfilePage() {
     e.preventDefault();
     triggerHaptic();
 
-    // 🔒 Security Guard: Authenticate active user to block ID spoofing
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -130,7 +133,6 @@ export default function ProfilePage() {
     setMessage(null);
 
     try {
-      // Direct binding with authenticated user.id for security
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -190,7 +192,6 @@ export default function ProfilePage() {
         throw new Error("User session expired. Please log in again.");
       }
 
-      // 🔒 Strict owner verification before deletion
       const { error: dbError } = await supabase
         .from("profiles")
         .delete()
