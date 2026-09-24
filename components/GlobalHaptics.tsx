@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { triggerSubtleVibration } from "@/lib/haptic";
+
+const triggerSubtleVibration = () => {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(10);
+  }
+};
 
 export default function GlobalHaptics() {
   useEffect(() => {
