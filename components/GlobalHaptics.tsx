@@ -3,17 +3,22 @@
 import { useEffect } from "react";
 
 const triggerSubtleVibration = () => {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    navigator.vibrate(10);
+  if (typeof window !== "undefined" && "vibrate" in navigator) {
+    try {
+      // 20ms minimal but clear vibration feel ke liye
+      navigator.vibrate(20);
+    } catch {
+      // Ignore if browser restricts vibration
+    }
   }
 };
 
 export default function GlobalHaptics() {
   useEffect(() => {
-    const handleGlobalClick = (event: PointerEvent) => {
+    const handleInteraction = (event: Event) => {
       const target = event.target as HTMLElement | null;
 
-      // Agar click button, link, ya role="button" par hua hai
+      // Check karein click/touch button, link, ya role="button" par hua hai
       if (
         target?.closest("button") ||
         target?.closest("a") ||
@@ -23,11 +28,13 @@ export default function GlobalHaptics() {
       }
     };
 
-    // 'pointerdown' mobile touch aur desktop click dono par fast trigger hota hai
-    window.addEventListener("pointerdown", handleGlobalClick);
+    // 'touchstart' for mobile touch response, 'click' for desktop/fallback
+    window.addEventListener("touchstart", handleInteraction, { passive: true });
+    window.addEventListener("click", handleInteraction);
 
     return () => {
-      window.removeEventListener("pointerdown", handleGlobalClick);
+      window.removeEventListener("touchstart", handleInteraction);
+      window.removeEventListener("click", handleInteraction);
     };
   }, []);
 
