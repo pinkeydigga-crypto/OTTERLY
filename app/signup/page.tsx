@@ -35,7 +35,6 @@ export default function SignupPage() {
   useEffect(() => {
     const fullText = step === 1 ? "Choose your avatar!" : "Create your profile";
 
-    // Agar current step pehle se animate ho chuka hai toh typewriter dobara mat chalao
     if (animatedSteps[step]) {
       setTypedText(fullText);
       setIsTypingComplete(true);
@@ -64,6 +63,7 @@ export default function SignupPage() {
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
 
   const syncLockoutState = useCallback(() => {
@@ -130,40 +130,41 @@ export default function SignupPage() {
     const cleanUsername = formData.username.trim();
     const cleanEmail = formData.email.trim().toLowerCase();
     const password = formData.password;
+    const confirmPassword = formData.confirmPassword;
 
-    if (!cleanName || !cleanUsername || !cleanEmail || !password) {
+    if (!cleanName || !cleanUsername || !cleanEmail || !password || !confirmPassword) {
       setErrorMessage('Please fill in all fields.');
       return;
     }
 
-    // Name validation: 2 to 8 characters
     const nameRegex = /^[a-zA-Z\s'-]{2,8}$/;
     if (!nameRegex.test(cleanName)) {
       setErrorMessage('Name must be 2 to 8 characters long and contain only letters.');
       return;
     }
 
-    // Username validation: 2 to 8 characters (alphanumeric or underscores)
     const usernameRegex = /^[a-zA-Z0-9_]{2,8}$/;
     if (!usernameRegex.test(cleanUsername)) {
       setErrorMessage('Username must be 2-8 characters long and contain only letters, numbers, and underscores.');
       return;
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(cleanEmail)) {
       setErrorMessage('Please enter a valid email address.');
       return;
     }
 
-    // Password validation: minimum 8 characters
     if (password.length < 8) {
       setErrorMessage('Password must be at least 8 characters long.');
       return;
     }
 
-    // Weak password check
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match. Please try again.');
+      return;
+    }
+
     const commonWeakPasswords = ['password', '12345678', 'qwertyui', '00000000', '11111111', 'abcdefgh'];
     if (commonWeakPasswords.includes(password.toLowerCase()) || /^\d+$/.test(password)) {
       setErrorMessage('Password is too weak. Please use a combination of letters, numbers, or symbols.');
@@ -309,7 +310,7 @@ export default function SignupPage() {
       <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
         <Link 
           href="/" 
-          className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-sm transition-all active:scale-95"
+          className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-full border-2 border-slate-200 shadow-sm transition-all active:scale-95"
         >
           <ArrowLeft className="w-4 h-4 text-[#2563EB]" />
           <span>Back to Home</span>
@@ -398,14 +399,14 @@ export default function SignupPage() {
                 })}
               </div>
 
-              {/* BUTTON WITH DEEP SHADOW & CHEVRON ICON */}
+              {/* PILL SHAPED NEXT BUTTON */}
               <button
                 type="submit"
                 style={{
                   backgroundColor: '#2563EB',
                   boxShadow: '0px 6px 0px #1D4ED8',
                 }}
-                className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
+                className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
               >
                 <span>NEXT</span>
                 <ChevronRight className="w-5 h-5 stroke-[3]" />
@@ -417,7 +418,6 @@ export default function SignupPage() {
           {step === 2 && (
             <form onSubmit={handleSignup} className="space-y-3.5 pt-1">
               
-              {/* 2-COLUMN LAYOUT FOR NAME & USERNAME */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
@@ -452,7 +452,6 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* EMAIL FIELD */}
               <div>
                 <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
                 <div className="relative flex items-center">
@@ -469,7 +468,6 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* PASSWORD FIELD */}
               <div>
                 <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Set Password</label>
                 <div className="relative flex items-center">
@@ -486,7 +484,22 @@ export default function SignupPage() {
                 </div>
               </div>
 
-              {/* CONSENT CHECKBOX */}
+              <div>
+                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Confirm Password</label>
+                <div className="relative flex items-center">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    disabled={lockoutSeconds > 0 || loading}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Re-enter password"
+                    className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
               <div className="flex items-start gap-2 pt-1">
                 <input
                   type="checkbox"
@@ -508,7 +521,7 @@ export default function SignupPage() {
                 </label>
               </div>
 
-              {/* SUBMIT BUTTON */}
+              {/* PILL SHAPED CREATE ACCOUNT BUTTON */}
               <button
                 type="submit"
                 disabled={loading || lockoutSeconds > 0}
@@ -516,7 +529,7 @@ export default function SignupPage() {
                   backgroundColor: lockoutSeconds > 0 || loading ? '#94A3B8' : '#2563EB',
                   boxShadow: lockoutSeconds > 0 || loading ? 'none' : '0px 6px 0px #1D4ED8',
                 }}
-                className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {lockoutSeconds > 0 
                   ? `LOCKED (${lockoutSeconds}s)` 

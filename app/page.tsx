@@ -1,38 +1,64 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase'; // Make sure path is correct
 
 const SITE_URL = "https://www.otterleo.in";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png";
 
-const SKETCHES = [
-  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789570157001.png',
-  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567428738.png',
-  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567954822%20%281%29.png',
-  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789567813703.png',
-  'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/practice-drawing-1789568212852.png',
-];
-
 export default function HomePage() {
-  const carouselRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const scroll = (direction: 'left' | 'right') => {
-    if (carouselRef.current) {
-      const { scrollLeft, clientWidth } = carouselRef.current;
-      const scrollAmount = clientWidth * 0.75;
-      
-      carouselRef.current.scrollTo({
-        left: direction === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
-        behavior: 'smooth',
-      });
-    }
-  };
+  // AUTO REDIRECT CHECK IF LOGGED IN
+  useEffect(() => {
+    const checkUserSession = async () => {
+      try {
+        // 1. Supabase Session Check
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // 2. Fallback check for localStorage flag
+        const isLoggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
 
-  // COMPLETE BING AI & GOOGLE STRUCTURED DATA (Fixes Semrush 1 Invalid Item Error)
+        if (session || isLoggedInLocal) {
+          router.replace('/dashboard');
+          return;
+        }
+      } catch (err) {
+        console.error("Auth check error:", err);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+
+    checkUserSession();
+
+    // Listen to Auth State changes (Login/Logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        router.replace('/dashboard');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
+  // Agar login checking chal rahi ho toh page flick na ho
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // COMPLETE BING AI & GOOGLE STRUCTURED DATA
   const schemaData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -147,14 +173,6 @@ export default function HomePage() {
           border-right: 2px solid transparent;
           border-top: 6px solid #F0F7FF;
         }
-
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
       `}</style>
 
       {/* Header */}
@@ -178,13 +196,13 @@ export default function HomePage() {
         <div className="lg:col-span-7 space-y-4 sm:space-y-6 text-left">
           <h1 className="font-sans text-5xl sm:text-7xl font-black text-[#0F172A] leading-[1.08] tracking-tight flex flex-col items-start">
             <span className="inline-block animate-slide-left-1">
-              Learn
+              Learn.
             </span>
             <span className="inline-block animate-slide-left-2">
-              drawing
+              Practice.
             </span>
             <span className="text-[#2563EB] inline-block animate-slide-left-3">
-              the fun way.
+              Create.
             </span>
           </h1>
 
@@ -253,53 +271,6 @@ export default function HomePage() {
 
         </div>
       </main>
-
-      {/* SKETCH CAROUSEL SECTION */}
-      <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 my-8 z-10">
-        <div className="text-center mb-6">
-          <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
-            Some of the most liked sketches this month
-          </h2>
-        </div>
-
-        <div className="relative group">
-          <button
-            onClick={() => scroll('left')}
-            aria-label="Previous sketch"
-            className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-md flex items-center justify-center text-slate-700 hover:bg-slate-50 hover:text-[#2563EB] transition-all active:scale-95 cursor-pointer"
-          >
-            <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
-          </button>
-
-          <div
-            ref={carouselRef}
-            className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth py-2 px-1"
-          >
-            {SKETCHES.map((url, idx) => (
-              <div
-                key={idx}
-                className="flex-none w-[280px] sm:w-[340px] h-[200px] sm:h-[230px] bg-white rounded-2xl border-2 border-slate-200 shadow-sm overflow-hidden p-3 flex items-center justify-center relative hover:shadow-md transition-shadow"
-              >
-                <Image
-                  src={url}
-                  alt={`Popular community sketch ${idx + 1} on Otterleo drawing platform`}
-                  width={340}
-                  height={230}
-                  className="w-full h-full object-contain block"
-                />
-              </div>
-            ))}
-          </div>
-
-          <button
-            onClick={() => scroll('right')}
-            aria-label="Next sketch"
-            className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white border-2 border-slate-200 shadow-md flex items-center justify-center text-[#2563EB] transition-all active:scale-95 cursor-pointer"
-          >
-            <ChevronRight className="w-6 h-6 stroke-[2.5]" />
-          </button>
-        </div>
-      </section>
 
       {/* FOOTER */}
       <footer className="w-full py-6 text-center text-xs text-slate-400 font-medium z-10 mt-auto">

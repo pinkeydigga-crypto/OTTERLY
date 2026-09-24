@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
+import XpWheel from "@/components/xpwheel";
 import {
   LayoutDashboard,
   Swords,
@@ -203,6 +204,18 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  // Real-time Event Listener for XpWheel update
+  useEffect(() => {
+    const handleXpUpdated = (e: CustomEvent<number>) => {
+      setProfile((prev) => (prev ? { ...prev, xp: e.detail } : prev));
+    };
+
+    window.addEventListener("xpUpdated", handleXpUpdated as EventListener);
+    return () => {
+      window.removeEventListener("xpUpdated", handleXpUpdated as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     if (!profile?.id) return;
 
@@ -259,7 +272,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-20 md:pb-0 font-sans">
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-20 md:pb-0 font-sans overflow-x-hidden">
       
       {/* Mobile Top Header */}
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
@@ -460,6 +473,11 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Daily XP Wheel Section */}
+        <section className="w-full overflow-hidden min-w-0">
+          <XpWheel />
+        </section>
 
         {/* AI Scan Card */}
         <div className="bg-[#2563EB] text-white p-6 sm:p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
