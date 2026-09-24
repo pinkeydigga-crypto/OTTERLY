@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, ComponentType } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { 
   ArrowLeft,
   Trophy,
@@ -19,6 +21,7 @@ import {
   LucideProps
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 
 interface Achievement {
   id: string;
@@ -86,9 +89,15 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
   },
 ];
 
-function AchievementsContent() {
-  const [userXp, setUserXp] = useState<number>(0);
+const sanitizeString = (str: string) => {
+  return str.replace(/<[^>]*>?/gm, "").trim();
+};
 
+function AchievementsContent() {
+  const router = useRouter();
+  const isOffline = useOfflineGuard();
+
+  const [userXp, setUserXp] = useState<number>(0);
   const [scansCount, setScansCount] = useState<number>(0);
   const [challengesCount, setChallengesCount] = useState<number>(0);
   const [streakCount, setStreakCount] = useState<number>(0);
@@ -96,6 +105,16 @@ function AchievementsContent() {
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Screenshot_11-9-2026_144618_chatgpt.com-removebg-preview.png";
+
+  const triggerHaptic = () => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(15);
+      } catch {
+        // Safe fallback
+      }
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -108,9 +127,16 @@ function AchievementsContent() {
 
   const fetchUserData = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
-      if (!user) return;
+
+      if (authError || !user) {
+        if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+          localStorage.clear();
+          router.push("/login");
+        }
+        return;
+      }
 
       const { data: rpcStats } = await supabase.rpc('get_user_activity_counts', {
         p_user_id: user.id
@@ -144,6 +170,7 @@ function AchievementsContent() {
       const totalStreak = Math.max(
         rpcStats?.streak_count || 0,
         profile?.streak_count || 0,
+        profile?.streak || 0,
         profile?.current_streak || 0
       );
 
@@ -162,18 +189,18 @@ function AchievementsContent() {
         .eq("user_id", user.id);
 
       if (claimed) {
-        setClaimedAchievements(claimed.map((a) => a.achievement_id));
+        setClaimedAchievements(claimed.map((a) => sanitizeString(a.achievement_id)));
       }
     } catch (err) {
       console.error("Error fetching achievement stats:", err);
     }
-  }, []);
+  }, [router, isOffline]);
 
   useEffect(() => {
     fetchUserData();
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && !isOffline) {
         fetchUserData();
       }
     };
@@ -185,7 +212,7 @@ function AchievementsContent() {
       window.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', fetchUserData);
     };
-  }, [fetchUserData]);
+  }, [fetchUserData, isOffline]);
 
   const checkIsEligible = (ach: Achievement) => {
     if (ach.requiredScans !== undefined && scansCount >= ach.requiredScans) return true;
@@ -197,6 +224,7 @@ function AchievementsContent() {
   const handleClaimAchievement = async (achievement: Achievement) => {
     if (!checkIsEligible(achievement) || claimedAchievements.includes(achievement.id)) return;
 
+    triggerHaptic();
     setClaimingId(achievement.id);
 
     try {
@@ -218,6 +246,10 @@ function AchievementsContent() {
       setUserXp(newTotalXp);
       localStorage.setItem("user_xp_cache", newTotalXp.toString());
       setClaimedAchievements((prev) => Array.from(new Set([...prev, achievement.id])));
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("xpUpdated", { detail: newTotalXp }));
+      }
     } catch (err: unknown) {
       console.error("Claim Exception:", err);
     } finally {
@@ -239,6 +271,7 @@ function AchievementsContent() {
         <div className="flex items-center justify-between mb-2 bg-white p-3 sm:p-4 rounded-2xl border-2 border-slate-100 shadow-xs">
           <Link
             href="/dashboard"
+            onClick={triggerHaptic}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-black text-sm hover:bg-slate-200 transition-all cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 stroke-[3]" />
@@ -247,7 +280,7 @@ function AchievementsContent() {
           
           <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-4 py-2 rounded-full text-amber-600 font-black text-xs sm:text-sm">
             <Star className="w-4 h-4 fill-amber-400 stroke-amber-400" />
-            <span>{userXp} XP</span>
+            <span>{userXp.toLocaleString()} XP</span>
           </div>
         </div>
 
@@ -261,10 +294,13 @@ function AchievementsContent() {
           </div>
 
           <div className="w-28 sm:w-36 h-auto shrink-0 z-10 -mr-1 flex items-center justify-center">
-            <img 
+            <Image 
               src={mascotImageUrl} 
               alt="Otterleo Mascot" 
+              width={144}
+              height={144}
               className="w-full h-auto object-contain block"
+              priority
             />
           </div>
         </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
+import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import {
   ArrowLeft,
   Grid,
@@ -16,11 +17,15 @@ import {
   Eye,
   EyeOff,
   Slash,
+  ShieldAlert,
 } from "lucide-react";
 
 export default function GridMakerPage() {
   const router = useRouter();
+  const isOffline = useOfflineGuard();
+
   const [loading, setLoading] = useState<boolean>(true);
+  const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [rows, setRows] = useState<number>(5);
@@ -38,28 +43,52 @@ export default function GridMakerPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Authentication Check
+  // Haptic feedback function for mobile touches
+  const triggerHaptic = () => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(15);
+      } catch {
+        // Safe fallback for unsupported browsers
+      }
+    }
+  };
+
+  // Authentication & Email Verification Check with Offline Guard
   const checkAuth = useCallback(async () => {
     try {
       const {
-        data: { user },
+        data: { session },
         error,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
+
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
 
       if (error || !user) {
-        if (typeof window !== "undefined") {
-          localStorage.clear();
+        if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+          setIsVerified(false);
         }
-        router.push("/login");
+        setLoading(false);
         return;
       }
+
+      // Check Email Verification
+      if (!user.email_confirmed_at) {
+        setIsVerified(false);
+        setLoading(false);
+        return;
+      }
+
+      setIsVerified(true);
     } catch (err) {
       console.error("Auth check failed:", err);
-      router.push("/login");
+      if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+        setIsVerified(false);
+      }
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [isOffline]);
 
   useEffect(() => {
     checkAuth();
@@ -67,6 +96,7 @@ export default function GridMakerPage() {
 
   // Handle Image Upload
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    triggerHaptic();
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -82,7 +112,7 @@ export default function GridMakerPage() {
     reader.readAsDataURL(file);
   };
 
-  // Render Grid on Canvas (Fixed Exact Rows & Columns Calculation)
+  // Render Grid on Canvas (Exact Rows & Columns Calculation)
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || !image) return;
@@ -153,36 +183,71 @@ export default function GridMakerPage() {
   }, [image, rows, cols, gridColor, lineWidth, opacity, showGrid, showDiagonals]);
 
   useEffect(() => {
-    if (!loading) {
+    if (!loading && isVerified) {
       drawCanvas();
     }
-  }, [drawCanvas, loading]);
+  }, [drawCanvas, loading, isVerified]);
 
-  // Download Image with Rate Limiting
+  // Download Image with Fixed Mobile Support & Updated Limit (5 downloads per 2 minutes)
   const handleDownload = () => {
+    triggerHaptic();
     const now = Date.now();
+
+    // 2 Minutes (120,000 ms) window limit
     const recentDownloads = downloadTimesRef.current.filter(
-      (time) => now - time < 60000
+      (time) => now - time < 120000
     );
 
     if (recentDownloads.length >= 5) {
-      alert("Download limit reached! Please wait a minute before downloading again.");
+      alert("Download limit reached! Aap 2 minute me sirf 5 baar download kar sakte hain. Kripya thoda wait karein.");
       return;
     }
-
-    downloadTimesRef.current = [...recentDownloads, now];
 
     const canvas = canvasRef.current;
     if (!canvas || !image) return;
 
-    const link = document.createElement("a");
-    link.download = "grid-reference.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
+    downloadTimesRef.current = [...recentDownloads, now];
+
+    // Blob approach for solid compatibility on Mobile WebViews / iOS Safari / Android Chrome
+    try {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          // Fallback to DataURL if blob creation fails
+          const dataUrl = canvas.toDataURL("image/png");
+          const link = document.createElement("a");
+          link.download = `grid-reference-${Date.now()}.png`;
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `grid-reference-${Date.now()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 1000);
+      }, "image/png");
+    } catch (err) {
+      console.error("Download Error:", err);
+      // DataURL direct fallback
+      const link = document.createElement("a");
+      link.download = "grid-reference.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
   };
 
   // Clear/Reset to Defaults
   const handleClear = () => {
+    triggerHaptic();
     setImage(null);
     setRows(5);
     setCols(5);
@@ -197,6 +262,41 @@ export default function GridMakerPage() {
     return <LoadingScreen />;
   }
 
+  // Access Denied Screen (If Not Logged in or Email Not Verified)
+  if (isVerified === false && !isOffline) {
+    return (
+      <div className="min-h-screen bg-[#F6FAFF] flex flex-col items-center justify-center p-4 tracking-tight font-sans">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 max-w-md w-full text-center space-y-5 shadow-xs">
+          <div className="w-16 h-16 bg-amber-50 text-amber-600 rounded-3xl flex items-center justify-center mx-auto border border-amber-200">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-slate-900">Access Restricted</h2>
+            <p className="text-xs font-bold text-slate-500 leading-relaxed">
+              Grid Maker tool use karne ke liye aapka logged in hona aur email verify hona zaroori hai.
+            </p>
+          </div>
+          <div className="pt-2 space-y-2">
+            <Link
+              href="/login"
+              onClick={triggerHaptic}
+              className="block w-full py-3.5 bg-[#2563EB] hover:bg-blue-600 text-white font-black text-xs rounded-2xl border-b-2 border-blue-800 transition text-center"
+            >
+              Log In / Verify Account
+            </Link>
+            <Link
+              href="/dashboard"
+              onClick={triggerHaptic}
+              className="block w-full py-3 text-slate-500 font-black text-xs hover:bg-slate-50 rounded-2xl transition text-center"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F6FAFF] p-3 sm:p-6 md:p-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-4">
@@ -204,6 +304,7 @@ export default function GridMakerPage() {
         <div className="flex items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
           <Link
             href="/dashboard"
+            onClick={triggerHaptic}
             className="inline-flex items-center gap-2 px-3 py-2 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -277,7 +378,10 @@ export default function GridMakerPage() {
                     min="1"
                     max="20"
                     value={rows}
-                    onChange={(e) => setRows(Number(e.target.value))}
+                    onChange={(e) => {
+                      triggerHaptic();
+                      setRows(Number(e.target.value));
+                    }}
                     className="w-full accent-blue-600 h-2 bg-slate-100 rounded-lg cursor-pointer"
                   />
                 </div>
@@ -293,7 +397,10 @@ export default function GridMakerPage() {
                     min="1"
                     max="20"
                     value={cols}
-                    onChange={(e) => setCols(Number(e.target.value))}
+                    onChange={(e) => {
+                      triggerHaptic();
+                      setCols(Number(e.target.value));
+                    }}
                     className="w-full accent-blue-600 h-2 bg-slate-100 rounded-lg cursor-pointer"
                   />
                 </div>
@@ -309,7 +416,10 @@ export default function GridMakerPage() {
                     min="10"
                     max="100"
                     value={opacity}
-                    onChange={(e) => setOpacity(Number(e.target.value))}
+                    onChange={(e) => {
+                      triggerHaptic();
+                      setOpacity(Number(e.target.value));
+                    }}
                     className="w-full accent-blue-600 h-2 bg-slate-100 rounded-lg cursor-pointer"
                   />
                 </div>
@@ -325,7 +435,10 @@ export default function GridMakerPage() {
                     min="1"
                     max="10"
                     value={lineWidth}
-                    onChange={(e) => setLineWidth(Number(e.target.value))}
+                    onChange={(e) => {
+                      triggerHaptic();
+                      setLineWidth(Number(e.target.value));
+                    }}
                     className="w-full accent-blue-600 h-2 bg-slate-100 rounded-lg cursor-pointer"
                   />
                 </div>
@@ -340,14 +453,20 @@ export default function GridMakerPage() {
                     <input
                       type="color"
                       value={gridColor}
-                      onChange={(e) => setGridColor(e.target.value)}
+                      onChange={(e) => {
+                        triggerHaptic();
+                        setGridColor(e.target.value);
+                      }}
                       className="w-6 h-6 rounded-md cursor-pointer border-0 bg-transparent"
                     />
                   </div>
 
                   {/* Toggle Grid */}
                   <button
-                    onClick={() => setShowGrid(!showGrid)}
+                    onClick={() => {
+                      triggerHaptic();
+                      setShowGrid(!showGrid);
+                    }}
                     className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                       showGrid ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
                     }`}
@@ -358,7 +477,10 @@ export default function GridMakerPage() {
 
                   {/* Toggle Diagonals */}
                   <button
-                    onClick={() => setShowDiagonals(!showDiagonals)}
+                    onClick={() => {
+                      triggerHaptic();
+                      setShowDiagonals(!showDiagonals);
+                    }}
                     className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                       showDiagonals ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-600"
                     }`}
@@ -372,7 +494,10 @@ export default function GridMakerPage() {
                 <div className="flex items-center gap-2">
                   <div className="flex items-center bg-slate-100 rounded-xl p-1 gap-1">
                     <button
-                      onClick={() => setZoom((z) => Math.max(50, z - 10))}
+                      onClick={() => {
+                        triggerHaptic();
+                        setZoom((z) => Math.max(50, z - 10));
+                      }}
                       className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-white transition cursor-pointer"
                       title="Zoom Out"
                     >
@@ -380,7 +505,10 @@ export default function GridMakerPage() {
                     </button>
                     <span className="text-xs font-black text-slate-700 px-1">{zoom}%</span>
                     <button
-                      onClick={() => setZoom((z) => Math.min(200, z + 10))}
+                      onClick={() => {
+                        triggerHaptic();
+                        setZoom((z) => Math.min(200, z + 10));
+                      }}
                       className="p-1.5 text-slate-600 hover:text-slate-900 rounded-lg hover:bg-white transition cursor-pointer"
                       title="Zoom In"
                     >
@@ -398,7 +526,7 @@ export default function GridMakerPage() {
 
                   <button
                     onClick={handleDownload}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-xs transition cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download</span>

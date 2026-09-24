@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
+import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import {
   ArrowLeft,
   Flame,
@@ -35,6 +36,7 @@ interface Profile {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const isOffline = useOfflineGuard();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,6 +51,16 @@ export default function ProfilePage() {
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const triggerHaptic = () => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(15);
+      } catch {
+        // Fallback for unsupported devices
+      }
+    }
+  };
+
   const fetchProfile = useCallback(async () => {
     try {
       const {
@@ -57,8 +69,11 @@ export default function ProfilePage() {
       } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        localStorage.clear();
-        router.replace("/login");
+        // Only redirect to login if online and actually unauthenticated
+        if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+          localStorage.clear();
+          router.replace("/login");
+        }
         return;
       }
 
@@ -70,8 +85,10 @@ export default function ProfilePage() {
         .single();
 
       if (error || !data) {
-        localStorage.clear();
-        router.replace("/login");
+        if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+          localStorage.clear();
+          router.replace("/login");
+        }
         return;
       }
 
@@ -85,13 +102,11 @@ export default function ProfilePage() {
       setUsername(data.username || "");
       setSelectedAvatar(userAvatar);
     } catch (err: unknown) {
-      console.error("Profile security check failed:", err);
-      localStorage.clear();
-      router.replace("/login");
+      console.error("Profile security check error:", err);
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [router, isOffline]);
 
   useEffect(() => {
     fetchProfile();
@@ -99,12 +114,23 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile) return;
+    triggerHaptic();
+
+    // 🔒 Security Guard: Authenticate active user to block ID spoofing
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user || user.id !== profile?.id) {
+      setMessage({ type: "error", text: "Unauthorized action detected!" });
+      return;
+    }
 
     setSaving(true);
     setMessage(null);
 
     try {
+      // Direct binding with authenticated user.id for security
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -112,7 +138,7 @@ export default function ProfilePage() {
           username: username.trim(),
           avatar_url: selectedAvatar,
         })
-        .eq("id", profile.id);
+        .eq("id", user.id);
 
       if (error) throw error;
 
@@ -151,15 +177,20 @@ export default function ProfilePage() {
   };
 
   const handleDeleteAccount = async () => {
-    if (!profile) return;
+    triggerHaptic();
     setDeleting(true);
 
     try {
-      const { data: { user }, error: authUserError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authUserError,
+      } = await supabase.auth.getUser();
+
       if (authUserError || !user) {
         throw new Error("User session expired. Please log in again.");
       }
 
+      // 🔒 Strict owner verification before deletion
       const { error: dbError } = await supabase
         .from("profiles")
         .delete()
@@ -172,7 +203,10 @@ export default function ProfilePage() {
       router.replace("/login");
     } catch (err: unknown) {
       console.error("Delete Account Error:", err);
-      const errMsg = err instanceof Error ? err.message : "Failed to delete account. Please check Supabase RLS policies.";
+      const errMsg =
+        err instanceof Error
+          ? err.message
+          : "Failed to delete account. Please check Supabase RLS policies.";
       setMessage({
         type: "error",
         text: errMsg,
@@ -184,6 +218,7 @@ export default function ProfilePage() {
   };
 
   const handleLogout = async () => {
+    triggerHaptic();
     await supabase.auth.signOut();
     localStorage.clear();
     router.replace("/login");
@@ -202,12 +237,13 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between mb-2 bg-white p-3 sm:p-4 rounded-2xl border-2 border-slate-100 shadow-xs">
           <Link
             href="/dashboard"
+            onClick={triggerHaptic}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-black text-sm hover:bg-slate-200 transition-all cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 stroke-[3]" />
             Dashboard
           </Link>
-          
+
           <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-4 py-2 rounded-full text-amber-600 font-black text-xs sm:text-sm">
             <Star className="w-4 h-4 fill-amber-400 stroke-amber-400" />
             <span>{userXp} XP</span>
@@ -234,10 +270,10 @@ export default function ProfilePage() {
         <div className="bg-white rounded-[2.5rem] p-6 border-2 border-slate-100 shadow-xs flex flex-col sm:flex-row items-center gap-6">
           <div className="relative">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-blue-50 border-4 border-[#2563EB] p-1 shadow-md overflow-hidden flex items-center justify-center">
-              <img 
-                src={selectedAvatar || profile?.avatar_url || AVATARS[0].url} 
-                alt="Current Avatar" 
-                className="w-full h-full object-contain rounded-2xl" 
+              <img
+                src={selectedAvatar || profile?.avatar_url || AVATARS[0].url}
+                alt="Current Avatar"
+                className="w-full h-full object-contain rounded-2xl"
               />
             </div>
           </div>
@@ -287,7 +323,10 @@ export default function ProfilePage() {
                   <button
                     key={avatar.id}
                     type="button"
-                    onClick={() => setSelectedAvatar(avatar.url)}
+                    onClick={() => {
+                      triggerHaptic();
+                      setSelectedAvatar(avatar.url);
+                    }}
                     className={`relative rounded-2xl p-2 border-2 transition-all cursor-pointer flex items-center justify-center ${
                       isSelected
                         ? "border-[#2563EB] bg-blue-50 ring-2 ring-[#2563EB] scale-105 shadow-md"
@@ -368,7 +407,10 @@ export default function ProfilePage() {
 
           <button
             type="button"
-            onClick={() => setShowDeleteModal(true)}
+            onClick={() => {
+              triggerHaptic();
+              setShowDeleteModal(true);
+            }}
             className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-red-600 text-white font-black text-xs uppercase tracking-wider border-b-4 border-red-800 hover:bg-red-700 active:border-b-0 active:translate-y-1 transition-all cursor-pointer"
           >
             <Trash2 className="w-4 h-4" />
@@ -394,7 +436,10 @@ export default function ProfilePage() {
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setShowDeleteModal(false)}
+                onClick={() => {
+                  triggerHaptic();
+                  setShowDeleteModal(false);
+                }}
                 className="flex-1 py-3.5 rounded-2xl bg-slate-100 text-slate-700 font-black text-xs uppercase tracking-wider hover:bg-slate-200 transition-all cursor-pointer"
               >
                 Cancel

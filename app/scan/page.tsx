@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, ChangeEvent, useCallback, useRef } from "
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import {
   ArrowLeft,
   Upload,
@@ -101,6 +102,8 @@ function OneTimeGifMascot({ gifUrl, durationMs = 3000 }: { gifUrl: string; durat
 
 export default function ScanPage() {
   const router = useRouter();
+  const isOffline = useOfflineGuard();
+
   const [authLoading, setAuthLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
 
@@ -115,45 +118,61 @@ export default function ScanPage() {
     seconds: number;
   } | null>(null);
 
-  // Aapka Supabase Storage Wala Updated GIF URL
   const mascotGifUrl =
     "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/WhatsAppVideo2026-09-22at14.44.02online-video-cutter.com-ezgif.com-video-to-gif-converter__1__transparent.gif";
   const logoUrl =
     "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
+  const triggerHaptic = () => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(15);
+      } catch {
+        // Fallback for unsupported devices
+      }
+    }
+  };
+
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      if (!user) {
-        router.replace("/login");
-      } else {
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("id, name, username, email, avatar_url, xp")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (profileData) {
-          setProfile(profileData);
+        if (!user) {
+          if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+            router.replace("/login");
+          }
         } else {
-          setProfile({
-            id: user.id,
-            name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist",
-            username: user.email?.split("@")[0] || "artist",
-            email: user.email || "",
-            avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
-            xp: 0,
-          });
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("id, name, username, email, avatar_url, xp")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (profileData) {
+            setProfile(profileData);
+          } else {
+            setProfile({
+              id: user.id,
+              name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist",
+              username: user.email?.split("@")[0] || "artist",
+              email: user.email || "",
+              avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
+              xp: 0,
+            });
+          }
         }
+      } catch (err) {
+        console.error("Auth check error:", err);
+      } finally {
         setAuthLoading(false);
       }
     };
 
     checkUser();
-  }, [router]);
+  }, [router, isOffline]);
 
   const clearLock = useCallback(() => {
     setCountdown(null);
@@ -190,6 +209,7 @@ export default function ScanPage() {
   }, [analysis?.nextAllowedTime, calculateCountdown]);
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    triggerHaptic();
     if (countdown || (analysis && analysis.lockActive)) {
       setErrorMessage(
         "Scan Locked. Please wait until the timer resets. [Strict-24H] Error 3"
@@ -274,6 +294,7 @@ export default function ScanPage() {
   };
 
   const handleAnalyze = async () => {
+    triggerHaptic();
     if (!selectedImage) return;
     setIsAnalyzing(true);
     setErrorMessage(null);
@@ -368,6 +389,7 @@ export default function ScanPage() {
   };
 
   const handleReset = () => {
+    triggerHaptic();
     setSelectedImage(null);
     setAnalysis(null);
     setErrorMessage(null);
@@ -407,7 +429,10 @@ export default function ScanPage() {
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsMobileSidebarOpen(true)}
+            onClick={() => {
+              triggerHaptic();
+              setIsMobileSidebarOpen(true);
+            }}
             className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
             aria-label="Open sidebar"
           >
@@ -426,7 +451,10 @@ export default function ScanPage() {
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={() => setIsMobileSidebarOpen(false)}
+            onClick={() => {
+              triggerHaptic();
+              setIsMobileSidebarOpen(false);
+            }}
           />
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
             <div className="space-y-6">
@@ -437,7 +465,10 @@ export default function ScanPage() {
                   className="h-14 w-auto object-contain"
                 />
                 <button
-                  onClick={() => setIsMobileSidebarOpen(false)}
+                  onClick={() => {
+                    triggerHaptic();
+                    setIsMobileSidebarOpen(false);
+                  }}
                   className="p-2 rounded-xl text-slate-400 hover:bg-slate-100"
                 >
                   <X className="w-5 h-5" />
@@ -451,7 +482,10 @@ export default function ScanPage() {
                     <Link
                       href={item.path}
                       key={item.name}
-                      onClick={() => setIsMobileSidebarOpen(false)}
+                      onClick={() => {
+                        triggerHaptic();
+                        setIsMobileSidebarOpen(false);
+                      }}
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                         item.active
                           ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
@@ -499,6 +533,7 @@ export default function ScanPage() {
                 <Link
                   href={item.path}
                   key={item.name}
+                  onClick={triggerHaptic}
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                     item.active
                       ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
@@ -531,6 +566,7 @@ export default function ScanPage() {
         <div className="flex items-center justify-between mb-4">
           <Link
             href="/dashboard"
+            onClick={triggerHaptic}
             className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white border-2 border-slate-100 text-slate-700 font-black text-sm hover:bg-slate-50 transition-all shadow-sm"
           >
             <ArrowLeft className="w-4 h-4 stroke-[3]" />
@@ -544,7 +580,7 @@ export default function ScanPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Mascot GIF Container (Plays 1 time & stops) */}
+          {/* Left Column: Mascot GIF Container */}
           <div className="md:col-span-5 bg-white p-6 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex flex-col items-center justify-between min-h-[440px] relative">
             <div className="text-center z-10 space-y-2">
               <h2 className="text-2xl font-black text-[#0F172A]">
@@ -557,7 +593,6 @@ export default function ScanPage() {
             </div>
 
             <div className="flex-1 flex items-end justify-center w-full mt-4 -mb-6 z-20">
-              {/* GIF Mascot Component (3 second play time, then freezes) */}
               <OneTimeGifMascot gifUrl={mascotGifUrl} durationMs={3000} />
             </div>
           </div>
@@ -901,6 +936,7 @@ export default function ScanPage() {
               <Link
                 key={item.name}
                 href={item.path}
+                onClick={triggerHaptic}
                 className="group relative flex flex-1 flex-col items-center gap-0.5 py-1 transition-all"
               >
                 <span

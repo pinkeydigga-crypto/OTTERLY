@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, Trophy, Flame, Shield, Lock, 
-  LogOut, ChevronRight, Zap, Star, Target, KeyRound, AlertCircle, X
+  LogOut, ChevronRight, Zap, Star, Target, KeyRound, AlertCircle, X, CheckCircle2
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -38,18 +38,21 @@ export default function SettingsPage() {
   });
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
-  // Rate Limiting State (Throttling: Exactly 1 attempt per 10 minutes)
-  const [lastPasswordChangeTime, setLastPasswordChangeTime] = useState<number | null>(null);
+  // Rate Limiting State (Throttling: Exactly 20 seconds live countdown)
+  const [cooldown, setCooldown] = useState<number>(0);
 
+  // Live Timer Effect for 20-second Throttling
   useEffect(() => {
-    // Persistent rate-limit check via localStorage
-    const savedTime = localStorage.getItem("last_password_change_time");
-    if (savedTime) {
-      setLastPasswordChangeTime(Number(savedTime));
+    let timer: NodeJS.Timeout;
+    if (cooldown > 0) {
+      timer = setInterval(() => {
+        setCooldown((prev) => prev - 1);
+      }, 1000);
     }
-  }, []);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
-  // User Stats State (Default avatar_url fixed)
+  // User Stats State
   const [userStats, setUserStats] = useState<UserStats>({
     id: "",
     email: "",
@@ -65,44 +68,64 @@ export default function SettingsPage() {
   const fetchUserData = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Strict Auth Check to prevent unauthorized access
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        if (typeof window !== "undefined") {
-          localStorage.clear();
-        }
-        router.replace("/login");
+      // 1. Offline Check
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        setLoading(false);
         return;
       }
 
-      // 2. Fetch authenticated user's specific profile (Optimized Column Selection to Reduce Direct Egress)
+      // 2. Auth Check via Session & User
+      const { data: { session } } = await supabase.auth.getSession();
+      let currentUser = session?.user;
+
+      if (!currentUser) {
+        const { data: { user: fetchedUser } } = await supabase.auth.getUser();
+        currentUser = fetchedUser ?? undefined;
+      }
+
+      if (!currentUser) {
+        if (typeof window !== "undefined" && navigator.onLine) {
+          localStorage.clear();
+          router.replace("/login");
+        }
+        return;
+      }
+
+      // 3. Extract Name & Avatar from Auth Metadata (Google Auth / Email Auth Fallback)
+      const meta = currentUser.user_metadata || {};
+      const fallbackName = meta.full_name || meta.name || meta.user_name || currentUser.email?.split("@")[0] || "Artist Learner";
+      const fallbackAvatar = meta.avatar_url || meta.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.id}`;
+
+      // 4. Fetch Profile from Database
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("id, name, full_name, avatar_url, scans_count, scans, challenges_completed, completed_challenges, challenges_count, xp_points, xp, streak, current_streak, total_score")
-        .eq("id", user.id)
+        .select("*")
+        .eq("id", currentUser.id)
         .maybeSingle();
 
-      if (profileError || !profile) {
-        if (typeof window !== "undefined") {
-          localStorage.clear();
-        }
-        router.replace("/login");
-        return;
+      if (profileError) {
+        console.warn("Profile table query warning:", profileError.message);
       }
+
+      // Prioritize Database values -> Auth Metadata -> Fallback Defaults
+      const finalName = profile?.full_name || profile?.name || profile?.username || fallbackName;
+      const finalAvatar = profile?.avatar_url || profile?.avatar || fallbackAvatar;
 
       let completedChallengesCount = profile?.challenges_completed ?? profile?.completed_challenges ?? profile?.challenges_count ?? 0;
 
-      // Fetch count efficiently without row-payload transfer
-      if (!completedChallengesCount) {
-        const { count } = await supabase
-          .from("user_challenges")
-          .select("id", { count: 'exact', head: true })
-          .eq("user_id", user.id)
-          .eq("status", "completed");
+      if (!completedChallengesCount && navigator.onLine) {
+        try {
+          const { count } = await supabase
+            .from("user_challenges")
+            .select("id", { count: 'exact', head: true })
+            .eq("user_id", currentUser.id)
+            .eq("status", "completed");
 
-        if (count !== null && count > 0) {
-          completedChallengesCount = count;
+          if (count !== null && count > 0) {
+            completedChallengesCount = count;
+          }
+        } catch {
+          // DB error safely handled
         }
       }
 
@@ -112,10 +135,10 @@ export default function SettingsPage() {
       const score = profile?.total_score ?? (scans * 10 + completedChallengesCount * 50 + xp);
 
       setUserStats({
-        id: user.id,
-        email: user.email || "",
-        full_name: profile?.name || profile?.full_name || "Artist Learner",
-        avatar_url: profile?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
+        id: currentUser.id,
+        email: currentUser.email || "",
+        full_name: finalName,
+        avatar_url: finalAvatar,
         scans_count: Number(scans),
         challenges_completed: Number(completedChallengesCount),
         xp_points: Number(xp),
@@ -124,11 +147,7 @@ export default function SettingsPage() {
       });
 
     } catch (err) {
-      console.error("Security check or settings fetch failed:", err);
-      if (typeof window !== "undefined") {
-        localStorage.clear();
-      }
-      router.replace("/login");
+      console.error("Settings load issue:", err);
     } finally {
       setLoading(false);
     }
@@ -146,21 +165,15 @@ export default function SettingsPage() {
     router.replace("/login");
   };
 
-  // DIRECT SUPABASE AUTH PASSWORD UPDATE WITH 10-MINUTE THROTTLING RATE LIMITING
+  // PASSWORD CHANGE WITH 20-SECOND THROTTLING & MATCH CONFIRMATION
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordStatus({ type: null, message: "" });
 
-    const TEN_MINUTES_MS = 10 * 60 * 1000;
-    const now = Date.now();
-
-    if (lastPasswordChangeTime && now - lastPasswordChangeTime < TEN_MINUTES_MS) {
-      const remainingMs = TEN_MINUTES_MS - (now - lastPasswordChangeTime);
-      const remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
-
+    if (cooldown > 0) {
       setPasswordStatus({ 
         type: "error", 
-        message: `Aap 10 minute me sirf 1 baar password change kar sakte hain. Kripya ${remainingMinutes} minute baad dobara try karein.` 
+        message: `Kripya ${cooldown} seconds wait karein dobara change karne ke liye.` 
       });
       return;
     }
@@ -171,7 +184,7 @@ export default function SettingsPage() {
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordStatus({ type: "error", message: "Dono naye password match nahi ho rahe hain." });
+      setPasswordStatus({ type: "error", message: "Naya password aur confirm password match nahi ho rahe hain." });
       return;
     }
 
@@ -185,20 +198,17 @@ export default function SettingsPage() {
       if (error) {
         setPasswordStatus({ type: "error", message: error.message });
       } else {
-        const currentTime = Date.now();
-        setLastPasswordChangeTime(currentTime);
-        localStorage.setItem("last_password_change_time", currentTime.toString());
-
+        setCooldown(20);
         setPasswordStatus({ 
           type: "success", 
           message: "Password successfully update ho gaya hai!" 
         });
         setNewPassword("");
         setConfirmPassword("");
-        setTimeout(() => setIsPasswordModalOpen(false), 1500);
+        setTimeout(() => setIsPasswordModalOpen(false), 2000);
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Kuch error aaya password update karne me.";
+      const errorMessage = err instanceof Error ? err.message : "Password update karne me error aaya.";
       setPasswordStatus({ type: "error", message: errorMessage });
     } finally {
       setIsUpdatingPassword(false);
@@ -211,7 +221,7 @@ export default function SettingsPage() {
       {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-4xl mx-auto w-full space-y-6 overflow-y-auto">
 
-        {/* Top Header - Sirf Dashboard Button */}
+        {/* Top Header */}
         <div className="flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -232,8 +242,8 @@ export default function SettingsPage() {
             {/* User Profile Header */}
             <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 border-2 border-slate-100 shadow-xs flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
               <Image
-                src={userStats.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${userStats.id || 'default'}`}
-                alt={userStats.full_name || "User Profile"}
+                src={userStats.avatar_url}
+                alt={userStats.full_name}
                 width={80}
                 height={80}
                 className="w-20 h-20 rounded-2xl object-cover border-2 border-blue-200 bg-blue-50 shrink-0"
@@ -253,7 +263,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* OVERALL PROGRESS & STATS (Only XP & Score) */}
+            {/* OVERALL PROGRESS & STATS */}
             <div className="space-y-3">
               <h3 className="font-black text-slate-900 text-base sm:text-lg flex items-center gap-2">
                 <Target className="w-5 h-5 text-blue-600" />
@@ -349,7 +359,7 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={() => setIsPasswordModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100"
+                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -363,7 +373,11 @@ export default function SettingsPage() {
                     : "bg-green-50 text-green-600 border border-green-200"
                 }`}
               >
-                <AlertCircle className="w-4 h-4 shrink-0" />
+                {passwordStatus.type === "error" ? (
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-green-600" />
+                )}
                 <span>{passwordStatus.message}</span>
               </div>
             )}
@@ -401,16 +415,20 @@ export default function SettingsPage() {
                 <button
                   type="button"
                   onClick={() => setIsPasswordModalOpen(false)}
-                  className="flex-1 py-3 bg-slate-100 text-slate-700 font-black text-xs rounded-2xl hover:bg-slate-200"
+                  className="flex-1 py-3 bg-slate-100 text-slate-700 font-black text-xs rounded-2xl hover:bg-slate-200 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={isUpdatingPassword}
-                  className="flex-1 py-3 bg-[#2563eb] text-white font-black text-xs rounded-2xl hover:bg-blue-600 disabled:opacity-50"
+                  disabled={isUpdatingPassword || cooldown > 0}
+                  className="flex-1 py-3 bg-[#2563eb] text-white font-black text-xs rounded-2xl hover:bg-blue-600 border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {isUpdatingPassword ? "Updating..." : "Save Password"}
+                  {isUpdatingPassword 
+                    ? "Updating..." 
+                    : cooldown > 0 
+                      ? `Wait ${cooldown}s` 
+                      : "Save Password"}
                 </button>
               </div>
             </form>
@@ -430,7 +448,7 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={() => setIsPrivacyModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100"
+                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -447,7 +465,7 @@ export default function SettingsPage() {
             <div className="pt-4 border-t border-slate-100">
               <button
                 onClick={() => setIsPrivacyModalOpen(false)}
-                className="w-full py-3 bg-[#2563eb] text-white font-black text-sm rounded-2xl hover:bg-blue-600"
+                className="w-full py-3 bg-[#2563eb] text-white font-black text-sm rounded-2xl hover:bg-blue-600 cursor-pointer"
               >
                 I Understand
               </button>

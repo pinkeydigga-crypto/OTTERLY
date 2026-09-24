@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
+import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import LoadingScreen from "@/components/LoadingScreen";
 import XpWheel from "@/components/xpwheel";
 import {
@@ -57,8 +58,15 @@ const getLocalDateString = (date = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
+// Strict input sanitization helper to prevent XSS attacks
+const sanitizeString = (str: string) => {
+  return str.replace(/<[^>]*>?/gm, "").trim();
+};
+
 export default function DashboardPage() {
   const router = useRouter();
+  const isOffline = useOfflineGuard();
+
   const mascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
@@ -69,26 +77,36 @@ export default function DashboardPage() {
   const [userRank, setUserRank] = useState<number | string>("-");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  // Lock to avoid infinite re-fetching loops
   const isFetchingRef = useRef(false);
+
+  // Haptic feedback trigger helper
+  const triggerHaptic = () => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(15);
+      } catch {
+        // Fallback if vibration fails or is not supported
+      }
+    }
+  };
 
   const fetchDashboardData = useCallback(async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
 
     try {
-      // 1. Strict Auth Verification Check
+      // 1. Auth Guard (Blocked if offline to prevent unwanted logout)
       const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
-        if (typeof window !== "undefined") {
+        if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
           localStorage.clear();
+          router.push("/login");
         }
-        router.push("/login");
         return;
       }
 
-      // 2. Safe & Optimized Profile Fetching
+      // 2. Strict User Profile Isolation
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
         .select("id, name, username, email, avatar_url, xp, streak, last_login")
@@ -125,11 +143,10 @@ export default function DashboardPage() {
           activeProfile = profileData;
         }
       } else {
-        // Fallback object
         activeProfile = {
           id: user.id,
-          name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist",
-          username: user.email?.split("@")[0] || "artist",
+          name: sanitizeString(user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist"),
+          username: sanitizeString(user.email?.split("@")[0] || "artist"),
           email: user.email || "",
           avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
           xp: 0,
@@ -140,7 +157,7 @@ export default function DashboardPage() {
 
       setProfile(activeProfile);
 
-      // 3. Dynamic Achievements (Optimized Single Foreign Join Query)
+      // 3. Dynamic User Achievements (Bound to authenticated user ID)
       const { data: userAchData, error: achError } = await supabase
         .from("user_completed_achievements")
         .select("id, achievement_id, achievements(id, title, xp_reward)")
@@ -151,7 +168,7 @@ export default function DashboardPage() {
       if (!achError && userAchData) {
         const formatted = userAchData.map((item: any) => ({
           id: item.id,
-          title: item.achievements?.title || String(item.achievement_id || "").replace(/_/g, " ").toUpperCase(),
+          title: sanitizeString(item.achievements?.title || String(item.achievement_id || "").replace(/_/g, " ").toUpperCase()),
           xp_reward: item.achievements?.xp_reward ?? 50
         }));
         setRecentAchievements(formatted);
@@ -159,7 +176,7 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // 4. Heavily Optimized Leaderboard (DB level Limit 10 & Sorting to control Egress)
+      // 4. Leaderboard Fetching with Input Sanitization
       const { data: topProfiles, error: leadError } = await supabase
         .from("profiles")
         .select("id, name, username, xp, streak, avatar_url")
@@ -170,7 +187,7 @@ export default function DashboardPage() {
       if (!leadError && topProfiles) {
         const mapped: LeaderboardUser[] = topProfiles.map((p) => ({
           id: p.id,
-          name: (p.name || p.username || "Artist").replace(/<[^>]*>?/gm, "").trim(),
+          name: sanitizeString(p.name || p.username || "Artist"),
           xp: Number(p.xp ?? 0),
           streak: Number(p.streak ?? 0),
           avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.id}`
@@ -182,7 +199,6 @@ export default function DashboardPage() {
         if (rankIndex !== -1) {
           setUserRank(`#${rankIndex + 1}`);
         } else {
-          // Fetch exact rank count if outside top 10
           const { count } = await supabase
             .from("profiles")
             .select("id", { count: "exact", head: true })
@@ -198,7 +214,7 @@ export default function DashboardPage() {
       setLoading(false);
       isFetchingRef.current = false;
     }
-  }, [router]);
+  }, [router, isOffline]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -216,8 +232,9 @@ export default function DashboardPage() {
     };
   }, []);
 
+  // Real-time Listener (Guard added for offline state)
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!profile?.id || isOffline) return;
 
     const channel = supabase
       .channel(`dashboard_realtime_${profile.id}`)
@@ -236,7 +253,7 @@ export default function DashboardPage() {
       .subscribe();
 
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      if (!document.hidden && !isOffline) {
         fetchDashboardData();
       }
     };
@@ -247,7 +264,7 @@ export default function DashboardPage() {
       supabase.removeChannel(channel);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [profile?.id, fetchDashboardData]);
+  }, [profile?.id, fetchDashboardData, isOffline]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -256,7 +273,7 @@ export default function DashboardPage() {
   const userXp = Number(profile?.xp) || 0;
   const userStreak = Number(profile?.streak) || 0;
   const rawUserName = profile?.name || profile?.username || "Artist";
-  const userName = rawUserName.replace(/<[^>]*>?/gm, "").trim();
+  const userName = sanitizeString(rawUserName);
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", active: true, icon: LayoutDashboard },
@@ -278,7 +295,10 @@ export default function DashboardPage() {
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsMobileSidebarOpen(true)}
+            onClick={() => {
+              triggerHaptic();
+              setIsMobileSidebarOpen(true);
+            }}
             className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
             aria-label="Open sidebar"
           >
@@ -306,7 +326,10 @@ export default function DashboardPage() {
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
-            onClick={() => setIsMobileSidebarOpen(false)}
+            onClick={() => {
+              triggerHaptic();
+              setIsMobileSidebarOpen(false);
+            }}
           />
           
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
@@ -320,7 +343,10 @@ export default function DashboardPage() {
                   className="h-12 w-auto object-contain"
                 />
                 <button
-                  onClick={() => setIsMobileSidebarOpen(false)}
+                  onClick={() => {
+                    triggerHaptic();
+                    setIsMobileSidebarOpen(false);
+                  }}
                   className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                 >
                   <X className="w-5 h-5" />
@@ -334,7 +360,10 @@ export default function DashboardPage() {
                     <Link
                       key={item.name}
                       href={item.path}
-                      onClick={() => setIsMobileSidebarOpen(false)}
+                      onClick={() => {
+                        triggerHaptic();
+                        setIsMobileSidebarOpen(false);
+                      }}
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                         item.active
                           ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
@@ -387,6 +416,7 @@ export default function DashboardPage() {
                 <Link
                   key={item.name}
                   href={item.path}
+                  onClick={triggerHaptic}
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                     item.active
                       ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
@@ -494,6 +524,7 @@ export default function DashboardPage() {
             <div>
               <Link
                 href="/scan"
+                onClick={triggerHaptic}
                 className="inline-flex items-center gap-1.5 bg-white text-[#2563EB] px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-wider border-2 border-slate-200 border-b-4 border-b-slate-300 hover:bg-slate-50 active:border-b-2 active:translate-y-[2px] transition-all"
               >
                 Start Scanning <ChevronRight className="w-4 h-4 stroke-[3]" />
@@ -510,7 +541,11 @@ export default function DashboardPage() {
         <div className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 shadow-sm space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-black text-[#0F172A]">Recent Achievements</h3>
-            <Link href="/achievements" className="text-xs font-black text-blue-600 hover:underline">
+            <Link 
+              href="/achievements" 
+              onClick={triggerHaptic}
+              className="text-xs font-black text-blue-600 hover:underline"
+            >
               View All
             </Link>
           </div>
@@ -555,6 +590,7 @@ export default function DashboardPage() {
               <Link
                 key={item.name}
                 href={item.path}
+                onClick={triggerHaptic}
                 className="group relative flex flex-1 flex-col items-center gap-0.5 py-1 transition-all"
               >
                 <span

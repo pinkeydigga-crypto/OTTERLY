@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
+import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import PracticeCanvas from "@/components/PracticeCanvas";
 
 // Typewriter Text Effect Component with Safe Cleanup
@@ -112,6 +113,8 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
 
 export default function ChallengesPage() {
   const router = useRouter();
+  const isOffline = useOfflineGuard();
+
   const [userXp, setUserXp] = useState<number>(0);
   const [userProfile, setUserProfile] = useState<{ name: string; avatar_url: string } | null>(null);
   const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
@@ -129,28 +132,47 @@ export default function ChallengesPage() {
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
 
+  const triggerHaptic = () => {
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(15);
+      } catch {
+        // Safe fallback
+      }
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
   const fetchPageData = useCallback(async () => {
-    setLoading(true);
+    // Local Cache Se XP Pehle Load Kar Lenge
+    const cachedXp = localStorage.getItem("user_xp_cache");
+    if (cachedXp) {
+      setUserXp(Number(cachedXp));
+    }
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
 
-      if (!user || !user.email_confirmed_at) {
+      if (authError || !user) {
+        // Safe Guard: Online hone par hi redirect aur clear hoga
+        if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+          setIsVerified(false);
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (!user.email_confirmed_at) {
         setIsVerified(false);
         setLoading(false);
         return;
       }
 
       setIsVerified(true);
-
-      const cachedXp = localStorage.getItem("user_xp_cache");
-      if (cachedXp) {
-        setUserXp(Number(cachedXp));
-      }
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -188,7 +210,7 @@ export default function ChallengesPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isOffline]);
 
   useEffect(() => {
     fetchPageData();
@@ -201,13 +223,27 @@ export default function ChallengesPage() {
       }
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !isOffline) {
+        fetchPageData();
+      }
+    };
+
     window.addEventListener('xpUpdated', handleXpEvent);
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', () => {
+      if (!isOffline) fetchPageData();
+    });
+
     return () => {
       window.removeEventListener('xpUpdated', handleXpEvent);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', () => fetchPageData());
     };
-  }, [fetchPageData]);
+  }, [fetchPageData, isOffline]);
 
   const handleReviewChallenge = async () => {
+    triggerHaptic();
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
@@ -226,6 +262,7 @@ export default function ChallengesPage() {
   };
 
   const handleCompleteChallenge = async (challenge: LocalChallenge) => {
+    triggerHaptic();
     if (claimingId === challenge.id) return;
 
     if (completedChallenges.includes(challenge.id)) {
@@ -241,7 +278,11 @@ export default function ChallengesPage() {
       const user = session?.user || (await supabase.auth.getUser()).data.user;
 
       if (!user || !user.email_confirmed_at) {
-        alert("Please verify your account to complete challenges!");
+        if (!isOffline) {
+          alert("Please verify your account to complete challenges!");
+        } else {
+          alert("Aap offline hain. Kripya internet connect karne ke baad try karein.");
+        }
         setClaimingId(null);
         setActiveView('hub');
         return;
@@ -289,7 +330,7 @@ export default function ChallengesPage() {
     );
   }
 
-  if (isVerified === false) {
+  if (isVerified === false && !isOffline) {
     return (
       <div className="min-h-screen bg-[#F6FAFF] flex flex-col items-center justify-center p-4 tracking-tight font-sans">
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 max-w-md w-full text-center space-y-5 shadow-sm">
@@ -348,7 +389,10 @@ export default function ChallengesPage() {
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsMobileSidebarOpen(true)}
+            onClick={() => {
+              triggerHaptic();
+              setIsMobileSidebarOpen(true);
+            }}
             className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-all border border-slate-200"
             aria-label="Open sidebar"
           >
@@ -404,7 +448,10 @@ export default function ChallengesPage() {
                     <Link
                       key={item.name}
                       href={item.path}
-                      onClick={() => setIsMobileSidebarOpen(false)}
+                      onClick={() => {
+                        triggerHaptic();
+                        setIsMobileSidebarOpen(false);
+                      }}
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                         item.active
                           ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
@@ -457,6 +504,7 @@ export default function ChallengesPage() {
                 <Link
                   key={item.name}
                   href={item.path}
+                  onClick={triggerHaptic}
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                     item.active
                       ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
@@ -493,6 +541,7 @@ export default function ChallengesPage() {
         <div className="hidden md:flex items-center justify-between">
           <Link
             href="/dashboard"
+            onClick={triggerHaptic}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-200 text-slate-700 font-black text-xs hover:bg-slate-50"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -567,11 +616,12 @@ export default function ChallengesPage() {
 
                 <button
                   onClick={() => {
+                    triggerHaptic();
                     setActiveChallengeId(activeTabChallenge.id);
                     setActiveView('challenge-flow');
                     setCurrentStep(0);
                   }}
-                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-xs border-b-2 transition-all ${
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-xs border-b-2 transition-all cursor-pointer ${
                     completedChallenges.includes(activeTabChallenge.id)
                       ? "bg-slate-800 hover:bg-slate-900 text-white border-slate-950"
                       : "bg-[#2563EB] hover:bg-blue-600 text-white border-blue-800"
@@ -591,8 +641,11 @@ export default function ChallengesPage() {
                 Step {currentStep + 1} of {activeStepList.length}
               </span>
               <button
-                onClick={() => setActiveView('hub')}
-                className="text-xs font-black text-slate-500 hover:text-slate-800 bg-slate-100 px-3 py-1.5 rounded-xl transition"
+                onClick={() => {
+                  triggerHaptic();
+                  setActiveView('hub');
+                }}
+                className="text-xs font-black text-slate-500 hover:text-slate-800 bg-slate-100 px-3 py-1.5 rounded-xl transition cursor-pointer"
               >
                 Exit Mission
               </button>
@@ -682,17 +735,23 @@ export default function ChallengesPage() {
             {/* Step Actions */}
             <div className="flex justify-between items-center pt-2 border-t border-slate-100">
               <button
-                onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
+                onClick={() => {
+                  triggerHaptic();
+                  setCurrentStep(prev => Math.max(0, prev - 1));
+                }}
                 disabled={currentStep === 0}
-                className="px-4 py-2 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition"
+                className="px-4 py-2 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition cursor-pointer"
               >
                 Previous
               </button>
 
               {!isLastStep ? (
                 <button
-                  onClick={() => setCurrentStep(prev => Math.min(activeStepList.length - 1, prev + 1))}
-                  className="px-5 py-2 rounded-xl font-black text-xs bg-[#2563EB] text-white hover:bg-blue-600 border-b-2 border-blue-800 transition flex items-center gap-1"
+                  onClick={() => {
+                    triggerHaptic();
+                    setCurrentStep(prev => Math.min(activeStepList.length - 1, prev + 1));
+                  }}
+                  className="px-5 py-2 rounded-xl font-black text-xs bg-[#2563EB] text-white hover:bg-blue-600 border-b-2 border-blue-800 transition flex items-center gap-1 cursor-pointer"
                 >
                   <span>Next</span>
                   <ChevronRight className="w-4 h-4" />
@@ -700,8 +759,11 @@ export default function ChallengesPage() {
               ) : (
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setActiveView('hub')}
-                    className="px-4 py-2 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1"
+                    onClick={() => {
+                      triggerHaptic();
+                      setActiveView('hub');
+                    }}
+                    className="px-4 py-2 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 transition flex items-center gap-1 cursor-pointer"
                   >
                     <FastForward className="w-3.5 h-3.5" />
                     <span>Skip</span>
@@ -710,7 +772,7 @@ export default function ChallengesPage() {
                   {isCurrentDone ? (
                     <button
                       onClick={handleReviewChallenge}
-                      className="px-5 py-2 rounded-xl font-black text-xs bg-slate-800 hover:bg-slate-900 text-white transition flex items-center gap-1.5 shadow-xs"
+                      className="px-5 py-2 rounded-xl font-black text-xs bg-slate-800 hover:bg-slate-900 text-white transition flex items-center gap-1.5 shadow-xs cursor-pointer"
                     >
                       <Check className="w-4 h-4" />
                       <span>Return to Hub</span>
@@ -719,7 +781,7 @@ export default function ChallengesPage() {
                     <button
                       onClick={() => handleCompleteChallenge(currentChallenge)}
                       disabled={claimingId === currentChallenge.id}
-                      className="px-5 py-2 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-xs disabled:opacity-70"
+                      className="px-5 py-2 rounded-xl font-black text-xs bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-xs disabled:opacity-70 cursor-pointer"
                     >
                       {claimingId === currentChallenge.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -756,6 +818,7 @@ export default function ChallengesPage() {
               <Link
                 key={item.name}
                 href={item.path}
+                onClick={triggerHaptic}
                 className="group relative flex flex-1 flex-col items-center gap-0.5 py-1 transition-all"
               >
                 <span
