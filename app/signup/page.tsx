@@ -4,16 +4,20 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, ChevronLeft, ChevronRight, User, Mail, Lock } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, User, Mail, Lock, Check } from 'lucide-react';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME_MS = 60 * 1000;
 
 const AVATARS = [
-  { id: 1, name: 'Blue Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot&backgroundColor=0284c7' },
-  { id: 2, name: 'Green Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=GreenBot&backgroundColor=16a34a' },
-  { id: 3, name: 'Yellow Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=YellowBot&backgroundColor=eab308' },
-  { id: 4, name: 'Purple Bot', url: 'https://api.dicebear.com/7.x/bottts/svg?seed=PurpleBot&backgroundColor=9333ea' },
+  { id: 1, name: "Blue Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot&backgroundColor=0284c7" },
+  { id: 2, name: "Green Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=GreenBot&backgroundColor=16a34a" },
+  { id: 3, name: "Yellow Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=YellowBot&backgroundColor=eab308" },
+  { id: 4, name: "Purple Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=PurpleBot&backgroundColor=9333ea" },
+  { id: 5, name: "Lorelei Girl 1", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiLady1&backgroundColor=f1f5f9" },
+  { id: 6, name: "Lorelei Girl 2", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiLady2&backgroundColor=f1f5f9" },
+  { id: 7, name: "Lorelei Boy 1", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiBoy1&backgroundColor=f1f5f9" },
+  { id: 8, name: "Lorelei Boy 2", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiBoy2&backgroundColor=f1f5f9" },
 ];
 
 export default function SignupPage() {
@@ -371,7 +375,7 @@ export default function SignupPage() {
           {/* STEP 1: CHOOSE AVATAR */}
           {step === 1 && (
             <form onSubmit={handleNextStep} className="space-y-4 pt-1">
-              <div className="grid grid-cols-2 gap-3 max-w-[200px] mx-auto">
+              <div className="grid grid-cols-4 gap-2.5 max-w-md mx-auto">
                 {AVATARS.map((avatar) => {
                   const isSelected = selectedAvatar === avatar.url;
                   return (
