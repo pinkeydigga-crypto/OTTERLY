@@ -8,18 +8,18 @@ export default function LoadingScreen() {
 
   return (
     <div className="min-h-screen w-full bg-[#F6FAFF] flex flex-col justify-center items-center gap-3 z-50">
-      {/* Browser browser ko bolta hai ki yeh image turant fetch kare */}
-      <link rel="preload" as="image" href={logoUrl} />
-
-      {/* Static Logo Image with Priority */}
+      {/* Static Logo Image with High Priority */}
       <div className="w-24 h-24 sm:w-28 sm:h-28 relative">
         <Image
           src={logoUrl}
           alt="Otterleo Logo"
           width={112}
           height={112}
-          priority
-          unoptimized
+          priority={true}
+          fetchPriority="high"
+          loading="eager"
+          decoding="sync"
+          sizes="(max-width: 640px) 96px, 112px"
           className="w-full h-full object-contain drop-shadow-md rounded-2xl"
         />
       </div>

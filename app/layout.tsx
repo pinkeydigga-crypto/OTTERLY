@@ -3,6 +3,7 @@ import { Nunito } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import OfflinePopup from "@/components/offlinepopup";
+import GlobalHaptics from "@/components/GlobalHaptics";
 
 // Next.js Turbopack safe Google Font configuration
 const nunito = Nunito({
@@ -128,6 +129,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={`${nunito.className} min-h-full flex flex-col font-sans`}>
+        <GlobalHaptics />
         {children}
         <OfflinePopup />
         <Analytics />
