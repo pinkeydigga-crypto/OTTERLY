@@ -30,7 +30,7 @@ export default function HomePage() {
         }
       } catch (err) {
         console.error("Auth check error:", err);
-      } font-medium {
+      } finally {
         setCheckingAuth(false);
       }
     };
