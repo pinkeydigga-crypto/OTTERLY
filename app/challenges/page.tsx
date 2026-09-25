@@ -6,13 +6,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, Zap, ChevronRight,
-  Sparkles, Check, ShieldAlert, Palette, FastForward, Grid
+  Swords, Scan, Trophy, Compass, Award, User, Settings, PanelLeft, X, ChevronRight,
+  Sparkles, Check, ShieldAlert, Palette, FastForward, Grid, Zap
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
 import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import PracticeCanvas from "@/components/PracticeCanvas";
+import { playCelebrationSound } from "@/lib/sound";
 
 // Typewriter Text Effect Component with Safe Cleanup
 function TypewriterText({ text, speed = 50 }: { text: string; speed?: number }) {
@@ -147,7 +148,6 @@ export default function ChallengesPage() {
   }, []);
 
   const fetchPageData = useCallback(async () => {
-    // Local Cache Se XP Pehle Load Kar Lenge
     const cachedXp = localStorage.getItem("user_xp_cache");
     if (cachedXp) {
       setUserXp(Number(cachedXp));
@@ -158,7 +158,6 @@ export default function ChallengesPage() {
       const user = session?.user || (await supabase.auth.getUser()).data.user;
 
       if (authError || !user) {
-        // Safe Guard: Online hone par hi redirect aur clear hoga
         if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
           setIsVerified(false);
         }
@@ -244,6 +243,10 @@ export default function ChallengesPage() {
 
   const handleReviewChallenge = async () => {
     triggerHaptic();
+    
+    // Celebration sound without delay cut
+    playCelebrationSound();
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
@@ -299,6 +302,9 @@ export default function ChallengesPage() {
         alert("Server network slow hai! Kripya 5 second baad dobara try karein.");
         return;
       }
+
+      // Play sound immediately to ensure full duration playback
+      playCelebrationSound();
 
       const updatedXp = Number(newTotalXp);
 
@@ -407,11 +413,6 @@ export default function ChallengesPage() {
             className="h-12 w-auto object-contain"
             priority
           />
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-3 py-1 rounded-full text-amber-700 font-extrabold text-xs">
-          <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-          <span>{userXp} XP</span>
         </div>
       </header>
 
@@ -547,11 +548,6 @@ export default function ChallengesPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </Link>
-
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-2 rounded-2xl text-amber-700 font-black text-sm">
-            <Zap className="w-4 h-4 fill-amber-500 text-amber-500" />
-            <span>{userXp} XP</span>
-          </div>
         </div>
 
         {activeView === 'hub' ? (
@@ -603,13 +599,14 @@ export default function ChallengesPage() {
                   </p>
                 </div>
 
+                {/* CHALLENGE XP REWARD BADGE */}
                 <div className="flex items-center gap-3 text-xs font-black">
-                  <span className="flex items-center gap-1 text-amber-500">
-                    <Zap className="w-3.5 h-3.5 fill-amber-500" />
+                  <span className="flex items-center gap-1 text-amber-500 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-lg">
+                    <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                     +{activeTabChallenge.xp} XP
                   </span>
 
-                  <span className="px-2.5 py-0.5 rounded-lg text-[11px] uppercase bg-amber-50 text-amber-600">
+                  <span className="px-2.5 py-1 rounded-lg text-[11px] uppercase bg-blue-50 text-blue-600 border border-blue-100">
                     Pro
                   </span>
                 </div>

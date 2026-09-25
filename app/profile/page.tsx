@@ -8,8 +8,6 @@ import LoadingScreen from "@/components/LoadingScreen";
 import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import {
   ArrowLeft,
-  Flame,
-  Star,
   Check,
   Save,
   LogOut,
@@ -17,7 +15,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-// Updated Avatar list with bottts and lorelei avatars
+// Avatar list with bottts and lorelei avatars
 const AVATARS = [
   { id: 1, name: "Blue Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot&backgroundColor=0284c7" },
   { id: 2, name: "Green Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=GreenBot&backgroundColor=16a34a" },
@@ -32,11 +30,8 @@ const AVATARS = [
 interface Profile {
   id: string;
   name: string;
-  username: string;
   email: string;
   avatar_url: string;
-  xp: number;
-  streak: number;
 }
 
 export default function ProfilePage() {
@@ -51,7 +46,6 @@ export default function ProfilePage() {
 
   // Editable Form States
   const [name, setName] = useState("");
-  const [username, setUsername] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -81,10 +75,10 @@ export default function ProfilePage() {
         return;
       }
 
-      // ⚡ OPTIMIZATION: Fetch required fields
+      // ⚡ MAXIMUM OPTIMIZATION: Fetch ONLY essential fields (No username, xp, streak)
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, name, username, email, avatar_url, xp, streak")
+        .select("id, name, email, avatar_url")
         .eq("id", user.id)
         .single();
 
@@ -103,10 +97,9 @@ export default function ProfilePage() {
         avatar_url: userAvatar,
       });
       setName(data.name || "");
-      setUsername(data.username || "");
       setSelectedAvatar(userAvatar);
     } catch (err: unknown) {
-      console.error("Profile security check error:", err);
+      console.error("Profile fetch error:", err);
     } finally {
       setLoading(false);
     }
@@ -137,7 +130,6 @@ export default function ProfilePage() {
         .from("profiles")
         .update({
           name: name.trim(),
-          username: username.trim(),
           avatar_url: selectedAvatar,
         })
         .eq("id", user.id);
@@ -149,7 +141,6 @@ export default function ProfilePage() {
           ? {
               ...prev,
               name: name.trim(),
-              username: username.trim(),
               avatar_url: selectedAvatar,
             }
           : null
@@ -163,7 +154,6 @@ export default function ProfilePage() {
           JSON.stringify({
             ...parsed,
             name: name.trim(),
-            username: username.trim(),
             avatar: selectedAvatar,
           })
         );
@@ -229,9 +219,6 @@ export default function ProfilePage() {
     return <LoadingScreen />;
   }
 
-  const userXp = profile?.xp || 0;
-  const userStreak = profile?.streak || 0;
-
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col tracking-tight font-sans">
       <main className="flex-1 p-4 sm:p-8 max-w-4xl mx-auto w-full space-y-6 overflow-y-auto">
@@ -244,11 +231,6 @@ export default function ProfilePage() {
             <ArrowLeft className="w-4 h-4 stroke-[3]" />
             Dashboard
           </Link>
-
-          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 px-4 py-2 rounded-full text-amber-600 font-black text-xs sm:text-sm">
-            <Star className="w-4 h-4 fill-amber-400 stroke-amber-400" />
-            <span>{userXp} XP</span>
-          </div>
         </div>
 
         <div className="flex justify-between items-center">
@@ -279,21 +261,9 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="text-center sm:text-left space-y-2 flex-1">
+          <div className="text-center sm:text-left space-y-1 flex-1">
             <h2 className="text-2xl font-black text-[#0F172A]">{name || "User Name"}</h2>
-            <p className="text-xs font-bold text-slate-400">@{username || "username"}</p>
-
-            <div className="flex flex-wrap justify-center sm:justify-start gap-3 pt-2">
-              <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-3 py-1 rounded-xl text-amber-700 font-extrabold text-xs">
-                <Star className="w-4 h-4 fill-amber-400 stroke-amber-500" />
-                <span>{userXp} XP</span>
-              </div>
-
-              <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 px-3 py-1 rounded-xl text-orange-600 font-extrabold text-xs">
-                <Flame className="w-4 h-4 fill-orange-500 stroke-orange-500" />
-                <span>{userStreak} Day Streak</span>
-              </div>
-            </div>
+            <p className="text-xs font-bold text-slate-400">{profile?.email}</p>
           </div>
         </div>
 
@@ -362,20 +332,6 @@ export default function ProfilePage() {
 
           <div>
             <label className="block text-xs font-black text-[#0F172A] uppercase tracking-wider mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="username"
-              className="w-full px-4 py-3 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-bold text-[#0F172A]"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-black text-[#0F172A] uppercase tracking-wider mb-2">
               Email Address (Cannot be changed)
             </label>
             <input
@@ -403,7 +359,7 @@ export default function ProfilePage() {
           </div>
 
           <p className="text-xs font-extrabold text-red-900 leading-relaxed">
-            Warning: Deleting your account is permanent. Your entire profile, XP points, streak progress, and saved data will be permanently erased.
+            Warning: Deleting your account is permanent. Your entire profile and saved data will be permanently erased.
           </p>
 
           <button
@@ -430,7 +386,7 @@ export default function ProfilePage() {
             <div className="space-y-2">
               <h3 className="text-xl font-black text-[#0F172A]">Are you absolutely sure?</h3>
               <p className="text-xs font-bold text-red-600 leading-relaxed bg-red-50 p-3 rounded-xl border border-red-100">
-                Your info will be deleted permanently! All your XP, streaks, and account details will be lost forever.
+                Your info will be deleted permanently! All your account details will be lost forever.
               </p>
             </div>
 

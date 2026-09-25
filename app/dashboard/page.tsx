@@ -43,14 +43,6 @@ interface Achievement {
   xp_reward: number;
 }
 
-interface LeaderboardUser {
-  id: string;
-  name: string;
-  xp: number;
-  streak: number;
-  avatar_url: string;
-}
-
 const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -58,7 +50,6 @@ const getLocalDateString = (date = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
-// Strict input sanitization helper to prevent XSS attacks
 const sanitizeString = (str: string) => {
   return str.replace(/<[^>]*>?/gm, "").trim();
 };
@@ -73,19 +64,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentAchievements, setRecentAchievements] = useState<Achievement[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
   const [userRank, setUserRank] = useState<number | string>("-");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const isFetchingRef = useRef(false);
 
-  // Haptic feedback trigger helper
   const triggerHaptic = () => {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(15);
       } catch {
-        // Fallback if vibration fails or is not supported
+        // Fallback
       }
     }
   };
@@ -95,7 +84,7 @@ export default function DashboardPage() {
     isFetchingRef.current = true;
 
     try {
-      // 1. Auth Guard (Blocked if offline to prevent unwanted logout)
+      // 1. Auth Guard
       const { data: { user }, error: authError } = await supabase.auth.getUser();
 
       if (authError || !user) {
@@ -106,7 +95,7 @@ export default function DashboardPage() {
         return;
       }
 
-      // 2. Strict User Profile Isolation
+      // 2. Fetch User Profile (Optimized Select)
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
         .select("id, name, username, email, avatar_url, xp, streak, last_login")
@@ -126,7 +115,7 @@ export default function DashboardPage() {
 
         if (lastLoginStr !== todayStr) {
           const currentStreak = Number(profileData.streak) || 0;
-          const newStreak = currentStreak + 1;
+          const newStreak = currentStreak + 1; // Tumhara original increment logic
 
           const { data: updatedProfile } = await supabase
             .from("profiles")
@@ -157,7 +146,7 @@ export default function DashboardPage() {
 
       setProfile(activeProfile);
 
-      // 3. Dynamic User Achievements (Bound to authenticated user ID)
+      // 3. User Achievements (Lightweight Join)
       const { data: userAchData, error: achError } = await supabase
         .from("user_completed_achievements")
         .select("id, achievement_id, achievements(id, title, xp_reward)")
@@ -176,37 +165,13 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // 4. Leaderboard Fetching with Input Sanitization
-      const { data: topProfiles, error: leadError } = await supabase
+      // 4. Egress Optimized Rank Calculation (Sirf Count Request)
+      const { count } = await supabase
         .from("profiles")
-        .select("id, name, username, xp, streak, avatar_url")
-        .order("xp", { ascending: false })
-        .order("streak", { ascending: false })
-        .limit(10);
+        .select("id", { count: "exact", head: true })
+        .gt("xp", activeProfile.xp || 0);
 
-      if (!leadError && topProfiles) {
-        const mapped: LeaderboardUser[] = topProfiles.map((p) => ({
-          id: p.id,
-          name: sanitizeString(p.name || p.username || "Artist"),
-          xp: Number(p.xp ?? 0),
-          streak: Number(p.streak ?? 0),
-          avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${p.id}`
-        }));
-
-        setLeaderboard(mapped.slice(0, 3));
-
-        const rankIndex = mapped.findIndex((u) => u.id === user.id);
-        if (rankIndex !== -1) {
-          setUserRank(`#${rankIndex + 1}`);
-        } else {
-          const { count } = await supabase
-            .from("profiles")
-            .select("id", { count: "exact", head: true })
-            .gt("xp", activeProfile.xp || 0);
-
-          setUserRank(count !== null ? `#${count + 1}` : "-");
-        }
-      }
+      setUserRank(count !== null ? `#${count + 1}` : "-");
 
     } catch (err) {
       console.error("Dashboard processing error:", err);
@@ -232,7 +197,7 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Real-time Listener (Guard added for offline state)
+  // Egress Optimized Realtime Listener
   useEffect(() => {
     if (!profile?.id || isOffline) return;
 
@@ -246,8 +211,11 @@ export default function DashboardPage() {
           table: "profiles",
           filter: `id=eq.${profile.id}`
         },
-        () => {
-          fetchDashboardData();
+        (payload) => {
+          // Double DB fetch se bachne ke liye direct payload se state update
+          if (payload.new) {
+            setProfile((prev) => (prev ? { ...prev, ...payload.new } : (payload.new as Profile)));
+          }
         }
       )
       .subscribe();
