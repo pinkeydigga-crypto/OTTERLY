@@ -30,7 +30,7 @@ export default function HomePage() {
         }
       } catch (err) {
         console.error("Auth check error:", err);
-      } finally {
+      } font-medium {
         setCheckingAuth(false);
       }
     };
@@ -261,9 +261,13 @@ export default function HomePage() {
                 <Link href="/terms" className="underline hover:text-[#2563EB]">
                   Terms
                 </Link>{' '}
-                &{' '}
+                ,{' '}
                 <Link href="/privacy" className="underline hover:text-[#2563EB]">
                   Privacy Policy
+                </Link>{' '}
+                &{' '}
+                <Link href="/cookie-policy" className="underline hover:text-[#2563EB]">
+                  Cookie Policy
                 </Link>.
               </p>
             </div>
@@ -285,6 +289,10 @@ export default function HomePage() {
           <span>•</span>
           <Link href="/privacy" className="hover:text-slate-600 transition-colors">
             Privacy
+          </Link>
+          <span>•</span>
+          <Link href="/cookie-policy" className="hover:text-slate-600 transition-colors">
+            Cookie Policy
           </Link>
           <span>•</span>
           <Link 
