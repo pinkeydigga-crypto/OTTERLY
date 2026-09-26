@@ -95,7 +95,7 @@ export default function DashboardPage() {
         return;
       }
 
-      // 2. Fetch User Profile (Optimized Select)
+      // 2. Fetch User Profile
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
         .select("id, name, username, email, avatar_url, xp, streak, last_login")
@@ -115,7 +115,7 @@ export default function DashboardPage() {
 
         if (lastLoginStr !== todayStr) {
           const currentStreak = Number(profileData.streak) || 0;
-          const newStreak = currentStreak + 1; // Tumhara original increment logic
+          const newStreak = currentStreak + 1;
 
           const { data: updatedProfile } = await supabase
             .from("profiles")
@@ -146,7 +146,7 @@ export default function DashboardPage() {
 
       setProfile(activeProfile);
 
-      // 3. User Achievements (Lightweight Join)
+      // 3. User Achievements
       const { data: userAchData, error: achError } = await supabase
         .from("user_completed_achievements")
         .select("id, achievement_id, achievements(id, title, xp_reward)")
@@ -165,7 +165,7 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // 4. Egress Optimized Rank Calculation (Sirf Count Request)
+      // 4. Rank Calculation
       const { count } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
@@ -197,7 +197,7 @@ export default function DashboardPage() {
     };
   }, []);
 
-  // Egress Optimized Realtime Listener
+  // Realtime Listener
   useEffect(() => {
     if (!profile?.id || isOffline) return;
 
@@ -212,7 +212,6 @@ export default function DashboardPage() {
           filter: `id=eq.${profile.id}`
         },
         (payload) => {
-          // Double DB fetch se bachne ke liye direct payload se state update
           if (payload.new) {
             setProfile((prev) => (prev ? { ...prev, ...payload.new } : (payload.new as Profile)));
           }
@@ -251,7 +250,7 @@ export default function DashboardPage() {
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
-    { name: "Achievements", path: "/achievements", icon: Award },
+    
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings }
   ];
@@ -480,9 +479,6 @@ export default function DashboardPage() {
         {/* AI Scan Card */}
         <div className="bg-[#2563EB] text-white p-6 sm:p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-4 max-w-lg z-10">
-            <span className="bg-white/20 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">
-              AI Drawing Assistant
-            </span>
             <h2 className="text-2xl sm:text-3xl font-black leading-tight">
               Scan & Analyze Your Artwork
             </h2>

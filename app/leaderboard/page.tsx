@@ -5,12 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { 
-  ArrowLeft, Share2, Download, X, Loader2, LayoutDashboard,
+  ArrowLeft, Share2, X, LayoutDashboard,
   Swords, Scan, Trophy, Compass, Award, User, Settings, Flame, PanelLeft,
   Star, Palette, Grid, ShieldAlert
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import html2canvas from "html2canvas";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 
@@ -29,9 +28,6 @@ export default function LeaderboardPage() {
   const isOffline = useOfflineGuard();
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const [leaderboardData, setLeaderboardData] = useState<ProfileUser[]>([]);
@@ -168,175 +164,6 @@ export default function LeaderboardPage() {
   const rank2 = leaderboardData.length > 1 ? leaderboardData[1] : null;
   const rank3 = leaderboardData.length > 2 ? leaderboardData[2] : null;
 
-  const generateCanvas = async (): Promise<HTMLCanvasElement | null> => {
-    if (!cardRef.current) return null;
-
-    try {
-      return await html2canvas(cardRef.current, {
-        useCORS: true,
-        allowTaint: false,
-        scale: 3,
-        backgroundColor: "#ffffff",
-        logging: false,
-        imageTimeout: 15000,
-        onclone: (clonedDoc) => {
-          const images = clonedDoc.getElementsByTagName("img");
-          for (let i = 0; i < images.length; i++) {
-            images[i].setAttribute("crossorigin", "anonymous");
-          }
-
-          const elements = clonedDoc.querySelectorAll("*");
-          elements.forEach((el) => {
-            const htmlEl = el as HTMLElement;
-            const computedStyle = window.getComputedStyle(htmlEl);
-            
-            if (computedStyle.color && (computedStyle.color.includes("lab") || computedStyle.color.includes("oklab"))) {
-              htmlEl.style.color = "#1e3a8a";
-            }
-            if (computedStyle.backgroundColor && (computedStyle.backgroundColor.includes("lab") || computedStyle.backgroundColor.includes("oklab"))) {
-              htmlEl.style.backgroundColor = "#ffffff";
-            }
-            if (computedStyle.borderColor && (computedStyle.borderColor.includes("lab") || computedStyle.borderColor.includes("oklab"))) {
-              htmlEl.style.borderColor = "#cbd5e1";
-            }
-          });
-        },
-      });
-    } catch (canvasErr) {
-      return generateFallbackCanvas();
-    }
-  };
-
-  const generateFallbackCanvas = async (): Promise<HTMLCanvasElement | null> => {
-    if (!currentUser) return null;
-    const canvas = document.createElement("canvas");
-    canvas.width = 720;
-    canvas.height = 960;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    ctx.fillStyle = "#ffffff";
-    ctx.roundRect(0, 0, 720, 960, 40);
-    ctx.fill();
-
-    ctx.strokeStyle = "#3b82f6";
-    ctx.lineWidth = 12;
-    ctx.stroke();
-
-    ctx.fillStyle = "#1e3a8a";
-    ctx.font = "900 36px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("My Global Rank", 360, 160);
-
-    ctx.fillStyle = "#1e3a8a";
-    ctx.font = "900 80px sans-serif";
-    ctx.fillText(`${currentUser.rank || "N/A"}`, 360, 280);
-
-    ctx.fillStyle = "#e0f2fe";
-    ctx.roundRect(100, 580, 520, 140, 24);
-    ctx.fill();
-
-    ctx.fillStyle = "#0f172a";
-    ctx.font = "900 28px sans-serif";
-    ctx.fillText(`XP: ${currentUser.xp_points} XP`, 240, 660);
-    ctx.fillText(`Streak: ${currentUser.streak} Days`, 480, 660);
-
-    ctx.fillStyle = "#2563eb";
-    ctx.font = "italic bold 24px sans-serif";
-    ctx.fillText("Keep drawing, keep growing!", 360, 820);
-
-    return canvas;
-  };
-
-  const handleDownloadImage = async () => {
-    triggerHaptic();
-    if (!cardRef.current || isProcessing || isDownloading || isSharing) return;
-
-    setIsProcessing(true);
-    setIsDownloading(true);
-
-    try {
-      const canvas = await generateCanvas();
-      if (!canvas) throw new Error("Canvas generation failed");
-
-      // Blob approach for enhanced mobile compatibility
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          const dataUrl = canvas.toDataURL("image/png");
-          const link = document.createElement("a");
-          link.href = dataUrl;
-          link.download = `${currentUser?.full_name || "User"}_Global_Rank.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          return;
-        }
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.download = `${currentUser?.full_name || "User"}_Global_Rank.png`;
-        link.href = url;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 1000);
-      }, "image/png");
-    } catch (err) {
-      console.error("Error downloading image:", err);
-      alert("Image download failed. Please try again.");
-    } finally {
-      setIsDownloading(false);
-      setTimeout(() => {
-        setIsProcessing(false);
-      }, 1500);
-    }
-  };
-
-  const handleShareImage = async () => {
-    triggerHaptic();
-    if (!cardRef.current || isProcessing || isSharing || isDownloading) return;
-
-    setIsProcessing(true);
-    setIsSharing(true);
-
-    try {
-      const canvas = await generateCanvas();
-      if (!canvas) throw new Error("Canvas generation failed");
-
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          handleDownloadImage();
-          return;
-        }
-
-        const file = new File([blob], `${currentUser?.full_name || "User"}_Global_Rank.png`, {
-          type: "image/png",
-        });
-
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: "My Global Rank",
-            text: `Check out my rank on Otterleo! 🎨`,
-          });
-        } else {
-          handleDownloadImage();
-        }
-      }, "image/png");
-    } catch (err) {
-      console.error("Error sharing image:", err);
-      handleDownloadImage();
-    } finally {
-      setIsSharing(false);
-      setTimeout(() => {
-        setIsProcessing(false);
-      }, 1500);
-    }
-  };
-
   const desktopNavItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Practice", path: "/practice", icon: Palette },
@@ -345,7 +172,7 @@ export default function LeaderboardPage() {
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", active: true, icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
-    { name: "Achievements", path: "/achievements", icon: Award },
+    
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
@@ -797,7 +624,7 @@ export default function LeaderboardPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Target Card for Export */}
+            {/* Target Card */}
             <div
               ref={cardRef}
               className="w-full relative overflow-hidden flex flex-col items-center justify-between p-5 sm:p-6 text-center select-none rounded-xl mb-4"
@@ -811,21 +638,13 @@ export default function LeaderboardPage() {
                 fontFamily: '"Comic Sans MS", "Chalkboard SE", "Caveat", "Architects Daughter", cursive, sans-serif',
               }}
             >
-              {/* Inner Torn Paper Container */}
+              {/* Inner Paper Container */}
               <div
-                className="w-full h-full bg-[#fdfbf7] rounded-sm p-6 sm:p-7 relative flex flex-col items-center justify-between min-h-[460px] border border-amber-100/60"
-                style={{
-                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)",
-                  clipPath: "polygon(0% 0.5%, 15% 0%, 30% 0.8%, 45% 0.2%, 60% 0.6%, 75% 0.1%, 90% 0.7%, 100% 0%, 99.5% 15%, 100% 30%, 99.2% 45%, 100% 60%, 99.6% 75%, 100% 90%, 99.4% 100%, 85% 99.5%, 70% 100%, 55% 99.2%, 40% 100%, 25% 99.6%, 10% 100%, 0% 99.3%, 0.5% 85%, 0% 70%, 0.8% 55%, 0.2% 40%, 0.6% 25%, 0.1% 10%)"
-                }}
+                className="w-full h-full bg-[#fdfbf7] rounded-xl p-6 sm:p-7 relative flex flex-col items-center justify-between min-h-[460px] border border-amber-100/60 shadow-md"
               >
-                {/* Blue Washi Tape (Top Left) */}
+                {/* Washi Tape (Top Left) */}
                 <div
-                  className="absolute -top-3 -left-4 w-20 h-7 -rotate-25 shadow-xs z-20 opacity-90 pointer-events-none"
-                  style={{
-                    backgroundColor: "#60a5fa",
-                    clipPath: "polygon(5% 0%, 95% 0%, 100% 50%, 95% 100%, 5% 100%, 0% 50%)"
-                  }}
+                  className="absolute -top-3 left-4 w-16 h-6 bg-blue-400/90 rounded-sm shadow-xs z-20 pointer-events-none"
                 />
 
                 {/* Top Otterleo Logo */}
@@ -853,36 +672,33 @@ export default function LeaderboardPage() {
                     </svg>
                   </div>
 
-                  {/* Rank with Action Lines */}
-                  <div className="relative flex items-center justify-center">
-                    {/* Left Action Lines */}
-                    <div className="absolute -left-9 flex flex-col items-center gap-1.5 opacity-80" style={{ color: "#1e3a8a" }}>
-                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full rotate-25"></span>
+                  {/* Rank Display */}
+                  <div className="relative flex items-center justify-center gap-3">
+                    <div className="flex flex-col items-center gap-1 opacity-80" style={{ color: "#1e3a8a" }}>
+                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full"></span>
                       <span className="w-4 h-1 bg-[#1e3a8a] rounded-full"></span>
-                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full -rotate-25"></span>
+                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full"></span>
                     </div>
 
-                    {/* Big Rank Number */}
                     <span className="text-7xl sm:text-8xl font-black leading-none tracking-tight" style={{ color: "#1e3a8a" }}>
                       {currentUser?.rank || "5"}
                     </span>
 
-                    {/* Right Action Lines */}
-                    <div className="absolute -right-9 flex flex-col items-center gap-1.5 opacity-80" style={{ color: "#1e3a8a" }}>
-                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full -rotate-25"></span>
+                    <div className="flex flex-col items-center gap-1 opacity-80" style={{ color: "#1e3a8a" }}>
+                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full"></span>
                       <span className="w-4 h-1 bg-[#1e3a8a] rounded-full"></span>
-                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full rotate-25"></span>
+                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full"></span>
                     </div>
                   </div>
 
-                  {/* Underline Stroke */}
-                  <div className="w-28 h-2 rounded-full mt-2 -rotate-1 opacity-90" style={{ backgroundColor: "#93c5fd" }} />
+                  {/* Underline */}
+                  <div className="w-28 h-2 rounded-full mt-2 opacity-90" style={{ backgroundColor: "#93c5fd" }} />
                 </div>
 
                 {/* XP & Streak Box */}
                 <div
                   className="w-full rounded-2xl py-3.5 px-4 flex items-center justify-around my-2 z-10"
-                  style={{ backgroundColor: "#e0f2fe", opacity: 0.9 }}
+                  style={{ backgroundColor: "#e0f2fe" }}
                 >
                   <div className="flex items-center gap-3">
                     <Star className="w-5 h-5 fill-[#1e3a8a] text-[#1e3a8a]" />
@@ -903,46 +719,31 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
 
-                {/* Footer Quote & Doodles */}
-                <div className="w-full pt-2 flex flex-col items-center justify-center relative z-10">
-                  <p className="text-xs sm:text-sm font-black italic tracking-wide" style={{ color: "#2563eb" }}>
-                    Keep drawing, keep growing!
+                {/* User Avatar & @Username Footer */}
+                <div className="w-full pt-3 flex items-center justify-center gap-3 relative z-10">
+                  <img
+                    src={currentUser?.avatar_url}
+                    alt={currentUser?.full_name}
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-blue-400 shadow-2xs shrink-0"
+                    crossOrigin="anonymous"
+                  />
+                  <p className="text-xs sm:text-sm font-black tracking-tight truncate max-w-[200px]" style={{ color: "#1e3a8a" }}>
+                    @{currentUser?.full_name?.toLowerCase().replace(/\s+/g, '') || "user"}
                   </p>
-
-                  {/* Underline for quote */}
-                  <div className="w-24 h-1 rounded-full mt-1 -rotate-2" style={{ backgroundColor: "#93c5fd" }} />
-
-                  {/* Bottom Right Heart & Pencil Doodle */}
-                  <div className="absolute right-0 bottom-0 flex items-center gap-1.5" style={{ color: "#2563eb" }}>
-                    <span className="text-xs font-black">♡</span>
-                    <div className="w-3.5 h-3.5 border-2 border-[#2563eb] rotate-45 rounded-xs flex items-center justify-center">
-                      <div className="w-1 h-1 bg-[#2563eb]" />
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Modal Actions */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                onClick={handleShareImage}
-                disabled={isProcessing || isSharing || isDownloading}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isSharing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
-                <span>Share Image</span>
-              </button>
-
-              <button
-                onClick={handleDownloadImage}
-                disabled={isProcessing || isDownloading || isSharing}
-                className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl font-black text-xs border-b-4 border-slate-950 active:border-b-0 active:translate-y-1 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-              >
-                {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                <span>Download</span>
-              </button>
+            {/* Replaced Buttons with Screenshot Notice */}
+            <div className="text-center pt-1 pb-2 space-y-1.5">
+              <p className="text-lg sm:text-xl font-black text-slate-900 tracking-wide">
+                YOU CAN TAKE A SCREENSHOT
+              </p>
+              <p className="text-xs font-bold text-slate-500">
+                Downloading feature is currently unavailable
+              </p>
             </div>
+
           </div>
         </div>
       )}

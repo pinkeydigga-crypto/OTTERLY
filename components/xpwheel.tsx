@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Star, Sparkles, Loader2, Trophy, Clock, ShieldAlert } from "lucide-react";
+import { Star, Sparkles, Loader2, Trophy, Clock, ShieldAlert, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface WheelSegment {
@@ -11,13 +11,14 @@ interface WheelSegment {
   textColor: string;
 }
 
+// Gradient Colors: 10 XP (Light) se 100 XP (Dark)
 const SEGMENTS: WheelSegment[] = [
-  { label: "10", value: 10, color: "#1E40AF", textColor: "#FFFFFF" },
-  { label: "30", value: 30, color: "#2563EB", textColor: "#FFFFFF" },
-  { label: "50", value: 50, color: "#3B82F6", textColor: "#FFFFFF" },
-  { label: "60", value: 60, color: "#60A5FA", textColor: "#1E3A8A" },
-  { label: "80", value: 80, color: "#93C5FD", textColor: "#1E3A8A" },
-  { label: "100", value: 100, color: "#DBEAFE", textColor: "#1E40AF" },
+  { label: "10", value: 10, color: "#E0F2FE", textColor: "#0369A1" }, // Very Light Blue
+  { label: "30", value: 30, color: "#38BDF8", textColor: "#0C4A6E" }, // Light Sky Blue
+  { label: "50", value: 50, color: "#0284C7", textColor: "#FFFFFF" }, // Medium Blue
+  { label: "60", value: 60, color: "#2563EB", textColor: "#FFFFFF" }, // Bright Blue
+  { label: "80", value: 80, color: "#1D4ED8", textColor: "#FFFFFF" }, // Dark Blue
+  { label: "100", value: 100, color: "#0F172A", textColor: "#FFFFFF" }, // Darkest Blue/Slate
 ];
 
 const getTodayLocalDate = () => {
@@ -94,17 +95,22 @@ export default function XpWheel() {
     };
   }, []);
 
+  const initAudioCtx = () => {
+    if (!audioCtxRef.current) {
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      audioCtxRef.current = new AudioContextClass();
+    }
+    if (audioCtxRef.current.state === "suspended") {
+      audioCtxRef.current.resume();
+    }
+  };
+
   const playTickSound = () => {
     try {
-      if (!audioCtxRef.current) {
-        const AudioContextClass =
-          window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        audioCtxRef.current = new AudioContextClass();
-      }
-      if (audioCtxRef.current.state === "suspended") {
-        audioCtxRef.current.resume();
-      }
+      initAudioCtx();
+      if (!audioCtxRef.current) return;
 
       const osc = audioCtxRef.current.createOscillator();
       const gain = audioCtxRef.current.createGain();
@@ -121,6 +127,32 @@ export default function XpWheel() {
 
       osc.start();
       osc.stop(audioCtxRef.current.currentTime + 0.03);
+    } catch {
+      // Audio fallback
+    }
+  };
+
+  const playWinSound = () => {
+    try {
+      initAudioCtx();
+      if (!audioCtxRef.current) return;
+
+      const now = audioCtxRef.current.currentTime;
+      const osc = audioCtxRef.current.createOscillator();
+      const gain = audioCtxRef.current.createGain();
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(1040, now + 0.055);
+
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.058);
+
+      osc.connect(gain);
+      gain.connect(audioCtxRef.current.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.06);
     } catch {
       // Audio fallback
     }
@@ -157,6 +189,7 @@ export default function XpWheel() {
   };
 
   const handleSecureSpin = async () => {
+    // Client-side strict guard against re-spins or script manipulation
     if (isSpinning || hasSpunToday) return;
 
     setErrorMessage(null);
@@ -173,13 +206,17 @@ export default function XpWheel() {
         return;
       }
 
+      // Secure Database RPC Execution
       const { data, error } = await supabase.rpc("spin_daily_xp_wheel", {
         p_user_id: user.id,
       });
 
       if (error || !data || !data.success) {
         setIsSpinning(false);
-        if (data?.message?.toLowerCase().includes("already") || error?.message?.toLowerCase().includes("already")) {
+        if (
+          data?.message?.toLowerCase().includes("already") ||
+          error?.message?.toLowerCase().includes("already")
+        ) {
           setHasSpunToday(true);
         }
         setErrorMessage(data?.message || error?.message || "Spin action failed.");
@@ -192,14 +229,12 @@ export default function XpWheel() {
       const winningIndex = SEGMENTS.findIndex((seg) => seg.value === wonXp);
       const targetSegmentIndex = winningIndex !== -1 ? winningIndex : 0;
 
-      // 10 extra full rotations so the wheel spins smoothly for 8 seconds
       const extraTurns = 10 * 360;
       const targetAngle = 360 - targetSegmentIndex * segmentAngle - segmentAngle / 2;
 
       const currentRotation = rotation - (rotation % 360);
       const newRotation = currentRotation + extraTurns + targetAngle;
 
-      // Spin time set to 8 seconds (8000 ms)
       const spinDuration = 8000;
       const startTime = Date.now();
 
@@ -211,6 +246,9 @@ export default function XpWheel() {
       setTimeout(() => {
         setIsSpinning(false);
         setReward(wonXp);
+        setHasSpunToday(true);
+
+        playWinSound();
 
         localStorage.setItem("user_xp_cache", newTotalXp.toString());
         window.dispatchEvent(new CustomEvent("xpUpdated", { detail: newTotalXp }));
@@ -219,9 +257,9 @@ export default function XpWheel() {
           navigator.vibrate([40, 60, 120]);
         }
 
-        // Spin reward dikhne ke 3 seconds baad wheel hide hoke refresh status dikhayega
+        // 3 second baad reward banner hide ho jayega
         setTimeout(() => {
-          setHasSpunToday(true);
+          setReward(null);
         }, 3000);
       }, spinDuration);
     } catch (err) {
@@ -231,55 +269,72 @@ export default function XpWheel() {
     }
   };
 
-  // 1. Loading State
   if (hasSpunToday === null) {
     return (
-      <div className="bg-white rounded-[2rem] p-6 border border-slate-200/80 shadow-xs flex items-center justify-center max-w-md mx-auto min-h-[200px]">
+      <div className="bg-white rounded-[2rem] p-6 border border-slate-200/80 shadow-xs flex items-center justify-center w-full min-h-[200px]">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
       </div>
     );
   }
 
-  // 2. Hide Wheel when already spun today
-  if (hasSpunToday && !isSpinning) {
-    return (
-      <div className="bg-white rounded-[2rem] p-6 border border-slate-200/80 shadow-xs flex flex-col items-center justify-center text-center gap-3 max-w-md mx-auto">
-        <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-          <Clock className="w-6 h-6" />
-        </div>
-        <h3 className="text-lg font-black text-slate-900">Daily Spin Completed!</h3>
-        <p className="text-xs font-semibold text-slate-500 max-w-xs">
-          You have already claimed your daily XP today. Come back tomorrow after midnight for your next spin!
-        </p>
-      </div>
-    );
-  }
+  const numLights = 12;
+  const lights = Array.from({ length: numLights });
 
-  // 3. Wheel View (Visible when spin is available)
   return (
-    <div className="bg-white rounded-[2rem] p-6 border border-slate-200/80 shadow-xs flex flex-col items-center justify-center gap-6 max-w-md mx-auto">
+    <div className="bg-white rounded-[2rem] p-4 sm:p-6 border border-slate-200/80 shadow-xs flex flex-col items-center justify-center gap-4 w-full box-border relative overflow-hidden">
+      
       {/* Title Header */}
       <div className="text-center space-y-1">
-        <h2 className="text-xl font-black text-[#0F172A] flex items-center justify-center gap-2">
+        <h2 className="text-lg sm:text-xl font-black text-[#0F172A] flex items-center justify-center gap-2">
           <Sparkles className="w-5 h-5 text-blue-600" />
-          Daily Secured XP Wheel
+          Lucky XP Wheel
         </h2>
         <p className="text-xs font-bold text-slate-500">
-          Spin once daily to earn between 10 and 100 XP!
+          {hasSpunToday
+            ? "You claimed today's XP reward! Come back tomorrow."
+            : "Spin once daily to earn between 10 and 100 XP!"}
         </p>
       </div>
 
       {/* Wheel Box Container */}
-      <div className="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center">
-        {/* Top Pointer Arrow */}
-        <div className="absolute -top-3 z-30 w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[24px] border-t-blue-600 drop-shadow-md" />
+      <div className="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center my-2">
+        
+        {/* Pointer Arrow */}
+        <div className="absolute -top-3 z-30 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[20px] border-t-blue-600 drop-shadow-md" />
 
-        {/* Clean Outer Ring */}
-        <div className="w-full h-full rounded-full border-4 border-slate-200/80 shadow-xl relative overflow-hidden bg-white p-1">
+        {/* Outer Ring with Lights */}
+        <div className="w-full h-full rounded-full border-4 border-slate-200/80 shadow-xl relative overflow-hidden bg-slate-900 p-2">
           
+          {/* Border Bulbs */}
+          {lights.map((_, i) => {
+            const angleDeg = i * (360 / numLights);
+            const isBlue = i % 2 === 0;
+            return (
+              <div
+                key={i}
+                className="absolute w-full h-full top-0 left-0 pointer-events-none flex justify-center items-start pt-0.5"
+                style={{
+                  transform: `rotate(${angleDeg}deg)`,
+                  transformOrigin: "50% 50%",
+                }}
+              >
+                <div
+                  className={`w-2 h-2 rounded-full animate-pulse transition-all ${
+                    isBlue
+                      ? "bg-cyan-400 shadow-[0_0_6px_#38bdf8]"
+                      : "bg-white shadow-[0_0_6px_#ffffff]"
+                  }`}
+                  style={{
+                    animationDuration: isBlue ? "0.8s" : "1.2s",
+                  }}
+                />
+              </div>
+            );
+          })}
+
           {/* Rotating Wheel Container */}
           <div
-            className="w-full h-full rounded-full relative overflow-hidden"
+            className="w-full h-full rounded-full relative overflow-hidden border-2 border-white/20"
             style={{
               transform: `rotate(${rotation}deg)`,
               transition: isSpinning
@@ -318,15 +373,15 @@ export default function XpWheel() {
               return (
                 <div
                   key={index}
-                  className="absolute top-0 left-0 w-full h-full flex justify-center items-start pt-3.5 font-black text-xs sm:text-sm drop-shadow-sm select-none"
+                  className="absolute top-0 left-0 w-full h-full flex justify-center items-start pt-3 font-black text-xs drop-shadow-sm select-none"
                   style={{
                     transform: `rotate(${angle}deg)`,
                     transformOrigin: "50% 50%",
-                    color: seg.textColor
+                    color: seg.textColor,
                   }}
                 >
-                  <div className="flex items-center gap-1 mt-1">
-                    <Star className="w-3.5 h-3.5 fill-current" />
+                  <div className="flex items-center gap-0.5 mt-0.5">
+                    <Star className="w-3 h-3 fill-current" />
                     <span>{seg.label}</span>
                   </div>
                 </div>
@@ -335,48 +390,62 @@ export default function XpWheel() {
           </div>
         </div>
 
-        {/* Center Spin Button */}
+        {/* Spin / Locked Center Button */}
         <button
           onClick={handleSecureSpin}
-          disabled={isSpinning}
-          className={`absolute z-20 w-20 h-20 rounded-full border-4 border-white text-white font-black text-sm shadow-xl flex flex-col items-center justify-center transition-all border-b-4 ${
+          disabled={isSpinning || Boolean(hasSpunToday)}
+          className={`absolute z-20 w-16 h-16 sm:w-18 sm:h-18 rounded-full border-4 border-white text-white font-black text-xs shadow-xl flex flex-col items-center justify-center transition-all border-b-4 ${
             isSpinning
-              ? "bg-[#2563EB] opacity-90 cursor-not-allowed border-b-blue-900"
-              : "bg-[#2563EB] hover:bg-blue-600 active:scale-95 hover:scale-105 border-b-blue-900"
+              ? "bg-blue-600 opacity-90 cursor-not-allowed border-b-blue-900"
+              : hasSpunToday
+              ? "bg-slate-700 opacity-95 cursor-not-allowed border-b-slate-900 text-slate-300 pointer-events-none"
+              : "bg-blue-600 hover:bg-blue-500 active:scale-95 hover:scale-105 border-b-blue-900"
           }`}
         >
           {isSpinning ? (
-            <Loader2 className="w-6 h-6 animate-spin text-white" />
+            <Loader2 className="w-5 h-5 animate-spin text-white" />
+          ) : hasSpunToday ? (
+            <div className="flex flex-col items-center gap-0.5">
+              <Lock className="w-3.5 h-3.5 text-slate-300" />
+              <span className="text-[9px] tracking-wider uppercase font-black">LOCKED</span>
+            </div>
           ) : (
-            <span className="text-base tracking-wider">SPIN</span>
+            <span className="text-xs sm:text-sm tracking-wider">SPIN</span>
           )}
         </button>
       </div>
 
       {/* Security Error Banner */}
       {errorMessage && (
-        <div className="w-full bg-blue-50 border border-blue-200 p-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-blue-700">
-          <ShieldAlert className="w-4 h-4 text-blue-600" />
+        <div className="w-full bg-blue-50 border border-blue-200 p-2.5 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-blue-700">
+          <ShieldAlert className="w-4 h-4 text-blue-600 shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
 
-      {/* Winner Reward Banner */}
-      {reward !== null && (
-        <div className="w-full bg-blue-50 border border-blue-200 p-4 rounded-2xl flex items-center justify-between animate-bounce">
+      {/* Reward Banner */}
+      {reward !== null ? (
+        <div className="w-full bg-blue-50 border border-blue-200 p-3 rounded-2xl flex items-center justify-between transition-all duration-300">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600 text-white rounded-xl">
-              <Trophy className="w-5 h-5" />
+            <div className="p-2 bg-blue-600 text-white rounded-xl shrink-0">
+              <Trophy className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-xs font-bold text-blue-800">Verified & Added!</p>
-              <p className="text-sm font-black text-blue-950 flex items-center gap-1">
+              <p className="text-[11px] font-bold text-blue-800">Verified & Added!</p>
+              <p className="text-xs font-black text-blue-950 flex items-center gap-1">
                 +{reward} XP Secured!
-                <Star className="w-4 h-4 fill-blue-600 text-blue-600 inline" />
+                <Star className="w-3.5 h-3.5 fill-blue-600 text-blue-600 inline" />
               </p>
             </div>
           </div>
         </div>
+      ) : (
+        hasSpunToday && (
+          <div className="w-full bg-slate-50 border border-slate-200/80 p-2.5 rounded-2xl flex items-center justify-center gap-2 text-xs font-extrabold text-slate-600">
+            <Clock className="w-4 h-4 text-blue-600 shrink-0" />
+            <span className="text-[11px]">Daily Spin Completed! Unlocks tomorrow at midnight.</span>
+          </div>
+        )
       )}
     </div>
   );

@@ -106,7 +106,7 @@ export default function LearningPathPage() {
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { name: "Learning Path", path: "/learning-path", active: true, icon: Compass },
-    { name: "Achievements", path: "/achievements", icon: Award },
+    
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
