@@ -107,6 +107,7 @@ export default function XpWheel() {
     }
   };
 
+  // Realistic Wheel Mechanical Tick Sound
   const playTickSound = () => {
     try {
       initAudioCtx();
@@ -115,18 +116,18 @@ export default function XpWheel() {
       const osc = audioCtxRef.current.createOscillator();
       const gain = audioCtxRef.current.createGain();
 
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(600, audioCtxRef.current.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(120, audioCtxRef.current.currentTime + 0.03);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(1100, audioCtxRef.current.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(150, audioCtxRef.current.currentTime + 0.035);
 
-      gain.gain.setValueAtTime(0.15, audioCtxRef.current.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtxRef.current.currentTime + 0.03);
+      gain.gain.setValueAtTime(0.2, audioCtxRef.current.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.035);
 
       osc.connect(gain);
       gain.connect(audioCtxRef.current.destination);
 
       osc.start();
-      osc.stop(audioCtxRef.current.currentTime + 0.03);
+      osc.stop(audioCtxRef.current.currentTime + 0.035);
     } catch {
       // Audio fallback
     }
@@ -143,16 +144,16 @@ export default function XpWheel() {
 
       osc.type = "triangle";
       osc.frequency.setValueAtTime(520, now);
-      osc.frequency.exponentialRampToValueAtTime(1040, now + 0.055);
+      osc.frequency.exponentialRampToValueAtTime(1040, now + 0.085);
 
       gain.gain.setValueAtTime(0.35, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.058);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.088);
 
       osc.connect(gain);
       gain.connect(audioCtxRef.current.destination);
 
       osc.start(now);
-      osc.stop(now + 0.06);
+      osc.stop(now + 0.09);
     } catch {
       // Audio fallback
     }
@@ -165,7 +166,8 @@ export default function XpWheel() {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      // Easing Curve logic for fast to slow friction sound mapping
+      const easeProgress = 1 - Math.pow(1 - progress, 4);
       const currentRot = startRotation + (endRotation - startRotation) * easeProgress;
 
       const normalizedAngle = (360 - (currentRot % 360) + 270) % 360;
@@ -189,7 +191,6 @@ export default function XpWheel() {
   };
 
   const handleSecureSpin = async () => {
-    // Client-side strict guard against re-spins or script manipulation
     if (isSpinning || hasSpunToday) return;
 
     setErrorMessage(null);
@@ -229,13 +230,15 @@ export default function XpWheel() {
       const winningIndex = SEGMENTS.findIndex((seg) => seg.value === wonXp);
       const targetSegmentIndex = winningIndex !== -1 ? winningIndex : 0;
 
-      const extraTurns = 10 * 360;
+      // 12 Full Turns for 8-10 sec spin experience
+      const extraTurns = 12 * 360;
       const targetAngle = 360 - targetSegmentIndex * segmentAngle - segmentAngle / 2;
 
       const currentRotation = rotation - (rotation % 360);
       const newRotation = currentRotation + extraTurns + targetAngle;
 
-      const spinDuration = 8000;
+      // Spin Duration: 9 Seconds (Realistic Tez se Dhire slowing effect)
+      const spinDuration = 9000;
       const startTime = Date.now();
 
       monitorSpinSound(newRotation, startTime, spinDuration);
@@ -257,7 +260,6 @@ export default function XpWheel() {
           navigator.vibrate([40, 60, 120]);
         }
 
-        // 3 second baad reward banner hide ho jayega
         setTimeout(() => {
           setReward(null);
         }, 3000);
@@ -338,7 +340,7 @@ export default function XpWheel() {
             style={{
               transform: `rotate(${rotation}deg)`,
               transition: isSpinning
-                ? "transform 8s cubic-bezier(0.15, 0.99, 0.18, 0.99)"
+                ? "transform 9s cubic-bezier(0.12, 0.99, 0.15, 1)"
                 : "none",
             }}
           >

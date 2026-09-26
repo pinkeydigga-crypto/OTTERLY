@@ -35,6 +35,7 @@ interface Profile {
   xp: number;
   streak: number;
   last_login: string | null;
+  created_at?: string;
 }
 
 interface Achievement {
@@ -98,7 +99,7 @@ export default function DashboardPage() {
       // 2. Fetch User Profile
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
-        .select("id, name, username, email, avatar_url, xp, streak, last_login")
+        .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -124,7 +125,7 @@ export default function DashboardPage() {
               last_login: todayStr
             })
             .eq("id", user.id)
-            .select("id, name, username, email, avatar_url, xp, streak, last_login")
+            .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
             .maybeSingle();
 
           activeProfile = updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr };
@@ -140,7 +141,8 @@ export default function DashboardPage() {
           avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
           xp: 0,
           streak: 1,
-          last_login: getLocalDateString()
+          last_login: getLocalDateString(),
+          created_at: new Date().toISOString()
         };
       }
 
@@ -165,13 +167,38 @@ export default function DashboardPage() {
         setRecentAchievements([]);
       }
 
-      // 4. Rank Calculation
-      const { count } = await supabase
+      // 4. Precise Rank Calculation (Handles 0 XP Ties Uniformly)
+      const userXpVal = Number(activeProfile.xp) || 0;
+
+      // Calculate count of profiles with strictly higher XP
+      const { count: higherXpCount } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
-        .gt("xp", activeProfile.xp || 0);
+        .gt("xp", userXpVal);
 
-      setUserRank(count !== null ? `#${count + 1}` : "-");
+      // Tie breaker count based on secondary criteria (created_at or ID string order)
+      let sameXpTieCount = 0;
+      
+      if (activeProfile.created_at) {
+        const { count: tieCount } = await supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("xp", userXpVal)
+          .lt("created_at", activeProfile.created_at);
+        
+        sameXpTieCount = tieCount || 0;
+      } else {
+        const { count: tieCount } = await supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("xp", userXpVal)
+          .lt("id", activeProfile.id);
+        
+        sameXpTieCount = tieCount || 0;
+      }
+
+      const exactRank = (higherXpCount || 0) + sameXpTieCount + 1;
+      setUserRank(`#${exactRank}`);
 
     } catch (err) {
       console.error("Dashboard processing error:", err);
@@ -189,13 +216,14 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleXpUpdated = (e: CustomEvent<number>) => {
       setProfile((prev) => (prev ? { ...prev, xp: e.detail } : prev));
+      fetchDashboardData(); // Recalculate rank on XP change
     };
 
     window.addEventListener("xpUpdated", handleXpUpdated as EventListener);
     return () => {
       window.removeEventListener("xpUpdated", handleXpUpdated as EventListener);
     };
-  }, []);
+  }, [fetchDashboardData]);
 
   // Realtime Listener
   useEffect(() => {
@@ -214,6 +242,7 @@ export default function DashboardPage() {
         (payload) => {
           if (payload.new) {
             setProfile((prev) => (prev ? { ...prev, ...payload.new } : (payload.new as Profile)));
+            fetchDashboardData();
           }
         }
       )
@@ -250,7 +279,6 @@ export default function DashboardPage() {
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
-    
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings }
   ];
@@ -417,7 +445,7 @@ export default function DashboardPage() {
       <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto space-y-6 overflow-y-auto w-full">
         
         {/* Welcome Section */}
-        <div className="relative pt-6 pb-0 px-4 sm:px-6 flex items-end justify-between min-h-[140px] bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm overflow-hidden">
+        <div className="relative pt-6 pb-0 px-4 sm:px-6 flex items-end justify-between min-h-[140px] bg-white rounded-[2rem] border-2 border-slate-100 shadow-xs overflow-hidden">
           <div className="z-10 pb-6 max-w-xs sm:max-w-md">
             <h1 className="text-2xl sm:text-4xl font-black text-[#0F172A] tracking-tight">
               Welcome back, {userName}!
@@ -440,7 +468,7 @@ export default function DashboardPage() {
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 sm:pt-0">
-          <div className="bg-amber-50/50 p-5 rounded-[2rem] border border-amber-200/60 shadow-sm flex items-center gap-4">
+          <div className="bg-amber-50/50 p-5 rounded-[2rem] border border-amber-200/60 shadow-xs flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-amber-400 text-white flex items-center justify-center border-b-4 border-amber-600 shrink-0">
               <Star className="w-9 h-9 fill-white stroke-amber-400" />
             </div>
@@ -450,7 +478,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-orange-50/50 p-5 rounded-[2rem] border border-orange-200/60 shadow-sm flex items-center gap-4">
+          <div className="bg-orange-50/50 p-5 rounded-[2rem] border border-orange-200/60 shadow-xs flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center border-b-4 border-orange-700 shrink-0">
               <Flame className="w-10 h-10 fill-white stroke-orange-500" />
             </div>
@@ -460,7 +488,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bg-blue-50/50 p-5 rounded-[2rem] border border-blue-200/60 shadow-sm flex items-center gap-4">
+          <div className="bg-blue-50/50 p-5 rounded-[2rem] border border-blue-200/60 shadow-xs flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center border-b-4 border-blue-800 shrink-0">
               <Trophy className="w-9 h-9 fill-white stroke-blue-600" />
             </div>
@@ -502,7 +530,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Achievements */}
-        <div className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 shadow-sm space-y-4">
+        <div className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 shadow-xs space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-black text-[#0F172A]">Recent Achievements</h3>
             <Link 

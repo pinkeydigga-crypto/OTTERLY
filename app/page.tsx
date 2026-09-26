@@ -207,7 +207,7 @@ export default function HomePage() {
           </h1>
 
           <p className="font-sans text-base sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
-            Otterleo is a free online drawing platform. Get instant AI feedback, complete gamified practice challenges, earn XP, and improve your art daily.
+            Otterleo is a sketching and drawing learning platform.  learn through challenges, Get instant feedback, earn XP, and improve your art daily.
           </p>
         </div>
 
