@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase'; // Make sure path is correct
+import { supabase } from '@/lib/supabase';
 
 const SITE_URL = "https://www.otterleo.in";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
@@ -18,10 +18,7 @@ export default function HomePage() {
   useEffect(() => {
     const checkUserSession = async () => {
       try {
-        // 1. Supabase Session Check
         const { data: { session } } = await supabase.auth.getSession();
-        
-        // 2. Fallback check for localStorage flag
         const isLoggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
 
         if (session || isLoggedInLocal) {
@@ -37,7 +34,6 @@ export default function HomePage() {
 
     checkUserSession();
 
-    // Listen to Auth State changes (Login/Logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         router.replace('/dashboard');
@@ -49,7 +45,6 @@ export default function HomePage() {
     };
   }, [router]);
 
-  // Agar login checking chal rahi ho toh page flick na ho
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
@@ -58,7 +53,6 @@ export default function HomePage() {
     );
   }
 
-  // COMPLETE BING AI & GOOGLE STRUCTURED DATA
   const schemaData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -71,7 +65,7 @@ export default function HomePage() {
         "image": LOGO_URL,
         "operatingSystem": "All (Web Browser)",
         "applicationCategory": "EducationalApplication",
-        "description": "Otterleo is a free gamified online drawing platform and app that helps beginners learn drawing with instant AI feedback, daily sketch challenges, and XP rewards.",
+        "description": "Otterleo is a free online drawing platform. Get instant AI feedback, complete gamified practice challenges, earn XP, and improve your art daily.",
         "author": {
           "@type": "Person",
           "name": "Harjas Digga"
@@ -107,7 +101,7 @@ export default function HomePage() {
         "@id": `${SITE_URL}/#website`,
         "url": SITE_URL,
         "name": "Otterleo - Learn Drawing Online",
-        "description": "Free drawing learning fun platform with AI feedback, gamified challenges, and sketch analysis.",
+        "description": "Free online drawing platform with AI feedback, gamified practice challenges, and sketch analysis.",
         "publisher": { "@id": `${SITE_URL}/#organization` }
       }
     ]
@@ -207,7 +201,7 @@ export default function HomePage() {
           </h1>
 
           <p className="font-sans text-base sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
-            Otterleo is a sketching and drawing learning platform.  learn through challenges, Get instant feedback, earn XP, and improve your art daily.
+            Otterleo is a free online drawing platform. Get instant AI feedback, complete gamified practice challenges, earn XP, and improve your art daily.
           </p>
         </div>
 
