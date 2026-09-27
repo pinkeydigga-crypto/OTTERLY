@@ -60,12 +60,12 @@ export default function HomePage() {
         "@type": "SoftwareApplication",
         "@id": `${SITE_URL}/#application`,
         "name": "Otterleo",
-        "alternateName": "Otterleo AI Drawing Platform",
+        "alternateName": "Otterleo AI Drawing & Sketching Platform",
         "url": SITE_URL,
         "image": LOGO_URL,
         "operatingSystem": "All (Web Browser)",
         "applicationCategory": "EducationalApplication",
-        "description": "Otterleo is a free online drawing platform. Get instant AI feedback, complete gamified practice challenges, earn XP, and improve your art daily.",
+        "description": "Otterleo is a free online drawing and sketching platform. Get instant AI feedback, complete gamified practice challenges, earn XP, and improve your art daily.",
         "author": {
           "@type": "Person",
           "name": "Harjas Digga"
@@ -100,8 +100,8 @@ export default function HomePage() {
         "@type": "WebSite",
         "@id": `${SITE_URL}/#website`,
         "url": SITE_URL,
-        "name": "Otterleo - Learn Drawing Online",
-        "description": "Free online drawing platform with AI feedback, gamified practice challenges, and sketch analysis.",
+        "name": "Otterleo - Learn Drawing & Sketching Online",
+        "description": "Free online drawing and sketching platform with AI feedback, gamified practice challenges, and sketch analysis.",
         "publisher": { "@id": `${SITE_URL}/#organization` }
       }
     ]
@@ -201,7 +201,7 @@ export default function HomePage() {
           </h1>
 
           <p className="font-sans text-base sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
-            Otterleo is a free online drawing platform. Get instant AI feedback, complete gamified practice challenges, earn XP, and improve your art daily.
+            Otterleo is a free online drawing and sketching platform. Get instant AI feedback, complete gamified practice challenges, earn XP, and improve your art daily.
           </p>
         </div>
 
