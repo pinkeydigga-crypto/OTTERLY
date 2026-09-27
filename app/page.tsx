@@ -65,7 +65,7 @@ export default function HomePage() {
         "image": LOGO_URL,
         "operatingSystem": "All (Web Browser)",
         "applicationCategory": "EducationalApplication",
-        "description": "Otterleo is a free online drawing and sketching platform. Get instant AI feedback, complete gamified practice challenges, earn XP, and improve your art daily.",
+        "description": "Otterleo is a free online drawing and sketching platform. Get instant AI feedback, complete gamified challenges, earn XP, and improve your art daily.",
         "author": {
           "@type": "Person",
           "name": "Harjas Digga"
@@ -101,7 +101,7 @@ export default function HomePage() {
         "@id": `${SITE_URL}/#website`,
         "url": SITE_URL,
         "name": "Otterleo - Learn Drawing & Sketching Online",
-        "description": "Free online drawing and sketching platform with AI feedback, gamified practice challenges, and sketch analysis.",
+        "description": "Free online drawing and sketching platform with AI feedback, gamified challenges, and sketch analysis.",
         "publisher": { "@id": `${SITE_URL}/#organization` }
       }
     ]
@@ -201,7 +201,7 @@ export default function HomePage() {
           </h1>
 
           <p className="font-sans text-base sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
-            Otterleo is a free online drawing and sketching platform. Get instant AI feedback, complete gamified practice challenges, earn XP, and improve your art daily.
+            Otterleo is a free online drawing and sketching platform. Get instant feedback on artworks,complete challenges, compete with other artists and improve your art daily.
           </p>
         </div>
 
