@@ -60,12 +60,12 @@ export default function HomePage() {
         "@type": "SoftwareApplication",
         "@id": `${SITE_URL}/#application`,
         "name": "Otterleo",
-        "alternateName": "Otterleo AI Drawing & Sketching Platform",
+        "alternateName": "Otterleo AI Drawing Platform",
         "url": SITE_URL,
         "image": LOGO_URL,
         "operatingSystem": "All (Web Browser)",
         "applicationCategory": "EducationalApplication",
-        "description": "Otterleo is a free online drawing and sketching platform. Get instant AI feedback, complete gamified challenges, earn XP, and improve your art daily.",
+        "description": "Otterleo is a sketching and drawing learning platform. Complete challenges, get feedback, compete with artists, and improve your art daily.",
         "author": {
           "@type": "Person",
           "name": "Harjas Digga"
@@ -101,7 +101,7 @@ export default function HomePage() {
         "@id": `${SITE_URL}/#website`,
         "url": SITE_URL,
         "name": "Otterleo - Learn Drawing & Sketching Online",
-        "description": "Free online drawing and sketching platform with AI feedback, gamified challenges, and sketch analysis.",
+        "description": "Free online drawing and sketching platform with challenges, feedback, and artist community.",
         "publisher": { "@id": `${SITE_URL}/#organization` }
       }
     ]
@@ -201,8 +201,8 @@ export default function HomePage() {
           </h1>
 
           <p className="font-sans text-base sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
-            Otterleo is a free online drawing and sketching platform. Get instant feedback on artworks,complete challenges, compete with other artists and improve your art daily.
-          </p>
+         Learn drawing and sketching through fun challenges, practice regularly, climb the leaderboard, and improve your art every day.
+         </p>
         </div>
 
         {/* Right Column */}
