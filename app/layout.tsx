@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     "Learn drawing the fun way"
   ],
   alternates: {
-    canonical: './', // Automatically updates for every sub-page (/about, /blog, etc.)
+    canonical: './',
   },
   icons: {
     icon: [
@@ -91,7 +91,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  // Global Schema for WebSite and Organization ONLY
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [

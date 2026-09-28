@@ -14,7 +14,6 @@ import {
   Scan,
   Trophy,
   Compass,
-  Award,
   User,
   Settings,
   Star,
@@ -38,12 +37,6 @@ interface Profile {
   created_at?: string;
 }
 
-interface Achievement {
-  id: string;
-  title: string;
-  xp_reward: number;
-}
-
 const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -64,7 +57,6 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [recentAchievements, setRecentAchievements] = useState<Achievement[]>([]);
   const [userRank, setUserRank] = useState<number | string>("-");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -85,10 +77,11 @@ export default function DashboardPage() {
     isFetchingRef.current = true;
 
     try {
-      // 1. Auth Guard
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      // 1. Quick Auth Check
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
 
-      if (authError || !user) {
+      if (!user) {
         if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
           localStorage.clear();
           router.push("/login");
@@ -96,7 +89,15 @@ export default function DashboardPage() {
         return;
       }
 
-      // 2. Fetch User Profile
+      // Load cached profile data instantly if available to save bandwidth
+      if (typeof window !== "undefined") {
+        const cachedXp = localStorage.getItem("user_xp_cache");
+        if (cachedXp) {
+          setProfile((prev) => (prev ? { ...prev, xp: Number(cachedXp) } : prev));
+        }
+      }
+
+      // 2. Optimized Lightweight Profile Fetch
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
         .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
@@ -148,44 +149,28 @@ export default function DashboardPage() {
 
       setProfile(activeProfile);
 
-      // 3. User Achievements
-      const { data: userAchData, error: achError } = await supabase
-        .from("user_completed_achievements")
-        .select("id, achievement_id, achievements(id, title, xp_reward)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(3);
-
-      if (!achError && userAchData) {
-        const formatted = userAchData.map((item: any) => ({
-          id: item.id,
-          title: sanitizeString(item.achievements?.title || String(item.achievement_id || "").replace(/_/g, " ").toUpperCase()),
-          xp_reward: item.achievements?.xp_reward ?? 50
-        }));
-        setRecentAchievements(formatted);
-      } else {
-        setRecentAchievements([]);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user_xp_cache", (activeProfile.xp || 0).toString());
       }
 
-      // 4. Precise Rank Calculation (Handles 0 XP Ties Uniformly)
+      // 3. Egress-Optimized Leaderboard Rank Calculation
       const userXpVal = Number(activeProfile.xp) || 0;
 
-      // Calculate count of profiles with strictly higher XP
+      // Count profiles strictly having higher XP
       const { count: higherXpCount } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
         .gt("xp", userXpVal);
 
-      // Tie breaker count based on secondary criteria (created_at or ID string order)
+      // Tie-breaker count for identical XP (aligning with Leaderboard sorting: XP DESC, created_at ASC)
       let sameXpTieCount = 0;
-      
       if (activeProfile.created_at) {
         const { count: tieCount } = await supabase
           .from("profiles")
           .select("id", { count: "exact", head: true })
           .eq("xp", userXpVal)
           .lt("created_at", activeProfile.created_at);
-        
+
         sameXpTieCount = tieCount || 0;
       } else {
         const { count: tieCount } = await supabase
@@ -193,7 +178,7 @@ export default function DashboardPage() {
           .select("id", { count: "exact", head: true })
           .eq("xp", userXpVal)
           .lt("id", activeProfile.id);
-        
+
         sameXpTieCount = tieCount || 0;
       }
 
@@ -202,7 +187,7 @@ export default function DashboardPage() {
 
     } catch (err) {
       console.error("Dashboard processing error:", err);
-    } finally {
+    } stroke: {
       setLoading(false);
       isFetchingRef.current = false;
     }
@@ -212,11 +197,11 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Real-time Event Listener for XpWheel update
+  // Real-time Event Listener for XP update
   useEffect(() => {
     const handleXpUpdated = (e: CustomEvent<number>) => {
       setProfile((prev) => (prev ? { ...prev, xp: e.detail } : prev));
-      fetchDashboardData(); // Recalculate rank on XP change
+      fetchDashboardData(); // Recalculate exact rank on XP change
     };
 
     window.addEventListener("xpUpdated", handleXpUpdated as EventListener);
@@ -225,7 +210,7 @@ export default function DashboardPage() {
     };
   }, [fetchDashboardData]);
 
-  // Realtime Listener
+  // Realtime Profile Listener
   useEffect(() => {
     if (!profile?.id || isOffline) return;
 
@@ -527,40 +512,6 @@ export default function DashboardPage() {
           <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-3xl flex items-center justify-center border-2 border-white/20 shrink-0 z-10">
             <Scan className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
           </div>
-        </div>
-
-        {/* Recent Achievements */}
-        <div className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 shadow-xs space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-black text-[#0F172A]">Recent Achievements</h3>
-            <Link 
-              href="/achievements" 
-              onClick={triggerHaptic}
-              className="text-xs font-black text-blue-600 hover:underline"
-            >
-              View All
-            </Link>
-          </div>
-
-          {recentAchievements.length === 0 ? (
-            <p className="text-xs font-black text-slate-400 py-4 text-center">
-              No achievements unlocked yet. Scan your drawings and complete activities to unlock badges!
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {recentAchievements.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-center p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-black">
-                      <Award className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-black text-[#0F172A]">{item.title}</span>
-                  </div>
-                  <span className="text-xs font-black text-emerald-600">+{item.xp_reward} XP</span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
 
       </main>

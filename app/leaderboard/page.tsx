@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, Share2, X, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings, Flame, PanelLeft,
+  Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
   Star, Palette, Grid, ShieldAlert
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -77,36 +77,40 @@ export default function LeaderboardPage() {
 
       setIsVerified(true);
 
+      // Cleaned column selection: Using exact column 'xp' from your DB schema
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("*");
+        .select("id, name, username, avatar_url, streak, xp, created_at");
 
       if (error) {
-        console.error("Leaderboard fetch error:", error);
+        console.error("Leaderboard fetch error details:", error.message || error);
         setLeaderboardData([]);
         setLoading(false);
         return;
       }
 
       let mappedProfiles: ProfileUser[] = (profiles || []).map((p: any) => {
-        const userStreak = p.streak ?? p.current_streak ?? p.streak_count ?? p.scans_count ?? p.scans ?? 0;
-        const totalXP = Number(p.xp_points ?? p.xp ?? 0);
+        const userStreak = p.streak ?? 0;
+        const totalXP = Number(p.xp ?? 0);
 
         return {
           id: p.id,
-          full_name: p.full_name || p.name || p.username || "User",
-          avatar_url: p.avatar_url || p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+          full_name: p.name || p.username || "Artist",
+          avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
           streak: Number(userStreak),
           xp_points: totalXP,
           created_at: p.created_at,
         };
       });
 
+      // Tie-breaker aligned with Dashboard: XP DESC -> created_at ASC
       mappedProfiles.sort((a, b) => {
-        if (b.xp_points !== a.xp_points) {
-          return b.xp_points - a.xp_points;
-        }
-        return b.streak - a.streak;
+        const xpDiff = b.xp_points - a.xp_points;
+        if (xpDiff !== 0) return xpDiff;
+
+        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return timeA - timeB;
       });
 
       const rankedProfiles = mappedProfiles.map((item, index) => ({
@@ -122,21 +126,22 @@ export default function LeaderboardPage() {
       } else {
         const { data: userProfile } = await supabase
           .from("profiles")
-          .select("*")
+          .select("id, name, username, avatar_url, streak, xp, created_at")
           .eq("id", user.id)
           .maybeSingle();
 
         if (userProfile) {
           const p = userProfile as any;
-          const myStreak = p.streak ?? p.current_streak ?? p.streak_count ?? 0;
-          const myXP = Number(p.xp_points ?? p.xp ?? 0);
+          const myStreak = p.streak ?? 0;
+          const myXP = Number(p.xp ?? 0);
           setCurrentUser({
             id: p.id,
             rank: 0,
-            full_name: p.full_name || p.name || p.username || "You",
-            avatar_url: p.avatar_url || p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+            full_name: p.name || p.username || "You",
+            avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
             streak: Number(myStreak),
             xp_points: myXP,
+            created_at: p.created_at
           });
         }
       }
@@ -172,7 +177,6 @@ export default function LeaderboardPage() {
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", active: true, icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
-    
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
@@ -719,7 +723,7 @@ export default function LeaderboardPage() {
                   </div>
                 </div>
 
-                {/* User Avatar & @Username Footer */}
+                {/* User Avatar & Username Footer */}
                 <div className="w-full pt-3 flex items-center justify-center gap-3 relative z-10">
                   <img
                     src={currentUser?.avatar_url}
@@ -734,7 +738,7 @@ export default function LeaderboardPage() {
               </div>
             </div>
 
-            {/* Replaced Buttons with Screenshot Notice */}
+            {/* Screenshot Notice */}
             <div className="text-center pt-1 pb-2 space-y-1.5">
               <p className="text-lg sm:text-xl font-black text-slate-900 tracking-wide">
                 YOU CAN TAKE A SCREENSHOT
