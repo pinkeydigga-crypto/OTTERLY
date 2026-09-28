@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, Share2, X, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
-  Star, Palette, Grid, ShieldAlert
+  Star, Palette, Grid, ShieldAlert, RefreshCw
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -244,6 +244,14 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0">
+      
+      {/* Import Google Font 'Fredoka' to match original card design across all devices */}
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap');
+        .font-fredoka {
+          font-family: 'Fredoka', 'Comic Sans MS', sans-serif !important;
+        }
+      `}</style>
 
       {/* Mobile Top Header */}
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
@@ -421,18 +429,25 @@ export default function LeaderboardPage() {
             <span className="sm:hidden">Back</span>
           </Link>
 
-          {currentUser && (
-            <button
-              onClick={() => {
-                triggerHaptic();
-                setIsShareModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs sm:text-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-xs shrink-0 cursor-pointer"
-            >
-              <Share2 className="w-4 h-4" />
-              <span>Share Rank Card</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-100/80 px-3 py-2 rounded-xl">
+              <RefreshCw className="w-3.5 h-3.5" />
+              Refreshes every hour
+            </span>
+
+            {currentUser && (
+              <button
+                onClick={() => {
+                  triggerHaptic();
+                  setIsShareModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs sm:text-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-xs shrink-0 cursor-pointer"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Share Rank Card</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Mascot Banner Section */}
@@ -447,11 +462,13 @@ export default function LeaderboardPage() {
           </div>
 
           <div className="space-y-1 flex-1 pb-3 sm:pb-4">
-            <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-[#0F172A] leading-tight">
-              Leaderboard Standings
-            </h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg sm:text-2xl md:text-3xl font-black text-[#0F172A] leading-tight">
+                Leaderboard Standings
+              </h1>
+            </div>
             <p className="text-xs sm:text-sm font-bold text-slate-500 max-w-md">
-              Compete with fellow learners and climb the global rankings!
+              Compete with fellow learners and climb the global rankings! (Refreshes every hour)
             </p>
           </div>
         </div>
@@ -540,7 +557,10 @@ export default function LeaderboardPage() {
 
         {/* Leaderboard Table List */}
         <div className="bg-white rounded-[2.5rem] border-2 border-slate-100 p-4 sm:p-6 shadow-xs">
-          <h3 className="font-black text-slate-900 text-base mb-4 px-2">Top Rankings</h3>
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h3 className="font-black text-slate-900 text-base">Top Rankings</h3>
+            <span className="text-[11px] font-bold text-slate-400">Refreshes every hour</span>
+          </div>
 
           {leaderboardData.length === 0 ? (
             <div className="text-center py-8 text-slate-500 font-bold text-sm">
@@ -645,20 +665,19 @@ export default function LeaderboardPage() {
             {/* Target Card */}
             <div
               ref={cardRef}
-              className="w-full relative overflow-hidden flex flex-col items-center justify-between p-5 sm:p-6 text-center select-none rounded-xl mb-4"
+              className="w-full relative overflow-hidden flex flex-col items-center justify-between p-5 sm:p-6 text-center select-none rounded-xl mb-4 font-fredoka"
               style={{
                 backgroundColor: "#e0f2fe",
                 backgroundImage: `
                   linear-gradient(to right, rgba(147, 197, 253, 0.4) 1px, transparent 1px),
                   linear-gradient(to bottom, rgba(147, 197, 253, 0.4) 1px, transparent 1px)
                 `,
-                backgroundSize: "22px 22px",
-                fontFamily: '"Comic Sans MS", "Chalkboard SE", "Caveat", "Architects Daughter", cursive, sans-serif',
+                backgroundSize: "22px 22px"
               }}
             >
               {/* Inner Paper Container */}
               <div
-                className="w-full h-full bg-[#fdfbf7] rounded-xl p-6 sm:p-7 relative flex flex-col items-center justify-between min-h-[460px] border border-amber-100/60 shadow-md"
+                className="w-full h-full bg-[#fdfbf7] rounded-xl p-6 sm:p-7 relative flex flex-col items-center justify-between min-h-[460px] border border-amber-100/60 shadow-md font-fredoka"
               >
                 {/* Washi Tape (Top Left) */}
                 <div
@@ -673,7 +692,7 @@ export default function LeaderboardPage() {
                     className="h-10 sm:h-12 w-auto object-contain mb-1"
                     crossOrigin="anonymous"
                   />
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight" style={{ color: "#1e3a8a" }}>
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight font-fredoka" style={{ color: "#1e3a8a" }}>
                     My Global Rank
                   </h2>
                 </div>
@@ -698,7 +717,7 @@ export default function LeaderboardPage() {
                       <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full"></span>
                     </div>
 
-                    <span className="text-7xl sm:text-8xl font-black leading-none tracking-tight" style={{ color: "#1e3a8a" }}>
+                    <span className="text-7xl sm:text-8xl font-black leading-none tracking-tight font-fredoka" style={{ color: "#1e3a8a" }}>
                       {currentUser?.rank || "5"}
                     </span>
 
@@ -721,8 +740,8 @@ export default function LeaderboardPage() {
                   <div className="flex items-center gap-3">
                     <Star className="w-5 h-5 fill-[#1e3a8a] text-[#1e3a8a]" />
                     <div className="text-left">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">XP</p>
-                      <p className="text-sm sm:text-base font-black text-slate-900">{currentUser?.xp_points || 0} XP</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 font-fredoka">XP</p>
+                      <p className="text-sm sm:text-base font-black text-slate-900 font-fredoka">{currentUser?.xp_points || 0} XP</p>
                     </div>
                   </div>
 
@@ -731,8 +750,8 @@ export default function LeaderboardPage() {
                   <div className="flex items-center gap-3">
                     <Flame className="w-5 h-5 fill-[#1e3a8a] text-[#1e3a8a]" />
                     <div className="text-left">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">Streak</p>
-                      <p className="text-sm sm:text-base font-black text-slate-900">{currentUser?.streak || 0} Days</p>
+                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 font-fredoka">Streak</p>
+                      <p className="text-sm sm:text-base font-black text-slate-900 font-fredoka">{currentUser?.streak || 0} Days</p>
                     </div>
                   </div>
                 </div>
@@ -745,17 +764,20 @@ export default function LeaderboardPage() {
                     className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-blue-400 shadow-2xs shrink-0"
                     crossOrigin="anonymous"
                   />
-                  <p className="text-xs sm:text-sm font-black tracking-tight truncate max-w-[200px]" style={{ color: "#1e3a8a" }}>
+                  <p className="text-xs sm:text-sm font-black tracking-tight truncate max-w-[200px] font-fredoka" style={{ color: "#1e3a8a" }}>
                     @{currentUser?.full_name?.toLowerCase().replace(/\s+/g, '') || "user"}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Modal Bottom Close Note */}
-            <div className="text-center pt-1 pb-2 space-y-1.5">
-              <p className="text-xs font-bold text-slate-500">
-                Take a screenshot or save your card to share with friends!
+            {/* Modal Bottom Subtext */}
+            <div className="text-center pt-1 pb-2 space-y-1">
+              <p className="text-xs font-bold text-slate-600">
+                You can take a screenshot to share with friends!
+              </p>
+              <p className="text-[11px] font-medium text-slate-400">
+                Downloading feature is currently unavailable
               </p>
             </div>
           </div>
