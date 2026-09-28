@@ -518,7 +518,7 @@ export default function ChallengesPage() {
             </p>
 
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
-              What is your current drawing skill level?
+              What is your current skill level?
             </h2>
 
             <div className="flex items-center gap-3 p-3 bg-blue-50/70 border border-blue-100 rounded-2xl">
