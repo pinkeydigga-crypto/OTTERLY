@@ -77,7 +77,7 @@ export default function LeaderboardPage() {
 
       setIsVerified(true);
 
-      // Cleaned column selection: Using exact column 'xp' from your DB schema
+      // Cleaned column selection: Using exact column 'xp' from DB schema
       const { data: profiles, error } = await supabase
         .from("profiles")
         .select("id, name, username, avatar_url, streak, xp, created_at");
@@ -158,11 +158,25 @@ export default function LeaderboardPage() {
   useEffect(() => {
     fetchLeaderboardAndUser();
 
+    // 1 Hour interval = 3,600,000 ms
     const interval = setInterval(() => {
-      fetchLeaderboardAndUser(true);
-    }, 60000);
+      if (document.visibilityState === "visible") {
+        fetchLeaderboardAndUser(true);
+      }
+    }, 3600000);
 
-    return () => clearInterval(interval);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchLeaderboardAndUser(true);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [fetchLeaderboardAndUser]);
 
   const rank1 = leaderboardData.length > 0 ? leaderboardData[0] : null;
@@ -738,19 +752,16 @@ export default function LeaderboardPage() {
               </div>
             </div>
 
-            {/* Screenshot Notice */}
+            {/* Modal Bottom Close Note */}
             <div className="text-center pt-1 pb-2 space-y-1.5">
-              <p className="text-lg sm:text-xl font-black text-slate-900 tracking-wide">
-                YOU CAN TAKE A SCREENSHOT
-              </p>
               <p className="text-xs font-bold text-slate-500">
-                Downloading feature is currently unavailable
+                Take a screenshot or save your card to share with friends!
               </p>
             </div>
-
           </div>
         </div>
       )}
+
     </div>
   );
 }
