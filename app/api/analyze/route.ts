@@ -7,11 +7,9 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
+// Strictly Active Flash Models ONLY (Pro model has 0 quota on free key)
 const MODELS_TO_TRY = [
-  "gemini-3.6-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-2.5-flash",
-  "gemini-1.5-flash"
+  "gemini-3.8-flash"
 ];
 
 // Anti-Hacker In-Memory Rate Limiter
@@ -170,7 +168,9 @@ export async function POST(req: Request) {
 
     let supabaseAdmin = null;
     if (supabaseUrl && supabaseServiceKey) {
-      supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+      supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: { persistSession: false }
+      });
     }
 
     if (userId && supabaseAdmin) {
@@ -191,85 +191,124 @@ export async function POST(req: Request) {
     }
 
     const promptText = `
-      You are "Otto", a world-class, professional art critique and drawing mentor.
-      Analyze the uploaded image with extreme precision and attention to fine detail.
+      You are "Otto", a supportive art mentor who gives insightful, detailed, clear, and encouraging feedback.
+      Analyze the artwork in detail using SIMPLE and EASY English.
+
+      SCORING CRITERIA (Fair & Balanced):
+      - 0-30: Extremely rough, unrecognizable, or scribbled.
+      - 31-50: Beginner level (messy lines, minor shape errors, basic coloring attempt).
+      - 51-70: Intermediate attempt (clear subject, good effort, needs refinement).
+      - 71-88: Skilled artwork (clean execution, good technique).
+      - 89-100: Exceptional / Masterpiece.
+
+      INSTRUCTIONS:
+      - Strengths: Highlight 2 specific good points in detailed simple sentences.
+      - Areas to Improve: List 3 detailed, constructive technical feedback points explaining what needs work.
+      - Actionable Improvements: Provide 2 practical step-by-step guidance points.
+      - Practice Recommendation: Give a specific 15-minute daily exercise drill.
 
       SUPPORTED ART TYPES:
       Handmade Pencil Sketches, Digital Art, Paintings, Mandala Art, Mehndi/Henna Designs, Doodles, Line Art, Geometric Drawings, 3D Tutorials/Exercises, Perspective Diagrams.
 
       VALIDATION RULE:
-      If the image is strictly NOT related to art, drawing, or design (e.g., real human face/selfie, document, code, wallpaper, real object photo):
-      Return ONLY: {"isDrawing": false, "message": "Please upload a valid artwork, sketch, mandala, or drawing practice exercise. Otto AI only analyzes art."}
-
-      CRITIQUE INSTRUCTIONS FOR VALID ARTWORK:
-      - TONE & LANGUAGE: Use clear, simple, professional English ONLY. Do NOT use Hinglish words.
-      - DEEP CRITIQUE (areasToImprove): Be ultra-specific. Identify exact technical flaws.
-      - DAILY PRACTICE (practiceRecommendation): Provide a highly custom 10-15 minute step-by-step drill.
+      If not related to art/drawing/design (e.g. selfie, document, code, real photo):
+      Return ONLY: {"isDrawing": false, "message": "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art."}
 
       RETURN STRICTLY VALID JSON ONLY:
       {
         "isDrawing": true,
         "artCategory": "Detected Category Name",
-        "score": 85,
-        "skillLevel": "Intermediate",
-        "strengths": ["Clear line structure"],
-        "areasToImprove": ["Minor shading imbalance"],
-        "actionableImprovements": ["Step 1: Adjust pencil pressure"],
-        "practiceRecommendation": "15-minute daily shading drill",
-        "motivationalFeedback": "Great progress, keep practicing daily!",
+        "score": 38,
+        "skillLevel": "Beginner",
+        "strengths": [
+          "The overall concept and subject choice are clearly recognizable",
+          "Shows good enthusiasm in filling out the shape with color"
+        ],
+        "areasToImprove": [
+          "Outlines appear shaky and slightly uneven around the edges",
+          "Coloring spills over the main boundary lines in multiple spots",
+          "Shading lacks depth and uniform pencil pressure"
+        ],
+        "actionableImprovements": [
+          "Trace light guidelines first before making dark final strokes",
+          "Color in small circular motions to stay strictly inside boundaries"
+        ],
+        "practiceRecommendation": "Spend 15 minutes daily practicing continuous straight lines and smooth circles without rushing.",
+        "motivationalFeedback": "You have a great creative spark! Practice steady hand control every day to make your artwork pop.",
         "message": ""
       }
     `;
 
     let jsonResult = null;
     let lastApiStatus = 0;
+    let lastApiErrorMsg = "";
 
     activeRequestsCount++;
 
     try {
       for (const modelName of MODELS_TO_TRY) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000);
+        let attempts = 0;
+        const maxAttempts = 3;
 
-          const apiResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
-            {
-              method: "POST",
-              signal: controller.signal,
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      { text: promptText },
-                      { inlineData: { mimeType: mimeType, data: base64Data } },
-                    ],
+        while (attempts < maxAttempts) {
+          attempts++;
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+            const apiResponse = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+              {
+                method: "POST",
+                signal: controller.signal,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [
+                    {
+                      parts: [
+                        { text: promptText },
+                        { inlineData: { mimeType: mimeType, data: base64Data } },
+                      ],
+                    },
+                  ],
+                  generationConfig: {
+                    responseMimeType: "application/json",
+                    maxOutputTokens: 800,
+                    temperature: 0.2,
                   },
-                ],
-                generationConfig: {
-                  responseMimeType: "application/json",
-                  maxOutputTokens: 800,
-                  temperature: 0.2,
-                },
-              }),
-            }
-          ).finally(() => clearTimeout(timeoutId));
+                }),
+              }
+            ).finally(() => clearTimeout(timeoutId));
 
-          lastApiStatus = apiResponse.status;
+            lastApiStatus = apiResponse.status;
 
-          if (apiResponse.ok) {
-            const data = await apiResponse.json();
-            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (rawText) {
-              const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
-              jsonResult = JSON.parse(cleanJsonText);
-              break;
+            if (apiResponse.ok) {
+              const data = await apiResponse.json();
+              const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (rawText) {
+                const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
+                jsonResult = JSON.parse(cleanJsonText);
+                console.log(`✅ Success with model: ${modelName}`);
+                break;
+              }
+            } else {
+              const errData = await apiResponse.json().catch(() => null);
+              lastApiErrorMsg = errData?.error?.message || apiResponse.statusText;
+              console.error(`❌ [Gemini Error] Model ${modelName} (Attempt ${attempts}) Status ${apiResponse.status}:`, lastApiErrorMsg);
+
+              // 503 ya 429 ke liye exponential wait
+              if ((apiResponse.status === 503 || apiResponse.status === 429) && attempts < maxAttempts) {
+                await new Promise((res) => setTimeout(res, 2000 * attempts));
+                continue;
+              }
             }
+          } catch (err: any) {
+            console.warn(`⚠️ [Otto AI Fetch Warning] Model ${modelName} failed:`, err?.message || err);
           }
-        } catch (err) {
-          console.warn(`[Otto AI Fetch Warning] Model ${modelName} call failed.`);
+          break;
         }
+
+        if (jsonResult) break;
       }
     } finally {
       activeRequestsCount = Math.max(0, activeRequestsCount - 1);
@@ -277,18 +316,21 @@ export async function POST(req: Request) {
 
     if (!jsonResult) {
       let debugCode = "ERR_106A";
-      let debugMessage = "Otto AI is busy right now. Please try again in 5 seconds.";
+      let debugMessage = "Otto AI server is busy right now. Please tap Scan again in 5 seconds.";
 
       if (lastApiStatus === 400 || lastApiStatus === 403) {
         debugCode = "ERR_106B";
-        debugMessage = "AI API Key permission error or key disabled.";
+        debugMessage = `API Key issue: ${lastApiErrorMsg || "Key invalid or disabled."}`;
       } else if (lastApiStatus === 429) {
         debugCode = "ERR_106C";
-        debugMessage = "AI Provider quota exceeded. Try again in a few moments.";
+        debugMessage = "Rate limit reached. Please wait a minute and try again.";
+      } else if (lastApiStatus === 503) {
+        debugCode = "ERR_106D";
+        debugMessage = "Google AI service is experiencing high traffic. Please try scanning again.";
       }
 
       return NextResponse.json(
-        { isDrawing: false, message: debugMessage, errorCode: debugCode, httpStatus: lastApiStatus },
+        { isDrawing: false, message: debugMessage, errorCode: debugCode, httpStatus: lastApiStatus, rawError: lastApiErrorMsg },
         { status: 502 }
       );
     }
@@ -305,17 +347,19 @@ export async function POST(req: Request) {
         secure: process.env.NODE_ENV === "production",
       });
 
-      // FIX: UPSERT QUERY FIXES NULL VALUE ISSUE IN DATABASE
       if (userId && supabaseAdmin) {
-        const { error: dbError } = await supabaseAdmin
+        const { data: dbData, error: dbError } = await supabaseAdmin
           .from("profiles")
-          .upsert(
-            { id: userId, last_scanned_at: now.toISOString() },
-            { onConflict: "id" }
-          );
+          .update({ last_scanned_at: now.toISOString() })
+          .eq("id", userId)
+          .select();
 
         if (dbError) {
-          console.error("Supabase Scan Update Error:", dbError.message);
+          console.error("❌ Supabase Update Error:", dbError.message);
+        } else if (!dbData || dbData.length === 0) {
+          console.warn("⚠️ User profile row missing for ID:", userId);
+        } else {
+          console.log("✅ Supabase Scan Updated Successfully:", dbData);
         }
       }
 

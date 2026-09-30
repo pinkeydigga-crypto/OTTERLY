@@ -52,6 +52,7 @@ interface Profile {
   email: string;
   avatar_url: string;
   xp: number;
+  last_scanned_at?: string | null;
 }
 
 // Sub-component: Play GIF once and freeze on the final frame
@@ -145,14 +146,34 @@ export default function ScanPage() {
             router.replace("/login");
           }
         } else {
+          // Fetch last_scanned_at directly from DB on load
           const { data: profileData } = await supabase
             .from("profiles")
-            .select("id, name, username, email, avatar_url, xp")
+            .select("id, name, username, email, avatar_url, xp, last_scanned_at")
             .eq("id", user.id)
             .maybeSingle();
 
           if (profileData) {
             setProfile(profileData);
+
+            // Check database timestamp to see if scan is currently locked
+            if (profileData.last_scanned_at) {
+              const lastScan = new Date(profileData.last_scanned_at);
+              const now = new Date();
+              const hoursDiff = (now.getTime() - lastScan.getTime()) / (1000 * 60 * 60);
+
+              if (hoursDiff < 24) {
+                const nextAllowedIso = new Date(
+                  lastScan.getTime() + 24 * 60 * 60 * 1000
+                ).toISOString();
+
+                setAnalysis({
+                  isDrawing: true,
+                  lockActive: true,
+                  nextAllowedTime: nextAllowedIso,
+                });
+              }
+            }
           } else {
             setProfile({
               id: user.id,
@@ -161,6 +182,7 @@ export default function ScanPage() {
               email: user.email || "",
               avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
               xp: 0,
+              last_scanned_at: null,
             });
           }
         }
@@ -403,7 +425,6 @@ export default function ScanPage() {
     { name: "Scan", path: "/scan", active: true, icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
-    
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
