@@ -22,7 +22,8 @@ import {
   X,
   ChevronRight,
   Palette,
-  Grid
+  Grid,
+  ArrowRight
 } from "lucide-react";
 
 interface Profile {
@@ -52,13 +53,14 @@ export default function DashboardPage() {
   const router = useRouter();
   const isOffline = useOfflineGuard();
 
-  const mascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
+  const welcomeMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userRank, setUserRank] = useState<number | string>("-");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const isFetchingRef = useRef(false);
 
@@ -77,7 +79,6 @@ export default function DashboardPage() {
     isFetchingRef.current = true;
 
     try {
-      // 1. Quick Auth Check
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
 
@@ -89,7 +90,6 @@ export default function DashboardPage() {
         return;
       }
 
-      // Load cached profile data instantly if available to save bandwidth
       if (typeof window !== "undefined") {
         const cachedXp = localStorage.getItem("user_xp_cache");
         if (cachedXp) {
@@ -97,7 +97,6 @@ export default function DashboardPage() {
         }
       }
 
-      // 2. Optimized Lightweight Profile Fetch
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
         .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
@@ -153,16 +152,13 @@ export default function DashboardPage() {
         localStorage.setItem("user_xp_cache", (activeProfile.xp || 0).toString());
       }
 
-      // 3. Egress-Optimized Leaderboard Rank Calculation
       const userXpVal = Number(activeProfile.xp) || 0;
 
-      // Count profiles strictly having higher XP
       const { count: higherXpCount } = await supabase
         .from("profiles")
         .select("id", { count: "exact", head: true })
         .gt("xp", userXpVal);
 
-      // Tie-breaker count for identical XP (aligning with Leaderboard sorting: XP DESC, created_at ASC)
       let sameXpTieCount = 0;
       if (activeProfile.created_at) {
         const { count: tieCount } = await supabase
@@ -187,7 +183,7 @@ export default function DashboardPage() {
 
     } catch (err) {
       console.error("Dashboard processing error:", err);
-    } stroke: {
+    } finally {
       setLoading(false);
       isFetchingRef.current = false;
     }
@@ -197,11 +193,10 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Real-time Event Listener for XP update
   useEffect(() => {
     const handleXpUpdated = (e: CustomEvent<number>) => {
       setProfile((prev) => (prev ? { ...prev, xp: e.detail } : prev));
-      fetchDashboardData(); // Recalculate exact rank on XP change
+      fetchDashboardData();
     };
 
     window.addEventListener("xpUpdated", handleXpUpdated as EventListener);
@@ -210,7 +205,6 @@ export default function DashboardPage() {
     };
   }, [fetchDashboardData]);
 
-  // Realtime Profile Listener
   useEffect(() => {
     if (!profile?.id || isOffline) return;
 
@@ -254,7 +248,30 @@ export default function DashboardPage() {
   const userXp = Number(profile?.xp) || 0;
   const userStreak = Number(profile?.streak) || 0;
   const rawUserName = profile?.name || profile?.username || "Artist";
-  const userName = sanitizeString(rawUserName);
+  const sanitizedName = sanitizeString(rawUserName);
+  
+  // Format username with first letter capital and add exclamation mark
+  const formattedUserName = `${sanitizedName.charAt(0).toUpperCase()}${sanitizedName.slice(1)}!`;
+
+  const slidesData = [
+    {
+      isWelcome: true,
+      titleLine1: "Welcome back,",
+      titleLine2: formattedUserName,
+      description: "Ready to improve your drawing today?",
+      buttonText: null,
+      buttonPath: null,
+      mascot: welcomeMascotUrl
+    },
+    {
+      isWelcome: false,
+      title: "Take the Challenge",
+      description: "Step-by-step drawing challenges & earn XP.",
+      buttonText: "Start Challenge",
+      buttonPath: "/challenges",
+      mascot: welcomeMascotUrl
+    }
+  ];
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", active: true, icon: LayoutDashboard },
@@ -267,6 +284,8 @@ export default function DashboardPage() {
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings }
   ];
+
+  const currentSlideData = slidesData[currentSlide];
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-20 md:pb-0 font-sans overflow-x-hidden">
@@ -367,7 +386,7 @@ export default function DashboardPage() {
                 className="w-10 h-10 rounded-xl object-cover bg-blue-100"
               />
               <div className="overflow-hidden">
-                <p className="text-sm font-black text-[#0F172A] truncate">{userName}</p>
+                <p className="text-sm font-black text-[#0F172A] truncate">{formattedUserName}</p>
                 <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
               </div>
             </div>
@@ -420,7 +439,7 @@ export default function DashboardPage() {
             className="w-10 h-10 rounded-xl object-cover bg-blue-100"
           />
           <div className="overflow-hidden">
-            <p className="text-sm font-black text-[#0F172A] truncate">{userName}</p>
+            <p className="text-sm font-black text-[#0F172A] truncate">{formattedUserName}</p>
             <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
           </div>
         </div>
@@ -429,26 +448,69 @@ export default function DashboardPage() {
       {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto space-y-6 overflow-y-auto w-full">
         
-        {/* Welcome Section */}
-        <div className="relative pt-6 pb-0 px-4 sm:px-6 flex items-end justify-between min-h-[140px] bg-white rounded-[2rem] border-2 border-slate-100 shadow-xs overflow-hidden">
-          <div className="z-10 pb-6 max-w-xs sm:max-w-md">
-            <h1 className="text-2xl sm:text-4xl font-black text-[#0F172A] tracking-tight">
-              Welcome back, {userName}!
-            </h1>
-            <p className="text-sm font-bold text-slate-500 mt-1">
-              Ready to improve your drawing today?
+        {/* Welcome Card matching image style */}
+        <div className="relative px-6 py-5 sm:px-7 sm:py-6 flex items-center justify-between min-h-[150px] sm:min-h-[165px] bg-[#EBF3FF] rounded-[2rem] border border-blue-100/80 shadow-xs overflow-hidden">
+          
+          <div className="z-10 max-w-[210px] sm:max-w-xs flex flex-col justify-center space-y-1">
+
+            {currentSlideData.isWelcome ? (
+              <h1 className="text-2xl sm:text-3xl font-black text-[#0B192C] tracking-tight leading-tight">
+                <div>{currentSlideData.titleLine1}</div>
+                <div>{currentSlideData.titleLine2}</div>
+              </h1>
+            ) : (
+              <h1 className="text-xl sm:text-2xl font-black text-[#0B192C] tracking-tight leading-tight">
+                {currentSlideData.title}
+              </h1>
+            )}
+
+            <p className="text-xs sm:text-sm font-semibold text-slate-500 leading-snug pt-0.5">
+              {currentSlideData.description}
             </p>
+
+            {currentSlideData.buttonText && currentSlideData.buttonPath ? (
+              <div className="pt-1">
+                <Link
+                  href={currentSlideData.buttonPath!}
+                  onClick={triggerHaptic}
+                  className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white px-3.5 py-1 rounded-full font-bold text-xs shadow-sm transition-all"
+                >
+                  <span>{currentSlideData.buttonText}</span>
+                  <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                </Link>
+              </div>
+            ) : null}
+
+            <div className="flex items-center gap-1.5 pt-2">
+              {slidesData.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    triggerHaptic();
+                    setCurrentSlide(idx);
+                  }}
+                  className={`transition-all duration-300 ${
+                    currentSlide === idx
+                      ? "w-2.5 h-2.5 rounded-full bg-[#2563EB]"
+                      : "w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-slate-400"
+                  }`}
+                  aria-label={`Go to slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+
           </div>
 
-          <div className="z-20 flex items-end shrink-0 -mb-1">
+          <div className="absolute right-2 bottom-0 sm:right-5 z-20 flex items-end shrink-0 pointer-events-none">
             <Image
-              src={mascotUrl}
+              src={currentSlideData.mascot}
               alt="Otter Mascot"
-              width={144}
-              height={144}
-              className="w-28 h-28 sm:w-36 sm:h-36 object-contain block align-bottom"
+              width={140}
+              height={140}
+              className="w-28 h-28 sm:w-36 sm:h-36 object-contain block align-bottom select-none"
             />
           </div>
+
         </div>
 
         {/* Stats Row */}
@@ -490,8 +552,8 @@ export default function DashboardPage() {
         </section>
 
         {/* AI Scan Card */}
-        <div className="bg-[#2563EB] text-white p-6 sm:p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-4 max-w-lg z-10">
+        <div className="bg-[#2563EB] text-[#2563EB] p-6 sm:p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-4 max-w-lg z-10 text-white">
             <h2 className="text-2xl sm:text-3xl font-black leading-tight">
               Scan & Analyze Your Artwork
             </h2>
@@ -521,10 +583,10 @@ export default function DashboardPage() {
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {[
             { name: "Home", path: "/dashboard", active: true, icon: LayoutDashboard },
-            { name: "Challenges", path: "/challenges", icon: Swords },
-            { name: "Grid", path: "/grid-maker", icon: Grid },
-            { name: "Scan", path: "/scan", icon: Scan },
-            { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+            { name: "Challenges", path: "/challenges", active: false, icon: Swords },
+            { name: "Grid", path: "/grid-maker", active: false, icon: Grid },
+            { name: "Scan", path: "/scan", active: false, icon: Scan },
+            { name: "Leaderboard", path: "/leaderboard", active: false, icon: Trophy },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = item.active;
@@ -534,16 +596,16 @@ export default function DashboardPage() {
                 key={item.name}
                 href={item.path}
                 onClick={triggerHaptic}
-                className="group relative flex flex-1 flex-col items-center gap-0.5 py-1 transition-all"
+                className="group relative flex flex-1 flex-col items-center gap-1 py-1 transition-all"
               >
                 <span
                   className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
                     isActive
-                      ? "bg-[#2563EB] text-white shadow-md shadow-blue-500/30"
-                      : "text-slate-400 group-hover:text-slate-700"
+                      ? "bg-[#2563EB] text-white shadow-md shadow-blue-500/20"
+                      : "bg-transparent text-slate-400 group-hover:text-slate-600"
                   }`}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className={`h-5 w-5 ${isActive ? "text-white" : "text-slate-400"}`} />
                 </span>
                 <span
                   className={`text-[10px] font-bold leading-tight transition-colors ${
