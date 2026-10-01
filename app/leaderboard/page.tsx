@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, Share2, X, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
-  Star, Palette, Grid, ShieldAlert, RefreshCw
+  Star, Palette, Grid, ShieldAlert, RefreshCw, Globe
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -40,13 +40,12 @@ export default function LeaderboardPage() {
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/leaderbaord%20(1).png";
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
-  // Haptic feedback for mobile touches
   const triggerHaptic = () => {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(15);
       } catch {
-        // Safe fallback for unsupported web contexts
+        // Safe fallback
       }
     }
   };
@@ -68,7 +67,6 @@ export default function LeaderboardPage() {
         return;
       }
 
-      // Check Email Verification Status
       if (!user.email_confirmed_at) {
         setIsVerified(false);
         setLoading(false);
@@ -77,7 +75,6 @@ export default function LeaderboardPage() {
 
       setIsVerified(true);
 
-      // Cleaned column selection: Using exact column 'xp' from DB schema
       const { data: profiles, error } = await supabase
         .from("profiles")
         .select("id, name, username, avatar_url, streak, xp, created_at");
@@ -103,7 +100,6 @@ export default function LeaderboardPage() {
         };
       });
 
-      // Tie-breaker aligned with Dashboard: XP DESC -> created_at ASC
       mappedProfiles.sort((a, b) => {
         const xpDiff = b.xp_points - a.xp_points;
         if (xpDiff !== 0) return xpDiff;
@@ -158,7 +154,6 @@ export default function LeaderboardPage() {
   useEffect(() => {
     fetchLeaderboardAndUser();
 
-    // 1 Hour interval = 3,600,000 ms
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         fetchLeaderboardAndUser(true);
@@ -207,7 +202,6 @@ export default function LeaderboardPage() {
     return <LoadingScreen />;
   }
 
-  // Access Restriction Screen (Logged out or Email Unverified)
   if (isVerified === false && !isOffline) {
     return (
       <div className="min-h-screen bg-[#F6FAFF] flex flex-col items-center justify-center p-4 tracking-tight font-sans">
@@ -245,11 +239,14 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0">
       
-      {/* Import Google Font 'Fredoka' to match original card design across all devices */}
+      {/* Font imports for Rounded Fredoka style */}
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&display=swap');
-        .font-fredoka {
-          font-family: 'Fredoka', 'Comic Sans MS', sans-serif !important;
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Caveat:wght@700&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
+        .font-badge {
+          font-family: 'Fredoka', 'Nunito', system-ui, -apple-system, sans-serif !important;
+        }
+        .font-handwritten {
+          font-family: 'Caveat', cursive, sans-serif !important;
         }
       `}</style>
 
@@ -662,113 +659,147 @@ export default function LeaderboardPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Target Card */}
+            {/* Target Card Container with Fredoka Font Applied */}
             <div
               ref={cardRef}
-              className="w-full relative overflow-hidden flex flex-col items-center justify-between p-5 sm:p-6 text-center select-none rounded-xl mb-4 font-fredoka"
-              style={{
-                backgroundColor: "#e0f2fe",
-                backgroundImage: `
-                  linear-gradient(to right, rgba(147, 197, 253, 0.4) 1px, transparent 1px),
-                  linear-gradient(to bottom, rgba(147, 197, 253, 0.4) 1px, transparent 1px)
-                `,
-                backgroundSize: "22px 22px"
-              }}
+              className="w-full relative overflow-hidden flex flex-col justify-between p-6 sm:p-7 select-none rounded-[2rem] mb-4 font-badge border border-slate-100 bg-white shadow-md aspect-square min-h-[380px]"
             >
-              {/* Inner Paper Container */}
-              <div
-                className="w-full h-full bg-[#fdfbf7] rounded-xl p-6 sm:p-7 relative flex flex-col items-center justify-between min-h-[460px] border border-amber-100/60 shadow-md font-fredoka"
-              >
-                {/* Washi Tape (Top Left) */}
-                <div
-                  className="absolute -top-3 left-4 w-16 h-6 bg-blue-400/90 rounded-sm shadow-xs z-20 pointer-events-none"
+              {/* Very Light & Subtle Diagonal Blue Gradient Stripes Overlay */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[2rem]">
+                <div 
+                  className="absolute -top-[10%] -right-[10%] w-[130%] h-[130%]"
+                  style={{
+                    background: `
+                      linear-gradient(
+                        135deg,
+                        transparent 0%,
+                        transparent 35%,
+                        rgba(239, 246, 255, 0.4) 35%,
+                        rgba(239, 246, 255, 0.4) 48%,
+                        rgba(219, 234, 254, 0.45) 48%,
+                        rgba(219, 234, 254, 0.45) 62%,
+                        rgba(191, 219, 254, 0.5) 62%,
+                        rgba(191, 219, 254, 0.5) 78%,
+                        rgba(147, 197, 253, 0.55) 78%,
+                        rgba(147, 197, 253, 0.55) 100%
+                      )
+                    `
+                  }}
                 />
+              </div>
 
-                {/* Top Otterleo Logo */}
-                <div className="pt-2 z-10 flex flex-col items-center">
+              {/* Header: Logo Left */}
+              <div className="relative z-10 flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
                   <img
                     src={logoUrl}
                     alt="Otterleo"
-                    className="h-10 sm:h-12 w-auto object-contain mb-1"
+                    className="h-10 sm:h-11 w-auto object-contain"
                     crossOrigin="anonymous"
                   />
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight font-fredoka" style={{ color: "#1e3a8a" }}>
-                    My Global Rank
-                  </h2>
+                </div>
+              </div>
+
+              {/* Center Main Rank Content */}
+              <div className="relative z-10 flex flex-col items-center justify-center my-auto py-1">
+                <h2 className="text-sm sm:text-base font-extrabold text-[#334155] mb-1 tracking-tight">
+                  Global Rank
+                </h2>
+
+                {/* Big Rank Number surrounded by Leaves */}
+                <div className="flex items-center justify-center gap-2 sm:gap-3 my-0.5">
+                  {/* Left Laurel Leaf */}
+                  <svg className="w-10 h-20 sm:w-11 sm:h-22 text-[#93c5fd]" viewBox="0 0 50 100" fill="currentColor">
+                    <path d="M 38 92 C 20 75 14 42 32 10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                    <path d="M 32 10 C 29 4 33 2 34 8 C 35 12 33 13 32 10 Z" />
+                    <path d="M 28 20 C 20 15 22 8 28 14 C 30 17 29 20 28 20 Z" />
+                    <path d="M 33 22 C 38 15 42 18 36 24 C 34 25 32 24 33 22 Z" />
+                    <path d="M 23 35 C 13 31 15 22 23 28 C 25 31 24 34 23 35 Z" />
+                    <path d="M 30 38 C 38 30 42 34 35 41 C 32 42 30 40 30 38 Z" />
+                    <path d="M 21 52 C 10 49 11 39 20 45 C 23 48 22 51 21 52 Z" />
+                    <path d="M 28 55 C 37 48 41 52 33 58 C 30 59 28 57 28 55 Z" />
+                    <path d="M 22 70 C 11 68 12 58 21 63 C 24 66 23 69 22 70 Z" />
+                    <path d="M 29 72 C 38 66 41 71 34 76 C 31 77 29 74 29 72 Z" />
+                  </svg>
+
+                  {/* Rank Digit */}
+                  <span className="font-handwritten text-7xl sm:text-8xl font-black leading-none text-[#1e3a8a] tracking-tight">
+                    {currentUser?.rank || "2"}
+                  </span>
+
+                  {/* Right Laurel Leaf (Mirrored) */}
+                  <svg className="w-10 h-20 sm:w-11 sm:h-22 text-[#93c5fd] transform scale-x-[-1]" viewBox="0 0 50 100" fill="currentColor">
+                    <path d="M 38 92 C 20 75 14 42 32 10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                    <path d="M 32 10 C 29 4 33 2 34 8 C 35 12 33 13 32 10 Z" />
+                    <path d="M 28 20 C 20 15 22 8 28 14 C 30 17 29 20 28 20 Z" />
+                    <path d="M 33 22 C 38 15 42 18 36 24 C 34 25 32 24 33 22 Z" />
+                    <path d="M 23 35 C 13 31 15 22 23 28 C 25 31 24 34 23 35 Z" />
+                    <path d="M 30 38 C 38 30 42 34 35 41 C 32 42 30 40 30 38 Z" />
+                    <path d="M 21 52 C 10 49 11 39 20 45 C 23 48 22 51 21 52 Z" />
+                    <path d="M 28 55 C 37 48 41 52 33 58 C 30 59 28 57 28 55 Z" />
+                    <path d="M 22 70 C 11 68 12 58 21 63 C 24 66 23 69 22 70 Z" />
+                    <path d="M 29 72 C 38 66 41 71 34 76 C 31 77 29 74 29 72 Z" />
+                  </svg>
                 </div>
 
-                {/* Crown + Rank Number */}
-                <div className="relative my-auto py-2 flex flex-col items-center justify-center w-full z-10">
-                  {/* Crown */}
-                  <div className="mb-1">
-                    <svg className="w-10 h-10 sm:w-12 sm:h-12" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z" />
-                      <circle cx="2" cy="4" r="1" fill="#f59e0b" />
-                      <circle cx="12" cy="4" r="1" fill="#f59e0b" />
-                      <circle cx="22" cy="4" r="1" fill="#f59e0b" />
-                    </svg>
-                  </div>
-
-                  {/* Rank Display */}
-                  <div className="relative flex items-center justify-center gap-3">
-                    <div className="flex flex-col items-center gap-1 opacity-80" style={{ color: "#1e3a8a" }}>
-                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full"></span>
-                      <span className="w-4 h-1 bg-[#1e3a8a] rounded-full"></span>
-                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full"></span>
-                    </div>
-
-                    <span className="text-7xl sm:text-8xl font-black leading-none tracking-tight font-fredoka" style={{ color: "#1e3a8a" }}>
-                      {currentUser?.rank || "5"}
-                    </span>
-
-                    <div className="flex flex-col items-center gap-1 opacity-80" style={{ color: "#1e3a8a" }}>
-                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full"></span>
-                      <span className="w-4 h-1 bg-[#1e3a8a] rounded-full"></span>
-                      <span className="w-3.5 h-1 bg-[#1e3a8a] rounded-full"></span>
-                    </div>
-                  </div>
-
-                  {/* Underline */}
-                  <div className="w-28 h-2 rounded-full mt-2 opacity-90" style={{ backgroundColor: "#93c5fd" }} />
+                {/* Badge Pill with Image Font & Style */}
+                <div className="mt-1 px-5 py-1 bg-[#fef3c7] rounded-full border border-[#fde68a]">
+                  <span className="text-xs sm:text-sm font-extrabold text-[#78350f] tracking-tight uppercase">
+                    {currentUser?.rank && currentUser.rank <= 3 ? "LEGENDARY" : "RISING STAR"}
+                  </span>
                 </div>
 
-                {/* XP & Streak Box */}
-                <div
-                  className="w-full rounded-2xl py-3.5 px-4 flex items-center justify-around my-2 z-10"
-                  style={{ backgroundColor: "#e0f2fe" }}
-                >
-                  <div className="flex items-center gap-3">
-                    <Star className="w-5 h-5 fill-[#1e3a8a] text-[#1e3a8a]" />
-                    <div className="text-left">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 font-fredoka">XP</p>
-                      <p className="text-sm sm:text-base font-black text-slate-900 font-fredoka">{currentUser?.xp_points || 0} XP</p>
-                    </div>
+                {/* Subtext */}
+                <p className="text-xs font-bold text-[#64748b] mt-2 tracking-tight">
+                  You're in the top {currentUser?.rank || "2"}!
+                </p>
+              </div>
+
+              {/* Stats Bar Container */}
+              <div className="relative z-10 w-full bg-[#f0f6ff]/90 border border-blue-100/80 rounded-2xl p-3 flex items-center justify-around my-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-blue-100/60 flex items-center justify-center">
+                    <Star className="w-3.5 h-3.5 fill-[#1e3a8a] text-[#1e3a8a]" />
                   </div>
-
-                  <div className="h-8 w-0.5 bg-blue-200/80" />
-
-                  <div className="flex items-center gap-3">
-                    <Flame className="w-5 h-5 fill-[#1e3a8a] text-[#1e3a8a]" />
-                    <div className="text-left">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-500 font-fredoka">Streak</p>
-                      <p className="text-sm sm:text-base font-black text-slate-900 font-fredoka">{currentUser?.streak || 0} Days</p>
-                    </div>
+                  <div className="text-left">
+                    <p className="text-[9px] font-extrabold uppercase text-slate-400 leading-none mb-0.5 tracking-tight">XP</p>
+                    <p className="text-xs font-extrabold text-slate-900 tracking-tight">{currentUser?.xp_points || 0} XP</p>
                   </div>
                 </div>
 
-                {/* User Avatar & Username Footer */}
-                <div className="w-full pt-3 flex items-center justify-center gap-3 relative z-10">
+                <div className="h-5 w-px bg-blue-200/60" />
+
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-blue-100/60 flex items-center justify-center">
+                    <Flame className="w-3.5 h-3.5 fill-[#1e3a8a] text-[#1e3a8a]" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[9px] font-extrabold uppercase text-slate-400 leading-none mb-0.5 tracking-tight">STREAK</p>
+                    <p className="text-xs font-extrabold text-slate-900 tracking-tight">{currentUser?.streak || 0} Days</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Footer */}
+              <div className="relative z-10 w-full flex items-center justify-between pt-1">
+                <div className="flex items-center gap-2">
                   <img
                     src={currentUser?.avatar_url}
                     alt={currentUser?.full_name}
-                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border-2 border-blue-400 shadow-2xs shrink-0"
+                    className="w-6 h-6 rounded-full object-cover border border-blue-300 shadow-2xs"
                     crossOrigin="anonymous"
                   />
-                  <p className="text-xs sm:text-sm font-black tracking-tight truncate max-w-[200px] font-fredoka" style={{ color: "#1e3a8a" }}>
+                  <span className="text-xs font-bold text-[#1e3a8a] tracking-tight">
                     @{currentUser?.full_name?.toLowerCase().replace(/\s+/g, '') || "user"}
-                  </p>
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1 text-[10px] font-bold text-[#3b82f6] tracking-tight">
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Top 2% Worldwide</span>
                 </div>
               </div>
+
             </div>
 
             {/* Modal Bottom Subtext */}
