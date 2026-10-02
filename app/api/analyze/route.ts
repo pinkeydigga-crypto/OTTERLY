@@ -97,6 +97,9 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     const userId = body?.userId;
 
+    // Logging to verify if Frontend is actually sending userId
+    console.log("🔍 Incoming Scan Request for UserID:", userId || "NO_USER_ID_PROVIDED");
+
     const cookieStore = await cookies();
     const cookieKey = userId ? `otto_last_scan_time_${userId}` : "otto_last_scan_time";
     const lastScanCookie = cookieStore.get(cookieKey);
@@ -177,7 +180,11 @@ export async function POST(req: Request) {
       const { data: isAllowed, error: lockError } = await supabaseAdmin
         .rpc("check_and_lock_scan", { user_id_param: userId });
 
-      if (lockError || !isAllowed) {
+      if (lockError) {
+        console.warn("⚠️ Supabase RPC Lock Warning:", lockError.message);
+      }
+
+      if (isAllowed === false) {
         return NextResponse.json(
           {
             isDrawing: false,
@@ -296,7 +303,6 @@ export async function POST(req: Request) {
               lastApiErrorMsg = errData?.error?.message || apiResponse.statusText;
               console.error(`❌ [Gemini Error] Model ${modelName} (Attempt ${attempts}) Status ${apiResponse.status}:`, lastApiErrorMsg);
 
-              // 503 ya 429 ke liye exponential wait
               if ((apiResponse.status === 503 || apiResponse.status === 429) && attempts < maxAttempts) {
                 await new Promise((res) => setTimeout(res, 2000 * attempts));
                 continue;
@@ -347,20 +353,23 @@ export async function POST(req: Request) {
         secure: process.env.NODE_ENV === "production",
       });
 
+      // 🛠️ FIXED SUPABASE UPDATE LOGIC WITH UPSERT
       if (userId && supabaseAdmin) {
         const { data: dbData, error: dbError } = await supabaseAdmin
           .from("profiles")
-          .update({ last_scanned_at: now.toISOString() })
-          .eq("id", userId)
+          .upsert({ 
+            id: userId, 
+            last_scanned_at: now.toISOString() 
+          }, { onConflict: "id" })
           .select();
 
         if (dbError) {
           console.error("❌ Supabase Update Error:", dbError.message);
-        } else if (!dbData || dbData.length === 0) {
-          console.warn("⚠️ User profile row missing for ID:", userId);
         } else {
           console.log("✅ Supabase Scan Updated Successfully:", dbData);
         }
+      } else {
+        console.warn("⚠️ Skip Database Update: Missing userId or Supabase Admin setup.");
       }
 
       jsonResult.nextAllowedTime = nextAllowed.toISOString();

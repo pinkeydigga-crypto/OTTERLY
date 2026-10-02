@@ -234,7 +234,7 @@ export default function ScanPage() {
     triggerHaptic();
     if (countdown || (analysis && analysis.lockActive)) {
       setErrorMessage(
-        "Scan Locked. Please wait until the timer resets. [Strict-24H] Error 3"
+        "Otto AI is facing high demand. Please try again in few minutes. #101"
       );
       return;
     }
@@ -258,7 +258,7 @@ export default function ScanPage() {
       !ALLOWED_MIME_TYPES.includes(file.type)
     ) {
       setErrorMessage(
-        "Invalid file format! Only valid JPG, JPEG, PNG, and WEBP image files are allowed."
+        "Otto AI is facing high demand. Please try again in few minutes. #102"
       );
       e.target.value = "";
       return;
@@ -266,7 +266,7 @@ export default function ScanPage() {
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
       setErrorMessage(
-        `File size is too large! Maximum allowed size is ${MAX_FILE_SIZE_MB}MB.`
+        "Otto AI is facing high demand. Please try again in few minutes. #103"
       );
       e.target.value = "";
       return;
@@ -274,7 +274,7 @@ export default function ScanPage() {
 
     const reader = new FileReader();
     reader.onerror = () => {
-      setErrorMessage("Failed to read the file. Please try uploading again.");
+      setErrorMessage("Otto AI is facing high demand. Please try again in few minutes. #104");
       e.target.value = "";
     };
 
@@ -282,7 +282,7 @@ export default function ScanPage() {
       const img = new Image();
       img.onerror = () => {
         setErrorMessage(
-          "Invalid or corrupted image file! Please choose a valid drawing."
+          "Otto AI is facing high demand. Please try again in few minutes. #105"
         );
         setSelectedImage(null);
         e.target.value = "";
@@ -350,12 +350,12 @@ export default function ScanPage() {
           attempt++;
           if (attempt < maxRetries) {
             await new Promise((resolve) =>
-              setTimeout(resolve, attempt * 1500)
+              setTimeout(resolve, attempt * 2000)
             );
             continue;
           } else {
             setErrorMessage(
-              "Otto AI is facing high demand. Please try again after a few seconds. Error 1"
+              "Otto AI is facing high demand. Please try again in few minutes. #106"
             );
             break;
           }
@@ -365,7 +365,7 @@ export default function ScanPage() {
 
         if (res.status === 423 && data.lockActive) {
           setErrorMessage(
-            "Your daily scan limit is active. Please check the countdown timer below. [ERR-S24] Error 2"
+            "Otto AI is facing high demand. Please try again in few minutes. #107"
           );
           setAnalysis(data);
           setSelectedImage(null);
@@ -375,30 +375,33 @@ export default function ScanPage() {
 
         if (!res.ok || !data.isDrawing) {
           setErrorMessage(
-            data.message ||
-              "Please upload a valid drawing or artwork. Otto AI can only analyze drawings."
+            "Otto AI is facing high demand. Please try again in few minutes. #108"
           );
           setAnalysis(null);
         } else {
           setAnalysis(data);
+          
+          // Immediately update last_scanned_at in state to prevent it from remaining null
+          const nowIso = new Date().toISOString();
+          setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
         }
         success = true;
       } catch (err: unknown) {
         clearTimeout(timeoutId);
         if (err instanceof Error && err.name === "AbortError") {
           setErrorMessage(
-            "Request took too long to respond. Connection reset. Please try again later. Error 2"
+            "Otto AI is facing high demand. Please try again in few minutes. #109"
           );
           break;
         } else {
           attempt++;
           if (attempt < maxRetries) {
             await new Promise((resolve) =>
-              setTimeout(resolve, attempt * 1500)
+              setTimeout(resolve, attempt * 2000)
             );
           } else {
             setErrorMessage(
-              "Otto AI is facing high demand. Please try again after a few seconds. Error 1"
+              "Otto AI is facing high demand. Please try again in few minutes. #110"
             );
           }
         }
@@ -728,10 +731,6 @@ export default function ScanPage() {
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
                       <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#00f3ff,0_0_30px_#00f3ff] animate-scan z-10" />
                       <div className="absolute left-0 right-0 h-16 bg-gradient-to-b from-cyan-500/20 to-transparent animate-scan z-0" />
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-cyan-400 text-xs font-black px-4 py-2 rounded-full border border-cyan-500/40 flex items-center gap-2 z-20 shadow-lg">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                        Otto AI Analyzing Artwork...
-                      </div>
                     </>
                   )}
 
@@ -774,7 +773,7 @@ export default function ScanPage() {
                         : "text-rose-800"
                     }`}
                   >
-                    Otto AI System Notice
+                    Otto AI Notice
                   </p>
                   <p
                     className={`text-xs font-extrabold leading-relaxed ${
