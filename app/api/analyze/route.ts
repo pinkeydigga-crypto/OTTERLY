@@ -7,9 +7,13 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
-// Strictly Active Flash Models ONLY (Pro model has 0 quota on free key)
+// Models order (3.8, 3.6 aur fallback models)
 const MODELS_TO_TRY = [
-  "gemini-3.8-flash"
+  "gemini-3.8-flash",
+  "gemini-3.6-flash",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash"
 ];
 
 // Anti-Hacker In-Memory Rate Limiter
@@ -18,7 +22,7 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const windowMs = 60 * 1000;
-  const maxRequests = 5;
+  const maxRequests = 10;
 
   const record = rateLimitMap.get(ip);
 
@@ -37,7 +41,7 @@ function isRateLimited(ip: string): boolean {
 
 // Global In-Memory Concurrency Queue
 let activeRequestsCount = 0;
-const MAX_CONCURRENT_HEAVY_JOBS = 3;
+const MAX_CONCURRENT_HEAVY_JOBS = 5;
 
 async function waitForServerCapacity(maxWaitMs = 15000): Promise<boolean> {
   const startTime = Date.now();
@@ -45,7 +49,7 @@ async function waitForServerCapacity(maxWaitMs = 15000): Promise<boolean> {
     if (Date.now() - startTime > maxWaitMs) {
       return false;
     }
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }
   return true;
 }
@@ -97,7 +101,6 @@ export async function POST(req: Request) {
     const body = await req.json().catch(() => null);
     const userId = body?.userId;
 
-    // Logging to verify if Frontend is actually sending userId
     console.log("🔍 Incoming Scan Request for UserID:", userId || "NO_USER_ID_PROVIDED");
 
     const cookieStore = await cookies();
@@ -254,67 +257,59 @@ export async function POST(req: Request) {
 
     try {
       for (const modelName of MODELS_TO_TRY) {
-        let attempts = 0;
-        const maxAttempts = 3;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-        while (attempts < maxAttempts) {
-          attempts++;
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-            const apiResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
-              {
-                method: "POST",
-                signal: controller.signal,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [
-                    {
-                      parts: [
-                        { text: promptText },
-                        { inlineData: { mimeType: mimeType, data: base64Data } },
-                      ],
-                    },
-                  ],
-                  generationConfig: {
-                    responseMimeType: "application/json",
-                    maxOutputTokens: 800,
-                    temperature: 0.2,
+          const apiResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+            {
+              method: "POST",
+              signal: controller.signal,
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    parts: [
+                      { text: promptText },
+                      { inlineData: { mimeType: mimeType, data: base64Data } },
+                    ],
                   },
-                }),
-              }
-            ).finally(() => clearTimeout(timeoutId));
-
-            lastApiStatus = apiResponse.status;
-
-            if (apiResponse.ok) {
-              const data = await apiResponse.json();
-              const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (rawText) {
-                const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
-                jsonResult = JSON.parse(cleanJsonText);
-                console.log(`✅ Success with model: ${modelName}`);
-                break;
-              }
-            } else {
-              const errData = await apiResponse.json().catch(() => null);
-              lastApiErrorMsg = errData?.error?.message || apiResponse.statusText;
-              console.error(`❌ [Gemini Error] Model ${modelName} (Attempt ${attempts}) Status ${apiResponse.status}:`, lastApiErrorMsg);
-
-              if ((apiResponse.status === 503 || apiResponse.status === 429) && attempts < maxAttempts) {
-                await new Promise((res) => setTimeout(res, 2000 * attempts));
-                continue;
-              }
+                ],
+                generationConfig: {
+                  responseMimeType: "application/json",
+                  maxOutputTokens: 800,
+                  temperature: 0.2,
+                },
+              }),
             }
-          } catch (err: any) {
-            console.warn(`⚠️ [Otto AI Fetch Warning] Model ${modelName} failed:`, err?.message || err);
-          }
-          break;
-        }
+          ).finally(() => clearTimeout(timeoutId));
 
-        if (jsonResult) break;
+          lastApiStatus = apiResponse.status;
+
+          if (apiResponse.ok) {
+            const data = await apiResponse.json();
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
+              jsonResult = JSON.parse(cleanJsonText);
+              console.log(`✅ Success with model: ${modelName}`);
+              break; // Call success, exit model loop
+            }
+          } else {
+            const errData = await apiResponse.json().catch(() => null);
+            lastApiErrorMsg = errData?.error?.message || apiResponse.statusText;
+            console.error(`❌ [Gemini Error] Model ${modelName} Status ${apiResponse.status}:`, lastApiErrorMsg);
+
+            // KEY CHANGE: Agar 429 quota limit hit ho, to instant next model switch karein (retry spam na ho)
+            if (apiResponse.status === 429) {
+              console.warn(`⚠️ Model ${modelName} rate limited. Trying fallback model...`);
+              continue;
+            }
+          }
+        } catch (err: any) {
+          console.warn(`⚠️ [Otto AI Fetch Warning] Model ${modelName} failed:`, err?.message || err);
+        }
       }
     } finally {
       activeRequestsCount = Math.max(0, activeRequestsCount - 1);
@@ -329,7 +324,7 @@ export async function POST(req: Request) {
         debugMessage = `API Key issue: ${lastApiErrorMsg || "Key invalid or disabled."}`;
       } else if (lastApiStatus === 429) {
         debugCode = "ERR_106C";
-        debugMessage = "Rate limit reached. Please wait a minute and try again.";
+        debugMessage = "Quota rate limit reached. Please wait a minute or add billing.";
       } else if (lastApiStatus === 503) {
         debugCode = "ERR_106D";
         debugMessage = "Google AI service is experiencing high traffic. Please try scanning again.";
@@ -353,7 +348,7 @@ export async function POST(req: Request) {
         secure: process.env.NODE_ENV === "production",
       });
 
-      // 🛠️ FIXED SUPABASE UPDATE LOGIC WITH UPSERT
+      // SUPABASE UPSERT FIX (Ensures last_scanned_at is never null)
       if (userId && supabaseAdmin) {
         const { data: dbData, error: dbError } = await supabaseAdmin
           .from("profiles")
@@ -368,8 +363,6 @@ export async function POST(req: Request) {
         } else {
           console.log("✅ Supabase Scan Updated Successfully:", dbData);
         }
-      } else {
-        console.warn("⚠️ Skip Database Update: Missing userId or Supabase Admin setup.");
       }
 
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
