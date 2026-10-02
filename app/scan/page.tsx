@@ -55,7 +55,6 @@ interface Profile {
   last_scanned_at?: string | null;
 }
 
-// Sub-component: Play GIF once and freeze on the final frame
 function OneTimeGifMascot({ gifUrl, durationMs = 3000 }: { gifUrl: string; durationMs?: number }) {
   const [isFrozen, setIsFrozen] = useState(false);
   const [frozenFrame, setFrozenFrame] = useState<string | null>(null);
@@ -146,7 +145,6 @@ export default function ScanPage() {
             router.replace("/login");
           }
         } else {
-          // Fetch last_scanned_at directly from DB on load
           const { data: profileData } = await supabase
             .from("profiles")
             .select("id, name, username, email, avatar_url, xp, last_scanned_at")
@@ -156,7 +154,6 @@ export default function ScanPage() {
           if (profileData) {
             setProfile(profileData);
 
-            // Check database timestamp to see if scan is currently locked
             if (profileData.last_scanned_at) {
               const lastScan = new Date(profileData.last_scanned_at);
               const now = new Date();
@@ -258,7 +255,7 @@ export default function ScanPage() {
       !ALLOWED_MIME_TYPES.includes(file.type)
     ) {
       setErrorMessage(
-        "Otto AI is facing high demand. Please try again in few minutes. #102"
+        "Please upload a valid artwork image format (JPG, PNG, or WEBP)."
       );
       e.target.value = "";
       return;
@@ -266,7 +263,7 @@ export default function ScanPage() {
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
       setErrorMessage(
-        "Otto AI is facing high demand. Please try again in few minutes. #103"
+        "Image size is too large. Please upload an image under 5MB."
       );
       e.target.value = "";
       return;
@@ -274,7 +271,7 @@ export default function ScanPage() {
 
     const reader = new FileReader();
     reader.onerror = () => {
-      setErrorMessage("Otto AI is facing high demand. Please try again in few minutes. #104");
+      setErrorMessage("Unable to read image file. Please try again.");
       e.target.value = "";
     };
 
@@ -282,7 +279,7 @@ export default function ScanPage() {
       const img = new Image();
       img.onerror = () => {
         setErrorMessage(
-          "Otto AI is facing high demand. Please try again in few minutes. #105"
+          "Invalid or corrupted image file."
         );
         setSelectedImage(null);
         e.target.value = "";
@@ -325,7 +322,7 @@ export default function ScanPage() {
     const { data: { user } } = await supabase.auth.getUser();
     const activeUserId = profile?.id || user?.id;
 
-    const maxRetries = 3;
+    const maxRetries = 2;
     let attempt = 0;
     let success = false;
 
@@ -346,26 +343,11 @@ export default function ScanPage() {
 
         clearTimeout(timeoutId);
 
-        if (res.status === 503) {
-          attempt++;
-          if (attempt < maxRetries) {
-            await new Promise((resolve) =>
-              setTimeout(resolve, attempt * 2000)
-            );
-            continue;
-          } else {
-            setErrorMessage(
-              "Otto AI is facing high demand. Please try again in few minutes. #106"
-            );
-            break;
-          }
-        }
-
         const data: AIAnalysisResult = await res.json();
 
         if (res.status === 423 && data.lockActive) {
           setErrorMessage(
-            "Otto AI is facing high demand. Please try again in few minutes. #107"
+            data.message || "Daily scan limit reached for your account."
           );
           setAnalysis(data);
           setSelectedImage(null);
@@ -373,15 +355,18 @@ export default function ScanPage() {
           return;
         }
 
-        if (!res.ok || !data.isDrawing) {
+        if (!res.ok) {
           setErrorMessage(
-            "Otto AI is facing high demand. Please try again in few minutes. #108"
+            data.message || "Otto AI is facing high demand. Please try again in few minutes."
+          );
+          setAnalysis(null);
+        } else if (data.isDrawing === false) {
+          setErrorMessage(
+            data.message || "Please upload a valid artwork image."
           );
           setAnalysis(null);
         } else {
           setAnalysis(data);
-          
-          // Immediately update last_scanned_at in state to prevent it from remaining null
           const nowIso = new Date().toISOString();
           setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
         }
@@ -390,22 +375,22 @@ export default function ScanPage() {
         clearTimeout(timeoutId);
         if (err instanceof Error && err.name === "AbortError") {
           setErrorMessage(
-            "Otto AI is facing high demand. Please try again in few minutes. #109"
+            "Request timed out. Please try again."
           );
           break;
         } else {
           attempt++;
           if (attempt < maxRetries) {
             await new Promise((resolve) =>
-              setTimeout(resolve, attempt * 2000)
+              setTimeout(resolve, 1500)
             );
           } else {
             setErrorMessage(
-              "Otto AI is facing high demand. Please try again in few minutes. #110"
+              "Unable to connect to Otto AI server. Please try again."
             );
           }
         }
-      } finally {
+      } flex: {
         if (success || attempt >= maxRetries) {
           setIsAnalyzing(false);
         }
@@ -604,7 +589,7 @@ export default function ScanPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Mascot GIF Container */}
+          {/* Left Column: Mascot Container */}
           <div className="md:col-span-5 bg-white p-6 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex flex-col items-center justify-between min-h-[440px] relative">
             <div className="text-center z-10 space-y-2">
               <h2 className="text-2xl font-black text-[#0F172A]">
@@ -633,7 +618,7 @@ export default function ScanPage() {
             </div>
 
             <div className="w-full relative">
-              {/* LOCK OVERLAY + TIMER UI */}
+              {/* TIMER OVERLAY */}
               {countdown && (
                 <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-8 flex flex-col items-center justify-center space-y-6 border-3 border-amber-300 border-dashed text-center">
                   <div className="w-20 h-20 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center border-2 border-amber-200">

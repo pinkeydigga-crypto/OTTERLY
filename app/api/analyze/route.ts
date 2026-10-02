@@ -7,14 +7,12 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
-// Active & Supported Gemini Models (2026 Updated)
 const MODELS_TO_TRY = [
   "gemini-3.8-flash",
-  "gemini-2.5-pro",
-  "gemini-2.5-flash"
+  "gemini-3.6-flash",
+  "gemini-3.5-flash"
 ];
 
-// Anti-Spam In-Memory Rate Limiter
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 function isRateLimited(ip: string): boolean {
@@ -48,7 +46,6 @@ function isValidImageHeader(buffer: Buffer): boolean {
   return isJpeg || isPng || isWebp;
 }
 
-// Helper to delay execution during 503 retry
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(req: Request) {
@@ -57,7 +54,6 @@ export async function POST(req: Request) {
     const realIp = req.headers.get("x-real-ip");
     const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "0.0.0.0";
 
-    // 1. IP Rate Limiting Check
     if (isRateLimited(ip)) {
       return NextResponse.json(
         {
@@ -69,19 +65,25 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // Auto-detect Supabase Environment Variables with all possible fallback names
+    const supabaseUrl = 
+      process.env.NEXT_PUBLIC_SUPABASE_URL || 
+      process.env.SUPABASE_URL;
+
+    const supabaseKey = 
+      process.env.SUPABASE_SERVICE_ROLE_KEY || 
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_KEY ||
+      process.env.SUPABASE_KEY;
 
     const body = await req.json().catch(() => null);
     const userId = body?.userId;
-
-    console.log("🔍 Incoming Scan Request for UserID:", userId || "NO_USER_ID_PROVIDED");
 
     const cookieStore = await cookies();
     const cookieKey = userId ? `otto_last_scan_time_${userId}` : "otto_last_scan_time";
     const lastScanCookie = cookieStore.get(cookieKey);
 
-    // 2. Daily Limit Lock Check (Cookie)
     if (lastScanCookie) {
       const lastScanTime = new Date(lastScanCookie.value).getTime();
       const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
@@ -102,7 +104,6 @@ export async function POST(req: Request) {
     }
 
     if (!apiKey) {
-      console.error("❌ GEMINI_API_KEY is missing in environment variables!");
       return NextResponse.json(
         { isDrawing: false, message: "Server configuration issue: GEMINI_API_KEY missing.", errorCode: "ERR_102" },
         { status: 500 }
@@ -148,16 +149,16 @@ export async function POST(req: Request) {
       );
     }
 
-    let supabaseAdmin = null;
-    if (supabaseUrl && supabaseServiceKey) {
-      supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    // Initialize Supabase Client
+    let supabase = null;
+    if (supabaseUrl && supabaseKey) {
+      supabase = createClient(supabaseUrl, supabaseKey, {
         auth: { persistSession: false }
       });
     }
 
-    // 3. Supabase DB RPC Scan Check
-    if (userId && supabaseAdmin) {
-      const { data: isAllowed, error: lockError } = await supabaseAdmin
+    if (userId && supabase) {
+      const { data: isAllowed, error: lockError } = await supabase
         .rpc("check_and_lock_scan", { user_id_param: userId });
 
       if (lockError) {
@@ -231,11 +232,10 @@ export async function POST(req: Request) {
     let lastApiErrorMsg = "";
 
     modelLoop: for (const modelName of MODELS_TO_TRY) {
-      // Allow up to 2 attempts per model for transient 503 high-demand errors
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 12000);
+          const timeoutId = setTimeout(() => controller.abort(), 20000);
 
           const apiResponse = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
@@ -254,7 +254,7 @@ export async function POST(req: Request) {
                 ],
                 generationConfig: {
                   responseMimeType: "application/json",
-                  maxOutputTokens: 800,
+                  maxOutputTokens: 2048,
                   temperature: 0.2,
                 },
               }),
@@ -277,9 +277,7 @@ export async function POST(req: Request) {
             lastApiErrorMsg = errData?.error?.message || apiResponse.statusText;
             console.error(`❌ [Gemini Error] Model ${modelName} Status ${apiResponse.status}:`, lastApiErrorMsg);
 
-            // If 503 High Demand, wait 1 second before attempt 2
             if (apiResponse.status === 503 && attempt === 1) {
-              console.log(`⏳ Model ${modelName} returned 503. Retrying in 1000ms...`);
               await sleep(1000);
             }
           }
@@ -306,13 +304,28 @@ export async function POST(req: Request) {
       const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
 
-      if (userId && supabaseAdmin) {
-        await supabaseAdmin
-          .from("profiles")
-          .upsert({ id: userId, last_scanned_at: now.toISOString() }, { onConflict: "id" });
+      // INSERT SCAN LOG INTO SCAN_LOGS TABLE
+      if (userId && supabase) {
+        const { error: insertError } = await supabase
+          .from("scan_logs")
+          .insert([
+            { user_id: userId, scanned_at: now.toISOString() }
+          ]);
+
+        if (insertError) {
+          console.error("❌ Failed to insert into scan_logs:", insertError.message);
+        } else {
+          console.log(`✅ Successfully inserted scan_log for userId: ${userId}`);
+        }
+      } else {
+        console.warn("⚠️️ Could not log scan details:", {
+          hasUserId: !!userId,
+          hasSupabaseUrl: !!supabaseUrl,
+          hasSupabaseKey: !!supabaseKey
+        });
       }
 
-      const response = NextResponse.json(jsonResult);
+      const response = NextResponse.json(jsonResult, { status: 200 });
       response.cookies.set(cookieKey, now.toISOString(), {
         maxAge: 86400,
         path: "/",
@@ -324,7 +337,7 @@ export async function POST(req: Request) {
       return response;
     }
 
-    return NextResponse.json(jsonResult);
+    return NextResponse.json(jsonResult, { status: 200 });
 
   } catch (error: any) {
     console.error("❌ Catch Block Internal Error:", error);
