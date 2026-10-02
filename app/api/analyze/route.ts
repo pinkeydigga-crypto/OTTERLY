@@ -7,12 +7,11 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
-// Valid Active Gemini Models (Aapke mutabiq exact same rakha hai)
+// Active & Supported Gemini Models (2026 Updated)
 const MODELS_TO_TRY = [
   "gemini-3.8-flash",
-  "gemini-2.0-flash-exp",
-  "gemini-1.5-pro",
-  "gemini-3.8-flash"
+  "gemini-2.5-pro",
+  "gemini-2.5-flash"
 ];
 
 // Anti-Spam In-Memory Rate Limiter
@@ -38,30 +37,6 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-// Global Concurrency Limiter
-let activeRequestsCount = 0;
-let lastResetTime = Date.now();
-const MAX_CONCURRENT_HEAVY_JOBS = 5;
-
-async function waitForServerCapacity(maxWaitMs = 8000): Promise<boolean> {
-  const now = Date.now();
-
-  if (now - lastResetTime > 15000 && activeRequestsCount > 0) {
-    console.warn("⚠️ [Capacity Limiter] Auto-resetting stuck request counter.");
-    activeRequestsCount = 0;
-    lastResetTime = now;
-  }
-
-  const startTime = Date.now();
-  while (activeRequestsCount >= MAX_CONCURRENT_HEAVY_JOBS) {
-    if (Date.now() - startTime > maxWaitMs) {
-      return false;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 300));
-  }
-  return true;
-}
-
 function isValidImageHeader(buffer: Buffer): boolean {
   if (buffer.length < 4) return false;
   const hex = buffer.subarray(0, 4).toString("hex").toUpperCase();
@@ -72,6 +47,9 @@ function isValidImageHeader(buffer: Buffer): boolean {
 
   return isJpeg || isPng || isWebp;
 }
+
+// Helper to delay execution during 503 retry
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(req: Request) {
   try {
@@ -91,19 +69,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Capacity Check
-    const capacityAvailable = await waitForServerCapacity(8000);
-    if (!capacityAvailable) {
-      return NextResponse.json(
-        {
-          isDrawing: false,
-          message: "Server is under heavy load. Please try again in 5 seconds.",
-          errorCode: "ERR_108_BUSY",
-        },
-        { status: 503 }
-      );
-    }
-
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -116,7 +81,7 @@ export async function POST(req: Request) {
     const cookieKey = userId ? `otto_last_scan_time_${userId}` : "otto_last_scan_time";
     const lastScanCookie = cookieStore.get(cookieKey);
 
-    // 3. Daily Limit Lock Check (Cookie)
+    // 2. Daily Limit Lock Check (Cookie)
     if (lastScanCookie) {
       const lastScanTime = new Date(lastScanCookie.value).getTime();
       const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
@@ -137,6 +102,7 @@ export async function POST(req: Request) {
     }
 
     if (!apiKey) {
+      console.error("❌ GEMINI_API_KEY is missing in environment variables!");
       return NextResponse.json(
         { isDrawing: false, message: "Server configuration issue: GEMINI_API_KEY missing.", errorCode: "ERR_102" },
         { status: 500 }
@@ -189,7 +155,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // 4. Supabase DB RPC Scan Check
+    // 3. Supabase DB RPC Scan Check
     if (userId && supabaseAdmin) {
       const { data: isAllowed, error: lockError } = await supabaseAdmin
         .rpc("check_and_lock_scan", { user_id_param: userId });
@@ -264,14 +230,12 @@ export async function POST(req: Request) {
     let lastApiStatus = 0;
     let lastApiErrorMsg = "";
 
-    activeRequestsCount++;
-    lastResetTime = Date.now();
-
-    try {
-      for (const modelName of MODELS_TO_TRY) {
+    modelLoop: for (const modelName of MODELS_TO_TRY) {
+      // Allow up to 2 attempts per model for transient 503 high-demand errors
+      for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
+          const timeoutId = setTimeout(() => controller.abort(), 12000);
 
           const apiResponse = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
@@ -306,43 +270,33 @@ export async function POST(req: Request) {
               const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
               jsonResult = JSON.parse(cleanJsonText);
               console.log(`✅ Success with Gemini Model: ${modelName}`);
-              break;
+              break modelLoop;
             }
           } else {
             const errData = await apiResponse.json().catch(() => null);
             lastApiErrorMsg = errData?.error?.message || apiResponse.statusText;
             console.error(`❌ [Gemini Error] Model ${modelName} Status ${apiResponse.status}:`, lastApiErrorMsg);
 
-            if (apiResponse.status === 503 || apiResponse.status === 429) {
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-              continue;
+            // If 503 High Demand, wait 1 second before attempt 2
+            if (apiResponse.status === 503 && attempt === 1) {
+              console.log(`⏳ Model ${modelName} returned 503. Retrying in 1000ms...`);
+              await sleep(1000);
             }
           }
         } catch (err: any) {
-          console.warn(`⚠️ [Otto AI Fetch Warning] Model ${modelName} failed:`, err?.message || err);
+          console.warn(`⚠️ [Otto AI Fetch Warning] Model ${modelName} Attempt ${attempt} failed:`, err?.message || err);
         }
       }
-    } finally {
-      activeRequestsCount = Math.max(0, activeRequestsCount - 1);
     }
 
     if (!jsonResult) {
-      let debugCode = "ERR_106A";
-      let debugMessage = "Otto AI server is busy right now. Please tap Scan again in 5 seconds.";
-
-      if (lastApiStatus === 400 || lastApiStatus === 403) {
-        debugCode = "ERR_106B";
-        debugMessage = `API Key issue: ${lastApiErrorMsg || "Key invalid or disabled."}`;
-      } else if (lastApiStatus === 429) {
-        debugCode = "ERR_106C";
-        debugMessage = "Quota rate limit reached. Please wait a minute or add billing.";
-      } else if (lastApiStatus === 503) {
-        debugCode = "ERR_106D";
-        debugMessage = "Google AI service is experiencing high traffic. Please try scanning again.";
-      }
-
       return NextResponse.json(
-        { isDrawing: false, message: debugMessage, errorCode: debugCode, httpStatus: lastApiStatus, rawError: lastApiErrorMsg },
+        {
+          isDrawing: false,
+          message: lastApiErrorMsg || "Otto AI server is experiencing high traffic. Please try again in a few moments.",
+          errorCode: "ERR_108_FETCH_FAILED",
+          status: lastApiStatus,
+        },
         { status: 502 }
       );
     }
@@ -353,29 +307,18 @@ export async function POST(req: Request) {
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
 
       if (userId && supabaseAdmin) {
-        const { data: dbData, error: dbError } = await supabaseAdmin
+        await supabaseAdmin
           .from("profiles")
-          .upsert({ 
-            id: userId, 
-            last_scanned_at: now.toISOString() 
-          }, { onConflict: "id" })
-          .select();
-
-        if (dbError) {
-          console.error("❌ Supabase Update Error:", dbError.message);
-        } else {
-          console.log("✅ Supabase Scan Timestamp Updated:", dbData);
-        }
+          .upsert({ id: userId, last_scanned_at: now.toISOString() }, { onConflict: "id" });
       }
 
       const response = NextResponse.json(jsonResult);
-
       response.cookies.set(cookieKey, now.toISOString(), {
         maxAge: 86400,
         path: "/",
         httpOnly: true,
         sameSite: "strict",
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
       });
 
       return response;
