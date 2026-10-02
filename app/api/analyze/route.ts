@@ -7,6 +7,7 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
+// Gemini 2.5 Removed — Only 3.x Flash Models
 const MODELS_TO_TRY = [
   "gemini-3.8-flash",
   "gemini-3.6-flash",
@@ -52,36 +53,40 @@ export async function POST(req: Request) {
   try {
     const forwardedFor = req.headers.get("x-forwarded-for");
     const realIp = req.headers.get("x-real-ip");
+    const userAgent = req.headers.get("user-agent") || "unknown";
     const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "0.0.0.0";
 
+    // Rate Limiting
     if (isRateLimited(ip)) {
       return NextResponse.json(
         {
           isDrawing: false,
-          message: "Too many requests. Please wait 1 minute before scanning again.",
-          errorCode: "ERR_100",
+          message: "Too many requests. Please wait 1 minute before scanning again. (#100)",
+          errorCode: "#100",
         },
         { status: 429 }
       );
     }
 
-    // Auto-detect Supabase Environment Variables with all possible fallback names
     const supabaseUrl = 
       process.env.NEXT_PUBLIC_SUPABASE_URL || 
-      process.env.SUPABASE_URL;
+      process.env.SUPABASE_URL ||
+      "https://otsiwrtnkzhrztl.supabase.co";
 
     const supabaseKey = 
+      process.env["NEXT_PUBLIC_SUQ.AbPABASE_ANON_KEY"] || 
       process.env.SUPABASE_SERVICE_ROLE_KEY || 
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
-      process.env.SUPABASE_ANON_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_KEY ||
-      process.env.SUPABASE_KEY;
+      process.env.SUPABASE_ANON_KEY;
 
     const body = await req.json().catch(() => null);
-    const userId = body?.userId;
+    
+    const rawUserId = body?.userId ? String(body.userId).trim() : null;
+    const trackingIdentifier = rawUserId || `ip_${ip}`;
 
+    // Layer 1 Security: Local Cookie Check
     const cookieStore = await cookies();
-    const cookieKey = userId ? `otto_last_scan_time_${userId}` : "otto_last_scan_time";
+    const cookieKey = `otto_scan_lock_${trackingIdentifier.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
     const lastScanCookie = cookieStore.get(cookieKey);
 
     if (lastScanCookie) {
@@ -95,8 +100,8 @@ export async function POST(req: Request) {
             isDrawing: false,
             lockActive: true,
             nextAllowedTime: nextAllowed.toISOString(),
-            message: "Daily scan limit reached for this account.",
-            errorCode: "ERR_101A",
+            message: "Daily scan limit reached. You can scan 1 artwork per 24 hours. (#101)",
+            errorCode: "#101",
           },
           { status: 423 }
         );
@@ -104,15 +109,16 @@ export async function POST(req: Request) {
     }
 
     if (!apiKey) {
+      console.error("❌ GEMINI_API_KEY missing in server environment!");
       return NextResponse.json(
-        { isDrawing: false, message: "Server configuration issue: GEMINI_API_KEY missing.", errorCode: "ERR_102" },
+        { isDrawing: false, message: "Something went wrong. Please try again later. (#102)", errorCode: "#102" },
         { status: 500 }
       );
     }
 
     if (!body || !body.image || typeof body.image !== "string") {
       return NextResponse.json(
-        { isDrawing: false, message: "Please upload a valid artwork image payload.", errorCode: "ERR_103" },
+        { isDrawing: false, message: "Please upload a valid image. (#103)", errorCode: "#103" },
         { status: 400 }
       );
     }
@@ -120,7 +126,7 @@ export async function POST(req: Request) {
     const imageStr = body.image;
     if (imageStr.length > 7 * 1024 * 1024) {
       return NextResponse.json(
-        { isDrawing: false, message: "Image size too large. Maximum allowed limit is 5MB.", errorCode: "ERR_104" },
+        { isDrawing: false, message: "Image size too large. Maximum allowed limit is 5MB. (#104)", errorCode: "#104" },
         { status: 400 }
       );
     }
@@ -136,7 +142,7 @@ export async function POST(req: Request) {
 
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
       return NextResponse.json(
-        { isDrawing: false, message: "Format not supported. Upload JPG, PNG, or WEBP.", errorCode: "ERR_105A" },
+        { isDrawing: false, message: "Format not supported. Please upload JPG, PNG, or WEBP. (#105)", errorCode: "#105" },
         { status: 400 }
       );
     }
@@ -144,7 +150,7 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(base64Data, "base64");
     if (!isValidImageHeader(buffer)) {
       return NextResponse.json(
-        { isDrawing: false, message: "Corrupted or invalid image file detected.", errorCode: "ERR_105B" },
+        { isDrawing: false, message: "Corrupted or invalid image file. (#105)", errorCode: "#105" },
         { status: 400 }
       );
     }
@@ -152,29 +158,54 @@ export async function POST(req: Request) {
     // Initialize Supabase Client
     let supabase = null;
     if (supabaseUrl && supabaseKey) {
-      supabase = createClient(supabaseUrl, supabaseKey, {
-        auth: { persistSession: false }
-      });
+      try {
+        supabase = createClient(supabaseUrl, supabaseKey, {
+          auth: { persistSession: false }
+        });
+      } catch (err: any) {
+        console.error("❌ [Supabase Client Creation Error]:", err?.message);
+      }
     }
 
-    if (userId && supabase) {
-      const { data: isAllowed, error: lockError } = await supabase
-        .rpc("check_and_lock_scan", { user_id_param: userId });
+    // Layer 2 Security: Supabase Check for scan_logs
+    if (supabase) {
+      try {
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+        
+        let query = supabase
+          .from("scan_logs")
+          .select("scanned_at")
+          .gte("scanned_at", twentyFourHoursAgo)
+          .order("scanned_at", { ascending: false })
+          .limit(1);
 
-      if (lockError) {
-        console.warn("⚠️ Supabase RPC Lock Warning:", lockError.message);
-      }
+        if (rawUserId) {
+          query = query.eq("user_id", rawUserId);
+        } else {
+          query = query.eq("ip_address", ip);
+        }
 
-      if (isAllowed === false) {
-        return NextResponse.json(
-          {
-            isDrawing: false,
-            lockActive: true,
-            message: "Daily scan limit reached for your account.",
-            errorCode: "ERR_101B",
-          },
-          { status: 423 }
-        );
+        const { data: recentScans, error: dbQueryError } = await query;
+
+        if (dbQueryError) {
+          console.warn("⚠️ Supabase Lock Query Warning:", dbQueryError.message);
+        } else if (recentScans && recentScans.length > 0) {
+          const lastScanTime = new Date(recentScans[0].scanned_at).getTime();
+          const nextAllowed = new Date(lastScanTime + 24 * 60 * 60 * 1000);
+
+          return NextResponse.json(
+            {
+              isDrawing: false,
+              lockActive: true,
+              nextAllowedTime: nextAllowed.toISOString(),
+              message: "Daily scan limit reached. You can scan 1 artwork per 24 hours. (#101)",
+              errorCode: "#101",
+            },
+            { status: 423 }
+          );
+        }
+      } catch (dbErr: any) {
+        console.warn("⚠️ Supabase Query Catch Warning:", dbErr?.message);
       }
     }
 
@@ -200,7 +231,7 @@ export async function POST(req: Request) {
 
       VALIDATION RULE:
       If not related to art/drawing/design (e.g. selfie, document, code, real photo):
-      Return ONLY: {"isDrawing": false, "message": "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art."}
+      Return ONLY: {"isDrawing": false, "message": "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art. (#106)"}
 
       RETURN STRICTLY VALID JSON ONLY:
       {
@@ -235,7 +266,7 @@ export async function POST(req: Request) {
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000);
+          const timeoutId = setTimeout(() => controller.abort(), 10000);
 
           const apiResponse = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
@@ -254,7 +285,7 @@ export async function POST(req: Request) {
                 ],
                 generationConfig: {
                   responseMimeType: "application/json",
-                  maxOutputTokens: 2048,
+                  maxOutputTokens: 1500,
                   temperature: 0.2,
                 },
               }),
@@ -277,12 +308,19 @@ export async function POST(req: Request) {
             lastApiErrorMsg = errData?.error?.message || apiResponse.statusText;
             console.error(`❌ [Gemini Error] Model ${modelName} Status ${apiResponse.status}:`, lastApiErrorMsg);
 
-            if (apiResponse.status === 503 && attempt === 1) {
-              await sleep(1000);
+            if (apiResponse.status === 503 || apiResponse.status === 429) {
+              break;
+            }
+
+            if (attempt === 1) {
+              await sleep(500);
             }
           }
         } catch (err: any) {
           console.warn(`⚠️ [Otto AI Fetch Warning] Model ${modelName} Attempt ${attempt} failed:`, err?.message || err);
+          if (attempt === 1) {
+            await sleep(500);
+          }
         }
       }
     }
@@ -291,38 +329,44 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           isDrawing: false,
-          message: lastApiErrorMsg || "Otto AI server is experiencing high traffic. Please try again in a few moments.",
-          errorCode: "ERR_108_FETCH_FAILED",
+          message: "Something went wrong. Please try again. (#108)",
+          errorCode: "#108",
           status: lastApiStatus,
         },
         { status: 502 }
       );
     }
 
+    // Direct Database Insert into scan_logs
     if (jsonResult.isDrawing === true) {
       const now = new Date();
       const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
 
-      // INSERT SCAN LOG INTO SCAN_LOGS TABLE
-      if (userId && supabase) {
-        const { error: insertError } = await supabase
-          .from("scan_logs")
-          .insert([
-            { user_id: userId, scanned_at: now.toISOString() }
-          ]);
+      if (supabase) {
+        try {
+          const insertPayload: Record<string, any> = {
+            scanned_at: now.toISOString(),
+            ip_address: ip,
+            user_agent: userAgent
+          };
 
-        if (insertError) {
-          console.error("❌ Failed to insert into scan_logs:", insertError.message);
-        } else {
-          console.log(`✅ Successfully inserted scan_log for userId: ${userId}`);
+          if (rawUserId) {
+            insertPayload.user_id = rawUserId;
+          }
+
+          const { error: insertError } = await supabase
+            .from("scan_logs")
+            .insert([insertPayload]);
+
+          if (insertError) {
+            console.error("❌ Supabase scan_logs insert error:", insertError.message);
+          } else {
+            console.log(`✅ Logged scan to Supabase scan_logs! Identifier: ${trackingIdentifier}`);
+          }
+        } catch (dbInsertErr: any) {
+          console.error("❌ Supabase DB Insert Catch Error:", dbInsertErr?.message);
         }
-      } else {
-        console.warn("⚠️️ Could not log scan details:", {
-          hasUserId: !!userId,
-          hasSupabaseUrl: !!supabaseUrl,
-          hasSupabaseKey: !!supabaseKey
-        });
       }
 
       const response = NextResponse.json(jsonResult, { status: 200 });
@@ -337,12 +381,16 @@ export async function POST(req: Request) {
       return response;
     }
 
+    if (!jsonResult.message) {
+      jsonResult.message = "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art. (#106)";
+    }
+
     return NextResponse.json(jsonResult, { status: 200 });
 
   } catch (error: any) {
     console.error("❌ Catch Block Internal Error:", error);
     return NextResponse.json(
-      { isDrawing: false, message: "Internal server runtime error. Try again.", errorCode: "ERR_107", rawError: error?.message },
+      { isDrawing: false, message: "Something went wrong. Please try again. (#500)", errorCode: "#500" },
       { status: 500 }
     );
   }

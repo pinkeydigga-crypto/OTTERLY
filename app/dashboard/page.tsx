@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, TouchEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -61,6 +61,10 @@ export default function DashboardPage() {
   const [userRank, setUserRank] = useState<number | string>("-");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  // Swipe gesture tracking
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
 
   const isFetchingRef = useRef(false);
 
@@ -250,7 +254,6 @@ export default function DashboardPage() {
   const rawUserName = profile?.name || profile?.username || "Artist";
   const sanitizedName = sanitizeString(rawUserName);
   
-  // Format username with first letter capital and add exclamation mark
   const formattedUserName = `${sanitizedName.charAt(0).toUpperCase()}${sanitizedName.slice(1)}!`;
 
   const slidesData = [
@@ -272,6 +275,35 @@ export default function DashboardPage() {
       mascot: welcomeMascotUrl
     }
   ];
+
+  // Touch Swipe Handlers for Mobile Slider
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const isSwipeLeft = distance > 40;
+    const isSwipeRight = distance < -40;
+
+    if (isSwipeLeft && currentSlide < slidesData.length - 1) {
+      triggerHaptic();
+      setCurrentSlide((prev) => prev + 1);
+    }
+
+    if (isSwipeRight && currentSlide > 0) {
+      triggerHaptic();
+      setCurrentSlide((prev) => prev - 1);
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", active: true, icon: LayoutDashboard },
@@ -309,12 +341,12 @@ export default function DashboardPage() {
             alt="Otterleo Logo"
             width={120}
             height={48}
-            className="h-12 w-auto object-contain"
+            className="h-10 w-auto object-contain"
             priority
           />
         </div>
 
-        <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 px-3 py-1 rounded-full text-orange-600 font-extrabold text-xs">
+        <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 px-3 py-1.5 rounded-full text-orange-600 font-extrabold text-xs">
           <Flame className="w-4 h-4 fill-orange-500 stroke-orange-500" />
           <span>{userStreak}</span>
         </div>
@@ -339,7 +371,7 @@ export default function DashboardPage() {
                   alt="Otterleo Logo"
                   width={120}
                   height={48}
-                  className="h-12 w-auto object-contain"
+                  className="h-10 w-auto object-contain"
                 />
                 <button
                   onClick={() => {
@@ -403,7 +435,7 @@ export default function DashboardPage() {
               alt="Otterleo Logo"
               width={160}
               height={64}
-              className="h-16 sm:h-20 w-auto object-contain"
+              className="h-14 sm:h-16 w-auto object-contain"
               priority
             />
           </div>
@@ -448,40 +480,46 @@ export default function DashboardPage() {
       {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto space-y-6 overflow-y-auto w-full">
         
-        {/* Welcome Card matching image style */}
-        <div className="relative px-6 py-5 sm:px-7 sm:py-6 flex items-center justify-between min-h-[150px] sm:min-h-[165px] bg-[#EBF3FF] rounded-[2rem] border border-blue-100/80 shadow-xs overflow-hidden">
-          
-          <div className="z-10 max-w-[210px] sm:max-w-xs flex flex-col justify-center space-y-1">
+        {/* Responsive, Bigger & Touch Swipeable Welcome Card */}
+        <div
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="relative px-6 py-6 sm:px-8 sm:py-8 flex items-center justify-between min-h-[170px] sm:min-h-[190px] bg-[#EBF3FF] rounded-[2.2rem] border border-blue-100/90 shadow-xs overflow-hidden select-none touch-pan-y"
+        >
+          {/* Text Container - Ensured zero overlap */}
+          <div className="z-10 max-w-[60%] sm:max-w-[65%] md:max-w-md flex flex-col justify-center space-y-1.5">
 
             {currentSlideData.isWelcome ? (
-              <h1 className="text-2xl sm:text-3xl font-black text-[#0B192C] tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#0B192C] tracking-tight leading-tight">
                 <div>{currentSlideData.titleLine1}</div>
-                <div>{currentSlideData.titleLine2}</div>
+                <div className="text-[#2563EB] truncate">{currentSlideData.titleLine2}</div>
               </h1>
             ) : (
-              <h1 className="text-xl sm:text-2xl font-black text-[#0B192C] tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-black text-[#0B192C] tracking-tight leading-tight">
                 {currentSlideData.title}
               </h1>
             )}
 
-            <p className="text-xs sm:text-sm font-semibold text-slate-500 leading-snug pt-0.5">
+            <p className="text-xs sm:text-base font-semibold text-slate-600 leading-snug pt-0.5">
               {currentSlideData.description}
             </p>
 
             {currentSlideData.buttonText && currentSlideData.buttonPath ? (
-              <div className="pt-1">
+              <div className="pt-2">
                 <Link
                   href={currentSlideData.buttonPath!}
                   onClick={triggerHaptic}
-                  className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white px-3.5 py-1 rounded-full font-bold text-xs shadow-sm transition-all"
+                  className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white px-4 py-2 rounded-full font-bold text-xs sm:text-sm shadow-md transition-all"
                 >
                   <span>{currentSlideData.buttonText}</span>
-                  <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                 </Link>
               </div>
             ) : null}
 
-            <div className="flex items-center gap-1.5 pt-2">
+            {/* Pagination Dots */}
+            <div className="flex items-center gap-2 pt-3">
               {slidesData.map((_, idx) => (
                 <button
                   key={idx}
@@ -491,7 +529,7 @@ export default function DashboardPage() {
                   }}
                   className={`transition-all duration-300 ${
                     currentSlide === idx
-                      ? "w-2.5 h-2.5 rounded-full bg-[#2563EB]"
+                      ? "w-7 h-2.5 rounded-full bg-[#2563EB]"
                       : "w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-slate-400"
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
@@ -501,47 +539,49 @@ export default function DashboardPage() {
 
           </div>
 
-          <div className="absolute right-2 bottom-0 sm:right-5 z-20 flex items-end shrink-0 pointer-events-none">
+          {/* Mascot Image - Optimized positioning & Increased size */}
+          <div className="absolute right-1 bottom-0 sm:right-4 md:right-8 z-20 flex items-end shrink-0 pointer-events-none">
             <Image
               src={currentSlideData.mascot}
               alt="Otter Mascot"
-              width={140}
-              height={140}
-              className="w-28 h-28 sm:w-36 sm:h-36 object-contain block align-bottom select-none"
+              width={170}
+              height={170}
+              className="w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 object-contain block align-bottom select-none drop-shadow-sm"
+              priority
             />
           </div>
 
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 sm:pt-0">
-          <div className="bg-amber-50/50 p-5 rounded-[2rem] border border-amber-200/60 shadow-xs flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-amber-400 text-white flex items-center justify-center border-b-4 border-amber-600 shrink-0">
-              <Star className="w-9 h-9 fill-white stroke-amber-400" />
+        {/* Scaled & Enlarged Stats Cards Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4.5 pt-1">
+          <div className="bg-amber-50/60 p-6 rounded-[2.2rem] border border-amber-200/70 shadow-xs flex items-center gap-4 transition-all hover:scale-[1.01]">
+            <div className="w-16 h-16 rounded-2xl bg-amber-400 text-white flex items-center justify-center border-b-4 border-amber-600 shrink-0 shadow-sm">
+              <Star className="w-10 h-10 fill-white stroke-amber-400" />
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Total XP</p>
-              <h3 className="text-2xl font-black text-[#0F172A]">{userXp.toLocaleString()} XP</h3>
+              <h3 className="text-2xl sm:text-3xl font-black text-[#0F172A]">{userXp.toLocaleString()} XP</h3>
             </div>
           </div>
 
-          <div className="bg-orange-50/50 p-5 rounded-[2rem] border border-orange-200/60 shadow-xs flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center border-b-4 border-orange-700 shrink-0">
-              <Flame className="w-10 h-10 fill-white stroke-orange-500" />
+          <div className="bg-orange-50/60 p-6 rounded-[2.2rem] border border-orange-200/70 shadow-xs flex items-center gap-4 transition-all hover:scale-[1.01]">
+            <div className="w-16 h-16 rounded-2xl bg-orange-500 text-white flex items-center justify-center border-b-4 border-orange-700 shrink-0 shadow-sm">
+              <Flame className="w-11 h-11 fill-white stroke-orange-500" />
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Current Streak</p>
-              <h3 className="text-2xl font-black text-[#0F172A]">{userStreak} Days</h3>
+              <h3 className="text-2xl sm:text-3xl font-black text-[#0F172A]">{userStreak} Days</h3>
             </div>
           </div>
 
-          <div className="bg-blue-50/50 p-5 rounded-[2rem] border border-blue-200/60 shadow-xs flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center border-b-4 border-blue-800 shrink-0">
-              <Trophy className="w-9 h-9 fill-white stroke-blue-600" />
+          <div className="bg-blue-50/60 p-6 rounded-[2.2rem] border border-blue-200/70 shadow-xs flex items-center gap-4 transition-all hover:scale-[1.01]">
+            <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center border-b-4 border-blue-800 shrink-0 shadow-sm">
+              <Trophy className="w-10 h-10 fill-white stroke-blue-600" />
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Your Rank</p>
-              <h3 className="text-2xl font-black text-[#0F172A]">{userRank}</h3>
+              <h3 className="text-2xl sm:text-3xl font-black text-[#0F172A]">{userRank}</h3>
             </div>
           </div>
         </div>
@@ -551,16 +591,16 @@ export default function DashboardPage() {
           <XpWheel />
         </section>
 
-        {/* AI Scan Card */}
-        <div className="bg-[#2563EB] text-[#2563EB] p-6 sm:p-8 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+        {/* AI Scan Banner Card */}
+        <div className="bg-[#2563EB] text-[#2563EB] p-7 sm:p-9 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-4 max-w-lg z-10 text-white">
             <h2 className="text-2xl sm:text-3xl font-black leading-tight">
               Scan & Analyze Your Artwork
             </h2>
-            <p className="text-sm font-black text-blue-100">
+            <p className="text-sm font-semibold text-blue-100 leading-relaxed">
               Upload your drawing to get instant AI-powered feedback, score, and tips to improve!
             </p>
-            <div>
+            <div className="pt-1">
               <Link
                 href="/scan"
                 onClick={triggerHaptic}
