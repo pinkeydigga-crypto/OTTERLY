@@ -7,16 +7,15 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
-// Models order (3.8, 3.6 aur fallback models)
+// Valid Active Gemini Models (Aapke mutabiq exact same rakha hai)
 const MODELS_TO_TRY = [
   "gemini-3.8-flash",
-  "gemini-3.6-flash",
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash"
+  "gemini-2.0-flash-exp",
+  "gemini-1.5-pro",
+  "gemini-3.8-flash"
 ];
 
-// Anti-Hacker In-Memory Rate Limiter
+// Anti-Spam In-Memory Rate Limiter
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
 function isRateLimited(ip: string): boolean {
@@ -39,11 +38,20 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-// Global In-Memory Concurrency Queue
+// Global Concurrency Limiter
 let activeRequestsCount = 0;
+let lastResetTime = Date.now();
 const MAX_CONCURRENT_HEAVY_JOBS = 5;
 
-async function waitForServerCapacity(maxWaitMs = 15000): Promise<boolean> {
+async function waitForServerCapacity(maxWaitMs = 8000): Promise<boolean> {
+  const now = Date.now();
+
+  if (now - lastResetTime > 15000 && activeRequestsCount > 0) {
+    console.warn("⚠️ [Capacity Limiter] Auto-resetting stuck request counter.");
+    activeRequestsCount = 0;
+    lastResetTime = now;
+  }
+
   const startTime = Date.now();
   while (activeRequestsCount >= MAX_CONCURRENT_HEAVY_JOBS) {
     if (Date.now() - startTime > maxWaitMs) {
@@ -54,7 +62,6 @@ async function waitForServerCapacity(maxWaitMs = 15000): Promise<boolean> {
   return true;
 }
 
-// Magic Bytes Check
 function isValidImageHeader(buffer: Buffer): boolean {
   if (buffer.length < 4) return false;
   const hex = buffer.subarray(0, 4).toString("hex").toUpperCase();
@@ -72,6 +79,7 @@ export async function POST(req: Request) {
     const realIp = req.headers.get("x-real-ip");
     const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "0.0.0.0";
 
+    // 1. IP Rate Limiting Check
     if (isRateLimited(ip)) {
       return NextResponse.json(
         {
@@ -83,7 +91,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const capacityAvailable = await waitForServerCapacity(12000);
+    // 2. Capacity Check
+    const capacityAvailable = await waitForServerCapacity(8000);
     if (!capacityAvailable) {
       return NextResponse.json(
         {
@@ -107,6 +116,7 @@ export async function POST(req: Request) {
     const cookieKey = userId ? `otto_last_scan_time_${userId}` : "otto_last_scan_time";
     const lastScanCookie = cookieStore.get(cookieKey);
 
+    // 3. Daily Limit Lock Check (Cookie)
     if (lastScanCookie) {
       const lastScanTime = new Date(lastScanCookie.value).getTime();
       const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
@@ -179,6 +189,7 @@ export async function POST(req: Request) {
       });
     }
 
+    // 4. Supabase DB RPC Scan Check
     if (userId && supabaseAdmin) {
       const { data: isAllowed, error: lockError } = await supabaseAdmin
         .rpc("check_and_lock_scan", { user_id_param: userId });
@@ -249,11 +260,12 @@ export async function POST(req: Request) {
       }
     `;
 
-    let jsonResult = null;
+    let jsonResult: any = null;
     let lastApiStatus = 0;
     let lastApiErrorMsg = "";
 
     activeRequestsCount++;
+    lastResetTime = Date.now();
 
     try {
       for (const modelName of MODELS_TO_TRY) {
@@ -293,17 +305,16 @@ export async function POST(req: Request) {
             if (rawText) {
               const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
               jsonResult = JSON.parse(cleanJsonText);
-              console.log(`✅ Success with model: ${modelName}`);
-              break; // Call success, exit model loop
+              console.log(`✅ Success with Gemini Model: ${modelName}`);
+              break;
             }
           } else {
             const errData = await apiResponse.json().catch(() => null);
             lastApiErrorMsg = errData?.error?.message || apiResponse.statusText;
             console.error(`❌ [Gemini Error] Model ${modelName} Status ${apiResponse.status}:`, lastApiErrorMsg);
 
-            // KEY CHANGE: Agar 429 quota limit hit ho, to instant next model switch karein (retry spam na ho)
-            if (apiResponse.status === 429) {
-              console.warn(`⚠️ Model ${modelName} rate limited. Trying fallback model...`);
+            if (apiResponse.status === 503 || apiResponse.status === 429) {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
               continue;
             }
           }
@@ -339,16 +350,8 @@ export async function POST(req: Request) {
     if (jsonResult.isDrawing === true) {
       const now = new Date();
       const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      jsonResult.nextAllowedTime = nextAllowed.toISOString();
 
-      cookieStore.set(cookieKey, now.toISOString(), {
-        maxAge: 86400,
-        path: "/",
-        httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV === "production",
-      });
-
-      // SUPABASE UPSERT FIX (Ensures last_scanned_at is never null)
       if (userId && supabaseAdmin) {
         const { data: dbData, error: dbError } = await supabaseAdmin
           .from("profiles")
@@ -361,17 +364,29 @@ export async function POST(req: Request) {
         if (dbError) {
           console.error("❌ Supabase Update Error:", dbError.message);
         } else {
-          console.log("✅ Supabase Scan Updated Successfully:", dbData);
+          console.log("✅ Supabase Scan Timestamp Updated:", dbData);
         }
       }
 
-      jsonResult.nextAllowedTime = nextAllowed.toISOString();
+      const response = NextResponse.json(jsonResult);
+
+      response.cookies.set(cookieKey, now.toISOString(), {
+        maxAge: 86400,
+        path: "/",
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+      });
+
+      return response;
     }
 
     return NextResponse.json(jsonResult);
-  } catch (error: unknown) {
+
+  } catch (error: any) {
+    console.error("❌ Catch Block Internal Error:", error);
     return NextResponse.json(
-      { isDrawing: false, message: "Internal server runtime error. Try again.", errorCode: "ERR_107" },
+      { isDrawing: false, message: "Internal server runtime error. Try again.", errorCode: "ERR_107", rawError: error?.message },
       { status: 500 }
     );
   }
