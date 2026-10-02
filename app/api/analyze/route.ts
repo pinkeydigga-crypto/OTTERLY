@@ -7,11 +7,11 @@ export const maxDuration = 60;
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 
-// Gemini 2.5 Removed — Only 3.x Flash Models
 const MODELS_TO_TRY = [
   "gemini-3.8-flash",
   "gemini-3.6-flash",
-  "gemini-3.5-flash"
+  "gemini-3.5-flash-lite",
+  "gemini-1.5-flash",
 ];
 
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -47,17 +47,23 @@ function isValidImageHeader(buffer: Buffer): boolean {
   return isJpeg || isPng || isWebp;
 }
 
+// Regex to validate if string is UUID format
+const isValidUUID = (id: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(req: Request) {
+  console.log("🚀 [API START] Scan request received!");
+
   try {
     const forwardedFor = req.headers.get("x-forwarded-for");
     const realIp = req.headers.get("x-real-ip");
     const userAgent = req.headers.get("user-agent") || "unknown";
     const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "0.0.0.0";
 
-    // Rate Limiting
     if (isRateLimited(ip)) {
+      console.log("⚠️ Rate limit hit");
       return NextResponse.json(
         {
           isDrawing: false,
@@ -68,19 +74,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabaseUrl = 
-      process.env.NEXT_PUBLIC_SUPABASE_URL || 
+    const supabaseUrl =
       process.env.SUPABASE_URL ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL ||
       "https://otsiwrtnkzhrztl.supabase.co";
 
-    const supabaseKey = 
-      process.env["NEXT_PUBLIC_SUQ.AbPABASE_ANON_KEY"] || 
-      process.env.SUPABASE_SERVICE_ROLE_KEY || 
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+    const supabaseKey =
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
       process.env.SUPABASE_ANON_KEY;
 
     const body = await req.json().catch(() => null);
-    
+
     const rawUserId = body?.userId ? String(body.userId).trim() : null;
     const trackingIdentifier = rawUserId || `ip_${ip}`;
 
@@ -95,6 +100,7 @@ export async function POST(req: Request) {
 
       if (hoursPassed < 24) {
         const nextAllowed = new Date(lastScanTime + 24 * 60 * 60 * 1000);
+        console.log("🔒 Cookie lock active");
         return NextResponse.json(
           {
             isDrawing: false,
@@ -109,7 +115,7 @@ export async function POST(req: Request) {
     }
 
     if (!apiKey) {
-      console.error("❌ GEMINI_API_KEY missing in server environment!");
+      console.error("❌ GEMINI_API_KEY missing in .env file!");
       return NextResponse.json(
         { isDrawing: false, message: "Something went wrong. Please try again later. (#102)", errorCode: "#102" },
         { status: 500 }
@@ -117,6 +123,7 @@ export async function POST(req: Request) {
     }
 
     if (!body || !body.image || typeof body.image !== "string") {
+      console.log("❌ Invalid image input");
       return NextResponse.json(
         { isDrawing: false, message: "Please upload a valid image. (#103)", errorCode: "#103" },
         { status: 400 }
@@ -155,12 +162,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Initialize Supabase Client
     let supabase = null;
     if (supabaseUrl && supabaseKey) {
       try {
         supabase = createClient(supabaseUrl, supabaseKey, {
-          auth: { persistSession: false }
+          auth: { persistSession: false },
         });
       } catch (err: any) {
         console.error("❌ [Supabase Client Creation Error]:", err?.message);
@@ -171,7 +177,7 @@ export async function POST(req: Request) {
     if (supabase) {
       try {
         const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        
+
         let query = supabase
           .from("scan_logs")
           .select("scanned_at")
@@ -179,7 +185,7 @@ export async function POST(req: Request) {
           .order("scanned_at", { ascending: false })
           .limit(1);
 
-        if (rawUserId) {
+        if (rawUserId && isValidUUID(rawUserId)) {
           query = query.eq("user_id", rawUserId);
         } else {
           query = query.eq("ip_address", ip);
@@ -193,6 +199,7 @@ export async function POST(req: Request) {
           const lastScanTime = new Date(recentScans[0].scanned_at).getTime();
           const nextAllowed = new Date(lastScanTime + 24 * 60 * 60 * 1000);
 
+          console.log("🔒 Supabase DB lock active!");
           return NextResponse.json(
             {
               isDrawing: false,
@@ -260,13 +267,15 @@ export async function POST(req: Request) {
 
     let jsonResult: any = null;
     let lastApiStatus = 0;
-    let lastApiErrorMsg = "";
+
+    console.log("📡 Calling Gemini API...");
 
     modelLoop: for (const modelName of MODELS_TO_TRY) {
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
+          console.log(`⏳ Trying model: ${modelName} (Attempt ${attempt})`);
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 10000);
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
 
           const apiResponse = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
@@ -285,7 +294,6 @@ export async function POST(req: Request) {
                 ],
                 generationConfig: {
                   responseMimeType: "application/json",
-                  maxOutputTokens: 1500,
                   temperature: 0.2,
                 },
               }),
@@ -293,6 +301,7 @@ export async function POST(req: Request) {
           ).finally(() => clearTimeout(timeoutId));
 
           lastApiStatus = apiResponse.status;
+          console.log(`📥 Gemini HTTP Response Status: ${apiResponse.status}`);
 
           if (apiResponse.ok) {
             const data = await apiResponse.json();
@@ -300,13 +309,12 @@ export async function POST(req: Request) {
             if (rawText) {
               const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
               jsonResult = JSON.parse(cleanJsonText);
-              console.log(`✅ Success with Gemini Model: ${modelName}`);
+              console.log(`✅ SUCCESS with Gemini Model: ${modelName}`);
               break modelLoop;
             }
           } else {
             const errData = await apiResponse.json().catch(() => null);
-            lastApiErrorMsg = errData?.error?.message || apiResponse.statusText;
-            console.error(`❌ [Gemini Error] Model ${modelName} Status ${apiResponse.status}:`, lastApiErrorMsg);
+            console.error(`❌ [Gemini API Error] Status ${apiResponse.status}:`, JSON.stringify(errData));
 
             if (apiResponse.status === 503 || apiResponse.status === 429) {
               break;
@@ -317,7 +325,7 @@ export async function POST(req: Request) {
             }
           }
         } catch (err: any) {
-          console.warn(`⚠️ [Otto AI Fetch Warning] Model ${modelName} Attempt ${attempt} failed:`, err?.message || err);
+          console.error(`⚠️ [Fetch Exception] ${modelName}:`, err?.message || err);
           if (attempt === 1) {
             await sleep(500);
           }
@@ -325,7 +333,9 @@ export async function POST(req: Request) {
       }
     }
 
+    // API Error (#108): NO LOCK
     if (!jsonResult) {
+      console.error("❌ ALL models failed. Returning 108 Error.");
       return NextResponse.json(
         {
           isDrawing: false,
@@ -337,50 +347,54 @@ export async function POST(req: Request) {
       );
     }
 
-    // Direct Database Insert into scan_logs
-    if (jsonResult.isDrawing === true) {
+    // Success response
+    if (jsonResult.isDrawing === true || jsonResult.isDrawing === "true") {
       const now = new Date();
       const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       jsonResult.nextAllowedTime = nextAllowed.toISOString();
 
+      // Insert Log to Supabase
       if (supabase) {
         try {
           const insertPayload: Record<string, any> = {
             scanned_at: now.toISOString(),
             ip_address: ip,
-            user_agent: userAgent
           };
 
-          if (rawUserId) {
+          // Valid UUID check taaki Supabase insert reject na kare
+          if (rawUserId && isValidUUID(rawUserId)) {
             insertPayload.user_id = rawUserId;
           }
 
-          const { error: insertError } = await supabase
+          const { data: insertedData, error: insertError } = await supabase
             .from("scan_logs")
-            .insert([insertPayload]);
+            .insert([insertPayload])
+            .select();
 
           if (insertError) {
-            console.error("❌ Supabase scan_logs insert error:", insertError.message);
+            console.error("❌ [SUPABASE INSERT ERROR]:", insertError.message, insertError.details);
           } else {
-            console.log(`✅ Logged scan to Supabase scan_logs! Identifier: ${trackingIdentifier}`);
+            console.log("✅ [SUPABASE INSERT SUCCESS]: Logged scan to table!", insertedData);
           }
         } catch (dbInsertErr: any) {
           console.error("❌ Supabase DB Insert Catch Error:", dbInsertErr?.message);
         }
       }
 
+      // Set cookie lock
       const response = NextResponse.json(jsonResult, { status: 200 });
       response.cookies.set(cookieKey, now.toISOString(), {
         maxAge: 86400,
         path: "/",
         httpOnly: true,
         sameSite: "strict",
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
       });
 
       return response;
     }
 
+    // Non-drawing image (#106): NO LOCK
     if (!jsonResult.message) {
       jsonResult.message = "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art. (#106)";
     }
