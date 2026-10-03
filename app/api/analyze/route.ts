@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 
 export const maxDuration = 60;
@@ -47,23 +46,30 @@ function isValidImageHeader(buffer: Buffer): boolean {
   return isJpeg || isPng || isWebp;
 }
 
-// Regex to validate if string is UUID format
 const isValidUUID = (id: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+// Local Date Formatter YYYY-MM-DD
+const getTodayLocalDate = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(req: Request) {
+  console.log("\n--------------------------------------------------");
   console.log("🚀 [API START] Scan request received!");
 
   try {
     const forwardedFor = req.headers.get("x-forwarded-for");
     const realIp = req.headers.get("x-real-ip");
-    const userAgent = req.headers.get("user-agent") || "unknown";
-    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "0.0.0.0";
+    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "127.0.0.1";
 
     if (isRateLimited(ip)) {
-      console.log("⚠️ Rate limit hit");
       return NextResponse.json(
         {
           isDrawing: false,
@@ -74,39 +80,79 @@ export async function POST(req: Request) {
       );
     }
 
+    // Checking Env Variables with exact custom variable name support
     const supabaseUrl =
-      process.env.SUPABASE_URL ||
       process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      process.env.SUPABASE_URL ||
       "https://otsiwrtnkzhrztl.supabase.co";
 
     const supabaseKey =
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env["NEXT_PUBLIC_SUQ.AbPABASE_ANON_KEY"] || // Exact env variable check
       process.env.SUPABASE_ANON_KEY;
 
     const body = await req.json().catch(() => null);
-
     const rawUserId = body?.userId ? String(body.userId).trim() : null;
-    const trackingIdentifier = rawUserId || `ip_${ip}`;
+    const todayStr = getTodayLocalDate();
 
-    // Layer 1 Security: Local Cookie Check
-    const cookieStore = await cookies();
-    const cookieKey = `otto_scan_lock_${trackingIdentifier.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
-    const lastScanCookie = cookieStore.get(cookieKey);
+    console.log("👤 User ID Received:", rawUserId || "MISSING");
 
-    if (lastScanCookie) {
-      const lastScanTime = new Date(lastScanCookie.value).getTime();
-      const hoursPassed = (Date.now() - lastScanTime) / (1000 * 60 * 60);
+    if (!rawUserId || !isValidUUID(rawUserId)) {
+      return NextResponse.json(
+        {
+          isDrawing: false,
+          message: "User authentication failed. Please login to scan. (#109)",
+          errorCode: "#109",
+        },
+        { status: 401 }
+      );
+    }
 
-      if (hoursPassed < 24) {
-        const nextAllowed = new Date(lastScanTime + 24 * 60 * 60 * 1000);
-        console.log("🔒 Cookie lock active");
+    let supabase = null;
+    if (supabaseUrl && supabaseKey) {
+      try {
+        supabase = createClient(supabaseUrl, supabaseKey, {
+          auth: { persistSession: false },
+        });
+      } catch (err: any) {
+        console.error("❌ [Supabase Init Error]:", err?.message);
+      }
+    }
+
+    if (!supabase) {
+      console.error("❌ DB Client Creation Failed! Check env key.");
+      return NextResponse.json(
+        { isDrawing: false, message: "Database connection failed. (#110)", errorCode: "#110" },
+        { status: 500 }
+      );
+    }
+
+    // 1. DIRECT DB CHECK: User ne aaj scan kiya hai ya nahi?
+    const { data: profileData, error: dbQueryError } = await supabase
+      .from("profiles")
+      .select("last_scanned_at")
+      .eq("id", rawUserId)
+      .maybeSingle();
+
+    if (dbQueryError) {
+      console.error("❌ Supabase Select Query Error:", dbQueryError.message);
+    } else if (profileData && profileData.last_scanned_at) {
+      const lastScanDate = new Date(profileData.last_scanned_at);
+      const lastYear = lastScanDate.getFullYear();
+      const lastMonth = String(lastScanDate.getMonth() + 1).padStart(2, "0");
+      const lastDay = String(lastScanDate.getDate()).padStart(2, "0");
+      const dbScanDateStr = `${lastYear}-${lastMonth}-${lastDay}`;
+
+      console.log(`📊 DB Last Scan Date: ${dbScanDateStr} | Today: ${todayStr}`);
+
+      if (dbScanDateStr === todayStr) {
+        console.log("🔒 LOCK: User already scanned today!");
         return NextResponse.json(
           {
             isDrawing: false,
             lockActive: true,
-            nextAllowedTime: nextAllowed.toISOString(),
-            message: "Daily scan limit reached. You can scan 1 artwork per 24 hours. (#101)",
+            message: "Daily scan limit reached! Unlocks tomorrow at midnight. (#101)",
             errorCode: "#101",
           },
           { status: 423 }
@@ -115,7 +161,6 @@ export async function POST(req: Request) {
     }
 
     if (!apiKey) {
-      console.error("❌ GEMINI_API_KEY missing in .env file!");
       return NextResponse.json(
         { isDrawing: false, message: "Something went wrong. Please try again later. (#102)", errorCode: "#102" },
         { status: 500 }
@@ -123,7 +168,6 @@ export async function POST(req: Request) {
     }
 
     if (!body || !body.image || typeof body.image !== "string") {
-      console.log("❌ Invalid image input");
       return NextResponse.json(
         { isDrawing: false, message: "Please upload a valid image. (#103)", errorCode: "#103" },
         { status: 400 }
@@ -162,82 +206,19 @@ export async function POST(req: Request) {
       );
     }
 
-    let supabase = null;
-    if (supabaseUrl && supabaseKey) {
-      try {
-        supabase = createClient(supabaseUrl, supabaseKey, {
-          auth: { persistSession: false },
-        });
-      } catch (err: any) {
-        console.error("❌ [Supabase Client Creation Error]:", err?.message);
-      }
-    }
-
-    // Layer 2 Security: Supabase Check for scan_logs
-    if (supabase) {
-      try {
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-
-        let query = supabase
-          .from("scan_logs")
-          .select("scanned_at")
-          .gte("scanned_at", twentyFourHoursAgo)
-          .order("scanned_at", { ascending: false })
-          .limit(1);
-
-        if (rawUserId && isValidUUID(rawUserId)) {
-          query = query.eq("user_id", rawUserId);
-        } else {
-          query = query.eq("ip_address", ip);
-        }
-
-        const { data: recentScans, error: dbQueryError } = await query;
-
-        if (dbQueryError) {
-          console.warn("⚠️ Supabase Lock Query Warning:", dbQueryError.message);
-        } else if (recentScans && recentScans.length > 0) {
-          const lastScanTime = new Date(recentScans[0].scanned_at).getTime();
-          const nextAllowed = new Date(lastScanTime + 24 * 60 * 60 * 1000);
-
-          console.log("🔒 Supabase DB lock active!");
-          return NextResponse.json(
-            {
-              isDrawing: false,
-              lockActive: true,
-              nextAllowedTime: nextAllowed.toISOString(),
-              message: "Daily scan limit reached. You can scan 1 artwork per 24 hours. (#101)",
-              errorCode: "#101",
-            },
-            { status: 423 }
-          );
-        }
-      } catch (dbErr: any) {
-        console.warn("⚠️ Supabase Query Catch Warning:", dbErr?.message);
-      }
-    }
-
     const promptText = `
-      You are "Otto", a supportive art mentor who gives insightful, detailed, clear, and encouraging feedback.
+      You are "Otto", a supportive art mentor who gives insightful feedback.
       Analyze the artwork in detail using SIMPLE and EASY English.
 
-      SCORING CRITERIA (Fair & Balanced):
-      - 0-30: Extremely rough, unrecognizable, or scribbled.
-      - 31-50: Beginner level (messy lines, minor shape errors, basic coloring attempt).
-      - 51-70: Intermediate attempt (clear subject, good effort, needs refinement).
-      - 71-88: Skilled artwork (clean execution, good technique).
+      SCORING CRITERIA:
+      - 0-30: Rough/scribbled.
+      - 31-50: Beginner level.
+      - 51-70: Intermediate attempt.
+      - 71-88: Skilled artwork.
       - 89-100: Exceptional / Masterpiece.
 
-      INSTRUCTIONS:
-      - Strengths: Highlight 2 specific good points in detailed simple sentences.
-      - Areas to Improve: List 3 detailed, constructive technical feedback points explaining what needs work.
-      - Actionable Improvements: Provide 2 practical step-by-step guidance points.
-      - Practice Recommendation: Give a specific 15-minute daily exercise drill.
-
-      SUPPORTED ART TYPES:
-      Handmade Pencil Sketches, Digital Art, Paintings, Mandala Art, Mehndi/Henna Designs, Doodles, Line Art, Geometric Drawings, 3D Tutorials/Exercises, Perspective Diagrams.
-
       VALIDATION RULE:
-      If not related to art/drawing/design (e.g. selfie, document, code, real photo):
+      If not related to art/drawing/design:
       Return ONLY: {"isDrawing": false, "message": "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art. (#106)"}
 
       RETURN STRICTLY VALID JSON ONLY:
@@ -246,34 +227,22 @@ export async function POST(req: Request) {
         "artCategory": "Detected Category Name",
         "score": 38,
         "skillLevel": "Beginner",
-        "strengths": [
-          "The overall concept and subject choice are clearly recognizable",
-          "Shows good enthusiasm in filling out the shape with color"
-        ],
-        "areasToImprove": [
-          "Outlines appear shaky and slightly uneven around the edges",
-          "Coloring spills over the main boundary lines in multiple spots",
-          "Shading lacks depth and uniform pencil pressure"
-        ],
-        "actionableImprovements": [
-          "Trace light guidelines first before making dark final strokes",
-          "Color in small circular motions to stay strictly inside boundaries"
-        ],
-        "practiceRecommendation": "Spend 15 minutes daily practicing continuous straight lines and smooth circles without rushing.",
-        "motivationalFeedback": "You have a great creative spark! Practice steady hand control every day to make your artwork pop.",
+        "strengths": ["Good concept"],
+        "areasToImprove": ["Outlines shaky"],
+        "actionableImprovements": ["Trace light guidelines"],
+        "practiceRecommendation": "Practice straight lines.",
+        "motivationalFeedback": "Great spark!",
         "message": ""
       }
     `;
 
     let jsonResult: any = null;
-    let lastApiStatus = 0;
 
     console.log("📡 Calling Gemini API...");
 
     modelLoop: for (const modelName of MODELS_TO_TRY) {
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          console.log(`⏳ Trying model: ${modelName} (Attempt ${attempt})`);
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -300,9 +269,6 @@ export async function POST(req: Request) {
             }
           ).finally(() => clearTimeout(timeoutId));
 
-          lastApiStatus = apiResponse.status;
-          console.log(`📥 Gemini HTTP Response Status: ${apiResponse.status}`);
-
           if (apiResponse.ok) {
             const data = await apiResponse.json();
             const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -313,88 +279,45 @@ export async function POST(req: Request) {
               break modelLoop;
             }
           } else {
-            const errData = await apiResponse.json().catch(() => null);
-            console.error(`❌ [Gemini API Error] Status ${apiResponse.status}:`, JSON.stringify(errData));
-
-            if (apiResponse.status === 503 || apiResponse.status === 429) {
-              break;
-            }
-
-            if (attempt === 1) {
-              await sleep(500);
-            }
+            if (attempt === 1) await sleep(500);
           }
         } catch (err: any) {
-          console.error(`⚠️ [Fetch Exception] ${modelName}:`, err?.message || err);
-          if (attempt === 1) {
-            await sleep(500);
-          }
+          if (attempt === 1) await sleep(500);
         }
       }
     }
 
-    // API Error (#108): NO LOCK
     if (!jsonResult) {
-      console.error("❌ ALL models failed. Returning 108 Error.");
       return NextResponse.json(
-        {
-          isDrawing: false,
-          message: "Something went wrong. Please try again. (#108)",
-          errorCode: "#108",
-          status: lastApiStatus,
-        },
+        { isDrawing: false, message: "Something went wrong. Please try again. (#108)", errorCode: "#108" },
         { status: 502 }
       );
     }
 
-    // Success response
-    if (jsonResult.isDrawing === true || jsonResult.isDrawing === "true") {
-      const now = new Date();
-      const nextAllowed = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      jsonResult.nextAllowedTime = nextAllowed.toISOString();
+    const isDrawingValid =
+      jsonResult.isDrawing === true ||
+      jsonResult.isDrawing === "true" ||
+      String(jsonResult.isDrawing).toLowerCase() === "true";
 
-      // Insert Log to Supabase
-      if (supabase) {
-        try {
-          const insertPayload: Record<string, any> = {
-            scanned_at: now.toISOString(),
-            ip_address: ip,
-          };
+    // 2. RESULT MILNE PAR HI DB UPDATE HOGA
+    if (isDrawingValid) {
+      console.log("🟢 Result mil gaya! Profiles table me timestamp update kar rahe hain...");
+      const nowTimestampz = new Date().toISOString();
 
-          // Valid UUID check taaki Supabase insert reject na kare
-          if (rawUserId && isValidUUID(rawUserId)) {
-            insertPayload.user_id = rawUserId;
-          }
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ last_scanned_at: nowTimestampz })
+        .eq("id", rawUserId);
 
-          const { data: insertedData, error: insertError } = await supabase
-            .from("scan_logs")
-            .insert([insertPayload])
-            .select();
-
-          if (insertError) {
-            console.error("❌ [SUPABASE INSERT ERROR]:", insertError.message, insertError.details);
-          } else {
-            console.log("✅ [SUPABASE INSERT SUCCESS]: Logged scan to table!", insertedData);
-          }
-        } catch (dbInsertErr: any) {
-          console.error("❌ Supabase DB Insert Catch Error:", dbInsertErr?.message);
-        }
+      if (updateError) {
+        console.error("❌ [SUPABASE UPDATE ERROR]:", updateError.message);
+      } else {
+        console.log(`🎉 [SUCCESS]: 'last_scanned_at' updated to ${nowTimestampz}`);
       }
 
-      // Set cookie lock
-      const response = NextResponse.json(jsonResult, { status: 200 });
-      response.cookies.set(cookieKey, now.toISOString(), {
-        maxAge: 86400,
-        path: "/",
-        httpOnly: true,
-        sameSite: "strict",
-        secure: process.env.NODE_ENV === "production",
-      });
-
-      return response;
+      return NextResponse.json(jsonResult, { status: 200 });
     }
 
-    // Non-drawing image (#106): NO LOCK
     if (!jsonResult.message) {
       jsonResult.message = "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art. (#106)";
     }
@@ -402,7 +325,7 @@ export async function POST(req: Request) {
     return NextResponse.json(jsonResult, { status: 200 });
 
   } catch (error: any) {
-    console.error("❌ Catch Block Internal Error:", error);
+    console.error("❌ Internal Error:", error);
     return NextResponse.json(
       { isDrawing: false, message: "Something went wrong. Please try again. (#500)", errorCode: "#500" },
       { status: 500 }

@@ -390,7 +390,7 @@ export default function ScanPage() {
             );
           }
         }
-      } flex: {
+      } finally {
         if (success || attempt >= maxRetries) {
           setIsAnalyzing(false);
         }
@@ -609,9 +609,14 @@ export default function ScanPage() {
           {/* Right Column: Scan & Evaluation */}
           <div className="md:col-span-7 bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex flex-col space-y-6">
             <div className="space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A]">
-                Scan & Analyze Artwork
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A]">
+                  Scan & Analyze Artwork
+                </h1>
+                <span className="bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border border-blue-200">
+                  Refreshes Daily
+                </span>
+              </div>
               <p className="text-sm font-bold text-slate-500">
                 Upload a clear image of your drawing to start analysis.
               </p>
@@ -626,12 +631,14 @@ export default function ScanPage() {
                   </div>
 
                   <div className="space-y-1.5">
+                    <span className="inline-block bg-amber-100 text-amber-800 text-[11px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-200">
+                      Refreshes Daily
+                    </span>
                     <p className="text-lg font-black tracking-tight text-amber-950 uppercase">
                       Daily Scan Limit Active
                     </p>
                     <p className="text-sm font-extrabold text-amber-800 leading-relaxed max-w-xs">
-                      Otto AI accepts one artwork scan per 24 hours to encourage
-                      proper practice over rapid uploads.
+                      Otto AI allows 1 scan per day to ensure balanced practice. Your limit resets every 24 hours.
                     </p>
                   </div>
 
@@ -696,7 +703,7 @@ export default function ScanPage() {
                   </div>
                   <p className="text-base font-black text-[#0F172A] text-center">
                     {countdown
-                      ? "Daily Limit Locked"
+                      ? "Daily Limit Locked (Refreshes Daily)"
                       : "Click or drag artwork here to scan"}
                   </p>
                   <p className="text-xs font-bold text-slate-400 mt-1">
@@ -788,7 +795,7 @@ export default function ScanPage() {
                 ) : countdown ? (
                   <>
                     <ShieldAlert className="w-5 h-5 text-amber-300" />
-                    <span>Scan Disabled (Limit Locked)</span>
+                    <span>Scan Disabled (Refreshes Daily)</span>
                   </>
                 ) : (
                   <>
@@ -804,7 +811,12 @@ export default function ScanPage() {
                 <div className="bg-amber-50 border-2 border-dashed border-amber-200 p-5 rounded-2xl flex items-center justify-between text-amber-950 text-sm font-extrabold gap-3">
                   <div className="flex gap-3">
                     <ShieldAlert className="w-6 h-6 text-amber-600" />
-                    <span>Next artwork scan available in:</span>
+                    <div>
+                      <span>Next artwork scan available in:</span>
+                      <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
+                        Refreshes Daily
+                      </p>
+                    </div>
                   </div>
                   {analysis.nextAllowedTime && (
                     <div className="bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-200 text-slate-800 font-bold text-sm tabular-nums flex items-center gap-1">
@@ -916,7 +928,7 @@ export default function ScanPage() {
                   disabled={true}
                   className="w-full bg-slate-100 text-slate-500 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all disabled:opacity-70 cursor-not-allowed"
                 >
-                  Daily Scan Limit Reached
+                  Daily Scan Limit Reached (Refreshes Daily)
                 </button>
               </div>
             )}
