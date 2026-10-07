@@ -89,7 +89,7 @@ export async function POST(req: Request) {
     const supabaseKey =
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      process.env["NEXT_PUBLIC_SUQ.AbPABASE_ANON_KEY"] || // Exact env variable check
+      process.env["NEXT_PUBLIC_SUAbPABASE_ANON_KEY"] || // Exact env variable check
       process.env.SUPABASE_ANON_KEY;
 
     const body = await req.json().catch(() => null);
