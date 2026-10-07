@@ -19,7 +19,7 @@ export default function HomePage() {
     const checkUserSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const isLoggedInLocal = localStorage.getItem('isLoggedIn') === 'true';
+        const isLoggedInLocal = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true';
 
         if (session || isLoggedInLocal) {
           router.replace('/dashboard');
@@ -113,7 +113,7 @@ export default function HomePage() {
         background: 'radial-gradient(circle at top, #F1F5F9 0%, #F8FAFC 50%, #FFFFFF 100%)',
         minHeight: '100vh',
       }}
-      className="relative selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased flex flex-col justify-between text-[#0F172A] overflow-x-hidden"
+      className="relative selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased flex flex-col justify-between text-[#0F172A] overflow-x-hidden overflow-y-auto w-full"
     >
       <script
         type="application/ld+json"
@@ -124,7 +124,7 @@ export default function HomePage() {
         @keyframes slideInWithShadow {
           0% {
             opacity: 0;
-            transform: translate3d(-60px, 0, 0);
+            transform: translate3d(-30px, 0, 0);
           }
           100% {
             opacity: 1;
@@ -170,7 +170,7 @@ export default function HomePage() {
       `}</style>
 
       {/* Header */}
-      <header className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-2 flex justify-center items-center z-10">
+      <header className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-2 flex justify-center items-center z-10 shrink-0">
         <div className="relative w-44 h-14 sm:w-48 sm:h-16 flex items-center justify-center">
           <Image
             src={LOGO_URL}
@@ -187,7 +187,7 @@ export default function HomePage() {
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center my-auto z-10 pb-6">
 
         {/* Left Column */}
-        <div className="lg:col-span-7 space-y-4 sm:space-y-6 text-left">
+        <div className="lg:col-span-7 space-y-4 sm:space-y-6 text-left w-full">
           <h1 className="font-sans text-5xl sm:text-7xl font-black text-[#0F172A] leading-[1.08] tracking-tight flex flex-col items-start">
             <span className="inline-block animate-slide-left-1">
               Learn.
@@ -201,8 +201,8 @@ export default function HomePage() {
           </h1>
 
           <p className="font-sans text-base sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
-         Learn drawing and sketching through fun challenges, practice regularly, climb the leaderboard, and improve your art every day.
-         </p>
+            Learn drawing and sketching through fun challenges, practice regularly, climb the leaderboard, and improve your art every day.
+          </p>
         </div>
 
         {/* Right Column */}
@@ -271,7 +271,7 @@ export default function HomePage() {
       </main>
 
       {/* FOOTER */}
-      <footer className="w-full py-6 text-center text-xs text-slate-400 font-medium z-10 mt-auto">
+      <footer className="w-full py-6 text-center text-xs text-slate-400 font-medium z-10 mt-auto shrink-0 px-4">
         <div className="flex justify-center items-center gap-4 flex-wrap">
           <Link href="/about" className="hover:text-slate-600 transition-colors">
             About Us

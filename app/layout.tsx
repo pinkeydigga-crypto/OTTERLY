@@ -1,11 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import OfflinePopup from "@/components/offlinepopup";
 import GlobalHaptics from "@/components/GlobalHaptics";
 
-// Next.js Turbopack safe Google Font configuration
 const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-nunito",
@@ -14,7 +13,17 @@ const nunito = Nunito({
 });
 
 const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
+const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 const SITE_URL = "https://www.otterleo.in";
+
+// 🚀 Fixes WhatsApp / Insta In-App Browser zoom/stretch issue
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -59,7 +68,7 @@ export const metadata: Metadata = {
     siteName: "Otterleo AI",
     images: [
       {
-        url: FAVICON_URL,
+        url: LOGO_URL,
         width: 1200,
         height: 630,
         alt: "Otterleo AI Logo",
@@ -75,7 +84,7 @@ export const metadata: Metadata = {
       template: "%s | Otterleo",
     },
     description: "Improve your drawing skills daily in fun way through interactive challenges, step-by-step tutorials, and gamified online courses.",
-    images: [FAVICON_URL],
+    images: [LOGO_URL],
   },
   robots: {
     index: true,
@@ -127,7 +136,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${nunito.className} min-h-full flex flex-col font-sans`}>
+      <body className={`${nunito.className} min-h-full flex flex-col font-sans overflow-x-hidden w-full relative`}>
         <GlobalHaptics />
         {children}
         <OfflinePopup />
