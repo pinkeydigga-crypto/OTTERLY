@@ -23,7 +23,8 @@ import {
   ChevronRight,
   Palette,
   Grid,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from "lucide-react";
 
 interface Profile {
@@ -62,7 +63,6 @@ export default function DashboardPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Swipe gesture tracking
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
 
@@ -276,7 +276,6 @@ export default function DashboardPage() {
     }
   ];
 
-  // Touch Swipe Handlers for Mobile Slider
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     touchStartX.current = e.targetTouches[0].clientX;
   };
@@ -307,6 +306,7 @@ export default function DashboardPage() {
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", active: true, icon: LayoutDashboard },
+    { name: "Idea Generator", path: "/generator", icon: Sparkles },
     { name: "Practice", path: "/practice", icon: Palette },
     { name: "Grid Maker", path: "/grid-maker", icon: Grid },
     { name: "Challenges", path: "/challenges", icon: Swords },
@@ -322,7 +322,6 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-20 md:pb-0 font-sans overflow-x-hidden">
       
-      {/* Mobile Top Header */}
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -352,7 +351,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Mobile Sidebar */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
@@ -396,7 +394,7 @@ export default function DashboardPage() {
                         setIsMobileSidebarOpen(false);
                       }}
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                        item.active
+                        item.path === "/dashboard"
                           ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
                           : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }`}
@@ -426,7 +424,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Desktop Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
@@ -449,7 +446,7 @@ export default function DashboardPage() {
                   href={item.path}
                   onClick={triggerHaptic}
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
-                    item.active
+                    item.path === "/dashboard"
                       ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
@@ -477,17 +474,14 @@ export default function DashboardPage() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto space-y-6 overflow-y-auto w-full">
         
-        {/* Responsive, Bigger & Touch Swipeable Welcome Card */}
         <div
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           className="relative px-6 py-6 sm:px-8 sm:py-8 flex items-center justify-between min-h-[170px] sm:min-h-[190px] bg-[#EBF3FF] rounded-[2.2rem] border border-blue-100/90 shadow-xs overflow-hidden select-none touch-pan-y"
         >
-          {/* Text Container - Ensured zero overlap */}
           <div className="z-10 max-w-[60%] sm:max-w-[65%] md:max-w-md flex flex-col justify-center space-y-1.5">
 
             {currentSlideData.isWelcome ? (
@@ -518,7 +512,6 @@ export default function DashboardPage() {
               </div>
             ) : null}
 
-            {/* Pagination Dots */}
             <div className="flex items-center gap-2 pt-3">
               {slidesData.map((_, idx) => (
                 <button
@@ -539,7 +532,6 @@ export default function DashboardPage() {
 
           </div>
 
-          {/* Mascot Image - Optimized positioning & Increased size */}
           <div className="absolute right-1 bottom-0 sm:right-4 md:right-8 z-20 flex items-end shrink-0 pointer-events-none">
             <Image
               src={currentSlideData.mascot}
@@ -553,7 +545,6 @@ export default function DashboardPage() {
 
         </div>
 
-        {/* Scaled & Enlarged Stats Cards Row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4.5 pt-1">
           <div className="bg-amber-50/60 p-6 rounded-[2.2rem] border border-amber-200/70 shadow-xs flex items-center gap-4 transition-all hover:scale-[1.01]">
             <div className="w-16 h-16 rounded-2xl bg-amber-400 text-white flex items-center justify-center border-b-4 border-amber-600 shrink-0 shadow-sm">
@@ -586,12 +577,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Daily XP Wheel Section */}
         <section className="w-full overflow-hidden min-w-0">
           <XpWheel />
         </section>
 
-        {/* AI Scan Banner Card */}
         <div className="bg-[#2563EB] text-[#2563EB] p-7 sm:p-9 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-4 max-w-lg z-10 text-white">
             <h2 className="text-2xl sm:text-3xl font-black leading-tight">
@@ -618,18 +607,17 @@ export default function DashboardPage() {
 
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {[
-            { name: "Home", path: "/dashboard", active: true, icon: LayoutDashboard },
-            { name: "Challenges", path: "/challenges", active: false, icon: Swords },
-            { name: "Grid", path: "/grid-maker", active: false, icon: Grid },
-            { name: "Scan", path: "/scan", active: false, icon: Scan },
-            { name: "Leaderboard", path: "/leaderboard", active: false, icon: Trophy },
+            { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+            { name: "Ideas", path: "/generator", icon: Sparkles },
+            { name: "Challenges", path: "/challenges", icon: Swords },
+            { name: "Scan", path: "/scan", icon: Scan },
+            { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
           ].map((item) => {
             const Icon = item.icon;
-            const isActive = item.active;
+            const isActive = item.path === "/dashboard";
 
             return (
               <Link
