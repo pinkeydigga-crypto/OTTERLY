@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, Share2, X, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
-  Star, Palette, Grid, ShieldAlert, RefreshCw, Globe
+  Star, Palette, Grid, ShieldAlert, RefreshCw, Globe, Sparkles
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -180,6 +180,7 @@ export default function LeaderboardPage() {
 
   const desktopNavItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Idea Generator", path: "/generator", icon: Sparkles },
     { name: "Practice", path: "/practice", icon: Palette },
     { name: "Grid Maker", path: "/grid-maker", icon: Grid },
     { name: "Challenges", path: "/challenges", icon: Swords },
@@ -192,8 +193,8 @@ export default function LeaderboardPage() {
 
   const mobileNavItems = [
     { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Ideas", path: "/generator", icon: Sparkles },
     { name: "Challenges", path: "/challenges", icon: Swords },
-    { name: "Grid", path: "/grid-maker", icon: Grid },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", active: true, icon: Trophy },
   ];
@@ -239,7 +240,6 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0">
       
-      {/* Font imports for Rounded Fredoka style */}
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Caveat:wght@700&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
         .font-badge {
@@ -250,7 +250,6 @@ export default function LeaderboardPage() {
         }
       `}</style>
 
-      {/* Mobile Top Header */}
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -282,7 +281,6 @@ export default function LeaderboardPage() {
         )}
       </header>
 
-      {/* Mobile Drawer */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
@@ -358,7 +356,6 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {/* Desktop Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0 h-screen sticky top-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
@@ -411,10 +408,8 @@ export default function LeaderboardPage() {
         )}
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 p-3 sm:p-6 md:p-8 max-w-5xl mx-auto w-full min-w-0 space-y-5 overflow-y-auto">
 
-        {/* Top Navigation */}
         <div className="flex items-center justify-between gap-2">
           <Link
             href="/dashboard"
@@ -447,7 +442,6 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {/* Mascot Banner Section */}
         <div className="bg-white px-5 sm:px-8 pt-4 pb-0 rounded-[2rem] border-2 border-slate-100 shadow-xs flex flex-row items-end justify-center gap-4 sm:gap-6 text-left relative overflow-hidden min-h-[120px] sm:min-h-[140px]">
           <div className="w-32 sm:w-44 md:w-48 shrink-0 flex items-end justify-center -mb-1">
             <img
@@ -470,11 +464,9 @@ export default function LeaderboardPage() {
           </div>
         </div>
 
-        {/* Top 3 Podium */}
         {leaderboardData.length > 0 ? (
           <div className="pt-4 pb-1 grid grid-cols-3 gap-2 sm:gap-4 md:gap-5 items-end w-full max-w-xl mx-auto">
             
-            {/* RANK 2 */}
             <div className="flex flex-col items-center">
               {rank2 ? (
                 <>
@@ -499,7 +491,6 @@ export default function LeaderboardPage() {
               ) : <div className="h-24" />}
             </div>
 
-            {/* RANK 1 */}
             <div className="flex flex-col items-center">
               {rank1 ? (
                 <>
@@ -524,7 +515,6 @@ export default function LeaderboardPage() {
               ) : <div className="h-32" />}
             </div>
 
-            {/* RANK 3 */}
             <div className="flex flex-col items-center">
               {rank3 ? (
                 <>
@@ -552,7 +542,6 @@ export default function LeaderboardPage() {
           </div>
         ) : null}
 
-        {/* Leaderboard Table List */}
         <div className="bg-white rounded-[2.5rem] border-2 border-slate-100 p-4 sm:p-6 shadow-xs">
           <div className="flex items-center justify-between mb-4 px-2">
             <h3 className="font-black text-slate-900 text-base">Top Rankings</h3>
@@ -609,7 +598,6 @@ export default function LeaderboardPage() {
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {mobileNavItems.map((item) => {
@@ -645,7 +633,6 @@ export default function LeaderboardPage() {
         </div>
       </nav>
 
-      {/* Share Card Modal */}
       {isShareModalOpen && currentUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-[2.5rem] w-full max-w-[420px] p-4 sm:p-6 shadow-2xl relative border-2 border-slate-100 my-auto">
@@ -659,12 +646,10 @@ export default function LeaderboardPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Target Card Container with Fredoka Font Applied */}
             <div
               ref={cardRef}
               className="w-full relative overflow-hidden flex flex-col justify-between p-6 sm:p-7 select-none rounded-[2rem] mb-4 font-badge border border-slate-100 bg-white shadow-md aspect-square min-h-[380px]"
             >
-              {/* Very Light & Subtle Diagonal Blue Gradient Stripes Overlay */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[2rem]">
                 <div 
                   className="absolute -top-[10%] -right-[10%] w-[130%] h-[130%]"
@@ -688,7 +673,6 @@ export default function LeaderboardPage() {
                 />
               </div>
 
-              {/* Header: Logo Left */}
               <div className="relative z-10 flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
                   <img
@@ -700,15 +684,12 @@ export default function LeaderboardPage() {
                 </div>
               </div>
 
-              {/* Center Main Rank Content */}
               <div className="relative z-10 flex flex-col items-center justify-center my-auto py-1">
                 <h2 className="text-sm sm:text-base font-extrabold text-[#334155] mb-1 tracking-tight">
                   Global Rank
                 </h2>
 
-                {/* Big Rank Number surrounded by Leaves */}
                 <div className="flex items-center justify-center gap-2 sm:gap-3 my-0.5">
-                  {/* Left Laurel Leaf */}
                   <svg className="w-10 h-20 sm:w-11 sm:h-22 text-[#93c5fd]" viewBox="0 0 50 100" fill="currentColor">
                     <path d="M 38 92 C 20 75 14 42 32 10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                     <path d="M 32 10 C 29 4 33 2 34 8 C 35 12 33 13 32 10 Z" />
@@ -722,12 +703,10 @@ export default function LeaderboardPage() {
                     <path d="M 29 72 C 38 66 41 71 34 76 C 31 77 29 74 29 72 Z" />
                   </svg>
 
-                  {/* Rank Digit */}
                   <span className="font-handwritten text-7xl sm:text-8xl font-black leading-none text-[#1e3a8a] tracking-tight">
                     {currentUser?.rank || "2"}
                   </span>
 
-                  {/* Right Laurel Leaf (Mirrored) */}
                   <svg className="w-10 h-20 sm:w-11 sm:h-22 text-[#93c5fd] transform scale-x-[-1]" viewBox="0 0 50 100" fill="currentColor">
                     <path d="M 38 92 C 20 75 14 42 32 10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
                     <path d="M 32 10 C 29 4 33 2 34 8 C 35 12 33 13 32 10 Z" />
@@ -742,20 +721,17 @@ export default function LeaderboardPage() {
                   </svg>
                 </div>
 
-                {/* Badge Pill with Image Font & Style */}
                 <div className="mt-1 px-5 py-1 bg-[#fef3c7] rounded-full border border-[#fde68a]">
                   <span className="text-xs sm:text-sm font-extrabold text-[#78350f] tracking-tight uppercase">
                     {currentUser?.rank && currentUser.rank <= 3 ? "LEGENDARY" : "RISING STAR"}
                   </span>
                 </div>
 
-                {/* Subtext */}
                 <p className="text-xs font-bold text-[#64748b] mt-2 tracking-tight">
                   You're in the top {currentUser?.rank || "2"}!
                 </p>
               </div>
 
-              {/* Stats Bar Container */}
               <div className="relative z-10 w-full bg-[#f0f6ff]/90 border border-blue-100/80 rounded-2xl p-3 flex items-center justify-around my-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-lg bg-blue-100/60 flex items-center justify-center">
@@ -780,7 +756,6 @@ export default function LeaderboardPage() {
                 </div>
               </div>
 
-              {/* Card Footer */}
               <div className="relative z-10 w-full flex items-center justify-between pt-1">
                 <div className="flex items-center gap-2">
                   <img
@@ -802,7 +777,6 @@ export default function LeaderboardPage() {
 
             </div>
 
-            {/* Modal Bottom Subtext */}
             <div className="text-center pt-1 pb-2 space-y-1">
               <p className="text-xs font-bold text-slate-600">
                 You can take a screenshot to share with friends!

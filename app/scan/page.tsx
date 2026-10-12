@@ -407,6 +407,7 @@ export default function ScanPage() {
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Idea Generator", path: "/generator", icon: Sparkles },
     { name: "Practice", path: "/practice", icon: Palette },
     { name: "Grid Maker", path: "/grid-maker", icon: Grid },
     { name: "Challenges", path: "/challenges", icon: Swords },
@@ -434,7 +435,6 @@ export default function ScanPage() {
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0">
-      {/* Mobile Top Header */}
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -455,7 +455,6 @@ export default function ScanPage() {
         </div>
       </header>
 
-      {/* Mobile Drawer Sidebar */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
@@ -524,7 +523,6 @@ export default function ScanPage() {
         </div>
       )}
 
-      {/* Desktop Sidebar Navigation */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0 h-screen sticky top-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
@@ -570,7 +568,6 @@ export default function ScanPage() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-6 overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <Link
@@ -589,7 +586,6 @@ export default function ScanPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Mascot Container */}
           <div className="md:col-span-5 bg-white p-6 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex flex-col items-center justify-between min-h-[440px] relative">
             <div className="text-center z-10 space-y-2">
               <h2 className="text-2xl font-black text-[#0F172A]">
@@ -606,7 +602,6 @@ export default function ScanPage() {
             </div>
           </div>
 
-          {/* Right Column: Scan & Evaluation */}
           <div className="md:col-span-7 bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-sm flex flex-col space-y-6">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
@@ -623,7 +618,6 @@ export default function ScanPage() {
             </div>
 
             <div className="w-full relative">
-              {/* TIMER OVERLAY */}
               {countdown && (
                 <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-8 flex flex-col items-center justify-center space-y-6 border-3 border-amber-300 border-dashed text-center">
                   <div className="w-20 h-20 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center border-2 border-amber-200">
@@ -936,13 +930,12 @@ export default function ScanPage() {
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {[
             { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+            { name: "Ideas", path: "/generator", icon: Sparkles },
             { name: "Challenges", path: "/challenges", icon: Swords },
-            { name: "Grid", path: "/grid-maker", icon: Grid },
             { name: "Scan", path: "/scan", icon: Scan, active: true },
             { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
           ].map((item) => {

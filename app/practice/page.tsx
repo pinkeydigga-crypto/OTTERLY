@@ -7,7 +7,7 @@ import PracticeCanvas from "@/components/PracticeCanvas";
 import { 
   Download, RotateCcw, ArrowLeft, LayoutDashboard,
   Swords, Scan, Trophy, Compass, Award, User, Settings, Flame, PanelLeft,
-  X, Palette, Grid, ShieldAlert, AlertCircle
+  X, Palette, Grid, ShieldAlert, AlertCircle, Sparkles
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -38,7 +38,6 @@ export default function PracticePage() {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   
-  // Rate limiting states
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState<number>(0);
 
@@ -55,7 +54,6 @@ export default function PracticePage() {
     }
   };
 
-  // Cooldown Timer Interval
   useEffect(() => {
     if (cooldown > 0) {
       const timer = setTimeout(() => setCooldown((prev) => prev - 1), 1000);
@@ -119,7 +117,6 @@ export default function PracticePage() {
     fetchUserData();
   }, [fetchUserData]);
 
-  // Strict & Instant Rate Limiting Logic
   const handleSaveDrawing = async () => {
     triggerHaptic();
     setRateLimitError(null);
@@ -129,7 +126,6 @@ export default function PracticePage() {
     const now = Date.now();
     const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
-    // 1. Fetch latest state directly from localStorage
     let storedDownloads: number[] = [];
     try {
       const item = localStorage.getItem("practice_downloads_log");
@@ -140,12 +136,10 @@ export default function PracticePage() {
       storedDownloads = [];
     }
 
-    // 2. Filter out timestamps older than 5 mins
     const validTimestamps = storedDownloads.filter(
       (timestamp) => now - timestamp < FIVE_MINUTES_MS
     );
 
-    // 3. Strict Check: If already 10 or more in 5 minutes, BLOCK IMMEDIATELY
     if (validTimestamps.length >= 10) {
       const oldestDownload = validTimestamps[0];
       const waitTimeMs = FIVE_MINUTES_MS - (now - oldestDownload);
@@ -159,7 +153,6 @@ export default function PracticePage() {
         }${secs}s wait karke try karein.`
       );
       
-      // Update clean timestamps back to storage
       localStorage.setItem("practice_downloads_log", JSON.stringify(validTimestamps));
       return;
     }
@@ -175,7 +168,6 @@ export default function PracticePage() {
         return;
       }
 
-      // Convert Canvas to Blob for smooth Mobile Browsers compatibility
       canvas.toBlob((blob) => {
         if (!blob) {
           alert("Image render karne me error aaya.");
@@ -195,11 +187,9 @@ export default function PracticePage() {
 
         setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 
-        // Save current timestamp immediately to LocalStorage BEFORE releasing loading state
         const updatedDownloads = [...validTimestamps, now];
         localStorage.setItem("practice_downloads_log", JSON.stringify(updatedDownloads));
 
-        // 10 second delay add kar rahe hain fast spam protection ke liye
         setCooldown(10);
         setIsSaving(false);
       }, "image/png");
@@ -211,7 +201,6 @@ export default function PracticePage() {
     }
   };
 
-  // Clear Canvas
   const handleClearDrawing = () => {
     triggerHaptic();
     setRateLimitError(null);
@@ -228,21 +217,21 @@ export default function PracticePage() {
 
   const desktopNavItems: NavItem[] = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Idea Generator", path: "/generator", icon: Sparkles },
     { name: "Practice", path: "/practice", active: true, icon: Palette },
     { name: "Grid Maker", path: "/grid-maker", icon: Grid },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
-    
     { name: "Profile", path: "/profile", icon: User },
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
   const mobileNavItems: NavItem[] = [
     { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Ideas", path: "/generator", icon: Sparkles },
     { name: "Challenges", path: "/challenges", icon: Swords },
-    { name: "Grid", path: "/grid-maker", icon: Grid },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
   ];
@@ -251,7 +240,6 @@ export default function PracticePage() {
     return <LoadingScreen />;
   }
 
-  // Access Restriction Screen
   if (isVerified === false && !isOffline) {
     return (
       <div className="min-h-screen bg-[#F6FAFF] flex flex-col items-center justify-center p-4 tracking-tight font-sans">
@@ -289,7 +277,6 @@ export default function PracticePage() {
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0">
 
-      {/* Mobile Top Header */}
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -321,7 +308,6 @@ export default function PracticePage() {
         )}
       </header>
 
-      {/* Mobile Drawer */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
@@ -399,7 +385,6 @@ export default function PracticePage() {
         </div>
       )}
 
-      {/* Desktop Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0 h-screen sticky top-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
@@ -454,10 +439,8 @@ export default function PracticePage() {
         )}
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-5xl mx-auto w-full space-y-6">
 
-        {/* Dashboard Navigation */}
         <div className="flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -469,7 +452,6 @@ export default function PracticePage() {
           </Link>
         </div>
 
-        {/* Top Header Card */}
         <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs space-y-4">
           <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="text-center sm:text-left flex-1 space-y-1">
@@ -492,7 +474,6 @@ export default function PracticePage() {
           </div>
         </div>
 
-        {/* Rate Limit Banner Warning */}
         {rateLimitError && (
           <div className="bg-rose-50 border-2 border-rose-200 text-rose-700 px-4 py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-3 shadow-xs animate-in fade-in">
             <AlertCircle className="w-5 h-5 shrink-0 text-rose-600" />
@@ -500,12 +481,10 @@ export default function PracticePage() {
           </div>
         )}
 
-        {/* Practice Canvas */}
         <div ref={containerRef} className="w-full bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-xs overflow-hidden p-2 sm:p-4">
           <PracticeCanvas />
         </div>
 
-        {/* Action Controls Below Canvas */}
         <div className="flex items-center justify-end gap-3 bg-white p-4 rounded-2xl border-2 border-slate-100 shadow-xs">
           <button
             onClick={handleClearDrawing}
@@ -533,7 +512,6 @@ export default function PracticePage() {
 
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {mobileNavItems.map((item) => {

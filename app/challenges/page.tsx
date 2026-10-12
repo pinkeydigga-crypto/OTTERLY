@@ -14,7 +14,6 @@ import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import PracticeCanvas from "@/components/PracticeCanvas";
 import { playCelebrationSound } from "@/lib/sound";
 
-// Typewriter Text Effect Component
 function TypewriterText({ text, speed = 50 }: { text: string; speed?: number }) {
   const [displayedText, setDisplayedText] = useState("");
 
@@ -183,15 +182,11 @@ export default function ChallengesPage() {
   const [activeChallengeId, setActiveChallengeId] = useState<string>("eye-drawing-1min");
   const [currentStep, setCurrentStep] = useState<number>(0);
 
-  // Modal State for Claiming XP
   const [showClaimModal, setShowClaimModal] = useState<boolean>(false);
-
-  // Difficulty State
   const [selectedDifficulty, setSelectedDifficulty] = useState<"beginner" | "intermediate" | "advanced" | null>(null);
   const [showLevelModal, setShowLevelModal] = useState<boolean>(false);
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
-  // Updated mascot for Level question & Header banner
   const ottoMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
 
   const triggerHaptic = () => {
@@ -225,7 +220,6 @@ export default function ChallengesPage() {
     setShowLevelModal(false);
   };
 
-  // Egress Optimized Fetch Data
   const fetchPageData = useCallback(async () => {
     if (typeof window !== "undefined") {
       const cachedXp = localStorage.getItem("user_xp_cache");
@@ -254,7 +248,6 @@ export default function ChallengesPage() {
 
       setIsVerified(true);
 
-      // Egress optimization: fetch only needed columns
       const { data: profile } = await supabase
         .from("profiles")
         .select("name, username, avatar_url, xp")
@@ -280,7 +273,6 @@ export default function ChallengesPage() {
         });
       }
 
-      // Egress optimization: fetch only challenge_id
       const { data: completed } = await supabase
         .from("user_completed_challenges")
         .select("challenge_id")
@@ -334,7 +326,7 @@ export default function ChallengesPage() {
 
   const handleOpenClaimModal = () => {
     triggerHaptic();
-    playCelebrationSound(); // Play audio when claim form opens
+    playCelebrationSound();
     setShowClaimModal(true);
   };
 
@@ -447,8 +439,9 @@ export default function ChallengesPage() {
   const isCurrentDone = completedChallenges.includes(currentChallenge.id);
   const isLastStep = currentStep === activeStepList.length - 1;
 
-  const navItems = [
+  const desktopNavItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Idea Generator", path: "/generator", icon: Sparkles },
     { name: "Practice", path: "/practice", icon: Palette },
     { name: "Grid Maker", path: "/grid-maker", icon: Grid },
     { name: "Challenges", path: "/challenges", active: true, icon: Swords },
@@ -459,10 +452,17 @@ export default function ChallengesPage() {
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
+  const mobileNavItems = [
+    { name: "Home", path: "/dashboard", icon: LayoutDashboard },
+    { name: "Ideas", path: "/generator", icon: Sparkles },
+    { name: "Challenges", path: "/challenges", icon: Swords, active: true },
+    { name: "Scan", path: "/scan", icon: Scan },
+    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+  ];
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0 relative">
       
-      {/* CLAIM XP MODAL (REAL XP DATA) */}
       {showClaimModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 max-w-sm w-full text-center space-y-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 relative">
@@ -473,7 +473,6 @@ export default function ChallengesPage() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Glowing Star Icon */}
             <div className="pt-2">
               <div className="w-20 h-20 bg-amber-400/20 rounded-3xl flex items-center justify-center mx-auto relative">
                 <div className="w-16 h-16 bg-amber-400 rounded-2xl flex items-center justify-center text-white shadow-md shadow-amber-400/50">
@@ -482,14 +481,12 @@ export default function ChallengesPage() {
               </div>
             </div>
 
-            {/* Dynamic Real XP */}
             <div className="space-y-1">
               <h2 className="text-3xl font-black text-slate-900 tracking-tight">
                 + {currentChallenge.xp} XP
               </h2>
             </div>
 
-            {/* Claim Action Button */}
             <button
               onClick={() => handleConfirmClaimXP(currentChallenge)}
               disabled={claimingId === currentChallenge.id}
@@ -508,7 +505,6 @@ export default function ChallengesPage() {
         </div>
       )}
 
-      {/* ONBOARDING LEVEL MODAL (WITH MASCOT) */}
       {showLevelModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
@@ -559,7 +555,6 @@ export default function ChallengesPage() {
         </div>
       )}
 
-      {/* Mobile Top Header */}
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -585,7 +580,6 @@ export default function ChallengesPage() {
         </div>
       </header>
 
-      {/* Mobile Sidebar */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
@@ -613,7 +607,7 @@ export default function ChallengesPage() {
               </div>
 
               <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)]">
-                {navItems.map((item) => {
+                {desktopNavItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <Link
@@ -654,7 +648,6 @@ export default function ChallengesPage() {
         </div>
       )}
 
-      {/* Desktop Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 hidden md:flex flex-col justify-between p-6 shrink-0">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
@@ -670,7 +663,7 @@ export default function ChallengesPage() {
           </div>
 
           <nav className="space-y-1.5">
-            {navItems.map((item) => {
+            {desktopNavItems.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -706,10 +699,8 @@ export default function ChallengesPage() {
         </div>
       </aside>
 
-      {/* Main Area */}
       <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-4 overflow-y-auto">
         
-        {/* Top Desktop Navigation Header */}
         <div className="hidden md:flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -723,7 +714,6 @@ export default function ChallengesPage() {
 
         {activeView === 'hub' ? (
           <>
-            {/* Top Banner Header with Updated Mascot */}
             <div className="bg-white p-5 rounded-[2rem] border border-slate-200/80 shadow-2xs flex items-center justify-between relative overflow-hidden">
               <div className="space-y-1 pr-3">
                 <h1 className="text-2xl font-black text-[#0F172A]">Challenges</h1>
@@ -741,7 +731,6 @@ export default function ChallengesPage() {
               />
             </div>
 
-            {/* ACTIVE LEVEL DISPLAY + RESET LEVEL BUTTON */}
             <div className="flex items-center justify-between bg-white p-2.5 rounded-2xl border border-slate-200/80">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-400 pl-2">Selected Level:</span>
@@ -761,7 +750,6 @@ export default function ChallengesPage() {
               </button>
             </div>
 
-            {/* Challenges List */}
             <div className="space-y-4">
               {filteredChallenges.length === 0 ? (
                 <div className="bg-white rounded-[2rem] p-8 border border-slate-200 text-center space-y-2">
@@ -776,7 +764,6 @@ export default function ChallengesPage() {
                       key={challenge.id}
                       className="bg-white rounded-[2rem] p-5 border border-slate-200/80 shadow-2xs space-y-4"
                     >
-                      {/* Completed Badge */}
                       {isDone && (
                         <div className="flex justify-end w-full">
                           <span className="text-[11px] font-black bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-xl flex items-center gap-1">
@@ -785,7 +772,6 @@ export default function ChallengesPage() {
                         </div>
                       )}
 
-                      {/* Clean Image Frame */}
                       <div className="w-full h-36 sm:h-44 flex items-center justify-center relative">
                         <Image
                           src={challenge.previewImage}
@@ -804,7 +790,6 @@ export default function ChallengesPage() {
                           </p>
                         </div>
 
-                        {/* CHALLENGE XP REWARD BADGE */}
                         <div className="flex items-center gap-3 text-xs font-black">
                           <span className="flex items-center gap-1 text-amber-500 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-lg">
                             <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
@@ -840,7 +825,6 @@ export default function ChallengesPage() {
             </div>
           </>
         ) : (
-          /* STEP-BY-STEP TUTORIAL VIEW */
           <div className="bg-white rounded-[2rem] p-4 sm:p-5 border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2.5">
               <span className="text-[11px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-xl">
@@ -866,7 +850,6 @@ export default function ChallengesPage() {
               )}
             </div>
 
-            {/* Step Content Rendering */}
             {isLastStep ? (
               <div className="space-y-3">
                 <div className="text-center bg-indigo-50 border border-indigo-200 py-2 px-3 rounded-xl">
@@ -880,7 +863,6 @@ export default function ChallengesPage() {
             ) : activeStepList[currentStep].typewriterText ? (
               <div className="w-full flex flex-col sm:flex-row-reverse items-center justify-center gap-3 sm:gap-5 py-2 px-1">
                 
-                {/* Mascot Image */}
                 <div className="w-48 h-48 sm:w-56 sm:h-56 shrink-0 flex items-center justify-center relative">
                   {activeStepList[currentStep].imageUrl && (
                     <Image
@@ -894,7 +876,6 @@ export default function ChallengesPage() {
                   )}
                 </div>
 
-                {/* Speech Bubble */}
                 <div className="relative bg-blue-50/80 border border-blue-200 rounded-2xl px-5 py-3 shadow-2xs max-w-xs text-center sm:text-left">
                   <div className="hidden sm:block absolute -right-2.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-t-transparent border-l-[10px] border-l-blue-200 border-b-8 border-b-transparent">
                     <div className="absolute right-[1px] -top-[7px] w-0 h-0 border-t-[7px] border-t-transparent border-l-[9px] border-l-blue-50 border-b-[7px] border-b-transparent" />
@@ -924,7 +905,6 @@ export default function ChallengesPage() {
               </div>
             )}
 
-            {/* Tips Section */}
             {currentStep !== 0 && activeStepList[currentStep].tips?.length > 0 && (
               <div className="bg-amber-50/60 border border-amber-200/60 p-3 rounded-2xl space-y-1.5">
                 <h4 className="text-[11px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
@@ -940,7 +920,6 @@ export default function ChallengesPage() {
               </div>
             )}
 
-            {/* Step Actions */}
             <div className="flex justify-between items-center pt-2 border-t border-slate-100">
               <button
                 onClick={() => {
@@ -991,16 +970,9 @@ export default function ChallengesPage() {
 
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          {[
-            { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-            { name: "Challenges", path: "/challenges", active: true, icon: Swords },
-            { name: "Grid", path: "/grid-maker", icon: Grid },
-            { name: "Scan", path: "/scan", icon: Scan },
-            { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-          ].map((item) => {
+          {mobileNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.active;
 
