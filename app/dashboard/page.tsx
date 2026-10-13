@@ -19,7 +19,6 @@ import {
   Star,
   Flame,
   PanelLeft,
-  X,
   ChevronRight,
   Palette,
   Grid,
@@ -62,9 +61,11 @@ export default function DashboardPage() {
   const [userRank, setUserRank] = useState<number | string>("-");
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showStreakPopup, setShowStreakPopup] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
+  const soundPlayedRef = useRef(false);
 
   const isFetchingRef = useRef(false);
 
@@ -75,6 +76,41 @@ export default function DashboardPage() {
       } catch {
         // Fallback
       }
+    }
+  };
+
+  const playCelebrationSound = async () => {
+    if (typeof window === "undefined" || soundPlayedRef.current) return;
+    soundPlayedRef.current = true;
+
+    try {
+      const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+
+      if (ctx.state === "suspended") {
+        await ctx.resume();
+      }
+
+      // Classic Arcade Level-Up Sound (Plays strictly once)
+      const notes = [329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "square";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.07);
+
+        gain.gain.setValueAtTime(0.2, ctx.currentTime + index * 0.07);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + index * 0.07 + 0.3);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime + index * 0.07);
+        osc.stop(ctx.currentTime + index * 0.07 + 0.3);
+      });
+    } catch {
+      // Audio fallback
     }
   };
 
@@ -112,9 +148,9 @@ export default function DashboardPage() {
       }
 
       let activeProfile: Profile;
+      const todayStr = getLocalDateString();
 
       if (profileData) {
-        const todayStr = getLocalDateString();
         const lastLoginRaw = profileData.last_login;
         const lastLoginStr = lastLoginRaw ? lastLoginRaw.split("T")[0] : null;
 
@@ -145,12 +181,20 @@ export default function DashboardPage() {
           avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
           xp: 0,
           streak: 1,
-          last_login: getLocalDateString(),
+          last_login: todayStr,
           created_at: new Date().toISOString()
         };
       }
 
       setProfile(activeProfile);
+
+      // Check if popup already shown for today
+      const lastPopupDate = localStorage.getItem("streak_popup_shown_date");
+      if (lastPopupDate !== todayStr) {
+        setShowStreakPopup(true);
+        localStorage.setItem("streak_popup_shown_date", todayStr);
+        playCelebrationSound();
+      }
 
       if (typeof window !== "undefined") {
         localStorage.setItem("user_xp_cache", (activeProfile.xp || 0).toString());
@@ -320,8 +364,98 @@ export default function DashboardPage() {
   const currentSlideData = slidesData[currentSlide];
 
   return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-20 md:pb-0 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-20 md:pb-0 font-sans overflow-x-hidden relative">
       
+      {showStreakPopup && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-[2.5rem] max-w-sm w-full overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 border border-slate-100">
+            
+            <div className="relative bg-[#0D47A1] pt-8 pb-16 px-6 flex items-center justify-between overflow-hidden shadow-inner">
+              
+              {/* Background Stars */}
+              <div className="absolute top-3 left-6 text-amber-300 opacity-90 animate-pulse pointer-events-none">
+                <Star className="w-4 h-4 fill-amber-300" />
+              </div>
+              <div className="absolute top-9 left-28 text-amber-300 opacity-80 pointer-events-none">
+                <Star className="w-3.5 h-3.5 fill-amber-300" />
+              </div>
+              <div className="absolute top-2 right-24 text-amber-400 opacity-90 pointer-events-none">
+                <Star className="w-4.5 h-4.5 fill-amber-400" />
+              </div>
+              <div className="absolute top-10 right-10 text-amber-300 opacity-75 pointer-events-none">
+                <Star className="w-3 h-3 fill-amber-300" />
+              </div>
+              <div className="absolute top-4 left-44 text-amber-200 opacity-80 pointer-events-none">
+                <Star className="w-2.5 h-2.5 fill-amber-200" />
+              </div>
+              <div className="absolute bottom-16 right-32 text-amber-300 opacity-85 pointer-events-none">
+                <Star className="w-3.5 h-3.5 fill-amber-300" />
+              </div>
+              <div className="absolute bottom-20 left-12 text-amber-300 opacity-70 pointer-events-none">
+                <Star className="w-2.5 h-2.5 fill-amber-300" />
+              </div>
+              {/* Extra Star below Day 1 area */}
+              <div className="absolute bottom-6 left-10 text-amber-300 opacity-90 pointer-events-none z-20">
+                <Star className="w-4 h-4 fill-amber-300" />
+              </div>
+
+              <div className="absolute -bottom-1 left-0 right-0 w-[102%] -ml-[1%] overflow-hidden leading-none pointer-events-none opacity-40">
+                <svg className="relative block w-full h-12 text-[#42A5F5]" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="currentColor">
+                  <path d="M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,181.3C960,203,1056,213,1152,192C1248,171,1344,117,1392,90.7L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                </svg>
+              </div>
+
+              <div className="absolute -bottom-1 left-0 right-0 w-[102%] -ml-[1%] overflow-hidden leading-none pointer-events-none z-10">
+                <svg className="relative block w-full h-12 text-white" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="currentColor">
+                  <path d="M0,192L48,181.3C96,171,192,149,288,160C384,171,480,213,576,213.3C672,213,768,171,864,149.3C960,128,1056,128,1152,149.3C1248,171,1344,213,1392,234.7L1440,256L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                </svg>
+              </div>
+
+              <div className="relative z-20 flex items-center gap-3 bg-white/15 backdrop-blur-md border border-white/25 px-5 py-3 rounded-2xl text-white shadow-md">
+                <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center shadow-lg shrink-0">
+                  <Flame className="w-6 h-6 fill-white text-white" />
+                </div>
+                <span className="font-black text-base tracking-wider">DAY {userStreak}</span>
+              </div>
+
+              <div className="relative z-20 w-28 h-28 shrink-0 flex items-end justify-center -mr-2 -mb-6">
+                <Image
+                  src={welcomeMascotUrl}
+                  alt="Otto Mascot"
+                  width={120}
+                  height={120}
+                  className="w-full h-auto object-contain drop-shadow-md translate-y-2"
+                  priority
+                />
+              </div>
+            </div>
+
+            <div className="bg-white pt-6 pb-8 px-6 text-center space-y-6">
+              <div className="space-y-1.5">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  You're building a habit!
+                </h2>
+                <p className="text-xs font-bold text-slate-500">
+                  Come back tomorrow to reach Day {userStreak + 1}.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  triggerHaptic();
+                  setShowStreakPopup(false);
+                }}
+                className="w-full py-3.5 bg-[#2563EB] hover:bg-blue-700 border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 text-white font-black text-sm rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Let's learn</span>
+                <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -371,15 +505,6 @@ export default function DashboardPage() {
                   height={48}
                   className="h-10 w-auto object-contain"
                 />
-                <button
-                  onClick={() => {
-                    triggerHaptic();
-                    setIsMobileSidebarOpen(false);
-                  }}
-                  className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
 
               <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)]">
