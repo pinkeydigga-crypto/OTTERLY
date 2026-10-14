@@ -92,7 +92,6 @@ export default function DashboardPage() {
         await ctx.resume();
       }
 
-      // Classic Arcade Level-Up Sound (Plays strictly once)
       const notes = [329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
       notes.forEach((freq, index) => {
         const osc = ctx.createOscillator();
@@ -125,7 +124,7 @@ export default function DashboardPage() {
       if (!user) {
         if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
           localStorage.clear();
-          router.push("/login");
+          router.replace("/login");
         }
         return;
       }
@@ -188,7 +187,6 @@ export default function DashboardPage() {
 
       setProfile(activeProfile);
 
-      // Check if popup already shown for today
       const lastPopupDate = localStorage.getItem("streak_popup_shown_date");
       if (lastPopupDate !== todayStr) {
         setShowStreakPopup(true);
@@ -372,7 +370,6 @@ export default function DashboardPage() {
             
             <div className="relative bg-[#0D47A1] pt-8 pb-16 px-6 flex items-center justify-between overflow-hidden shadow-inner">
               
-              {/* Background Stars */}
               <div className="absolute top-3 left-6 text-amber-300 opacity-90 animate-pulse pointer-events-none">
                 <Star className="w-4 h-4 fill-amber-300" />
               </div>
@@ -394,7 +391,6 @@ export default function DashboardPage() {
               <div className="absolute bottom-20 left-12 text-amber-300 opacity-70 pointer-events-none">
                 <Star className="w-2.5 h-2.5 fill-amber-300" />
               </div>
-              {/* Extra Star below Day 1 area */}
               <div className="absolute bottom-6 left-10 text-amber-300 opacity-90 pointer-events-none z-20">
                 <Star className="w-4 h-4 fill-amber-300" />
               </div>

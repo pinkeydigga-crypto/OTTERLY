@@ -16,12 +16,10 @@ const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 const SITE_URL = "https://www.otterleo.in";
 
-// 🚀 Fixes WhatsApp / Insta In-App Browser zoom/stretch issue
+// 🚀 Fixed viewport to support all mobile browsers smoothly without breaking layout
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
 };
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, ChevronLeft, ChevronRight, User, Mail, Lock, Check } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, User, Mail, Lock } from 'lucide-react';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME_MS = 60 * 1000;
@@ -32,7 +32,6 @@ export default function SignupPage() {
   const [consent, setConsent] = useState(false);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
-  // Dynamic Typewriter effect state per step
   const [typedText, setTypedText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
@@ -280,11 +279,9 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
       
-      {/* BACKGROUND DECORATIVE SHAPES */}
       <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-100/70 rounded-full blur-2xl pointer-events-none" />
       <div className="absolute top-1/2 -left-20 -translate-y-1/2 w-64 h-64 bg-indigo-100/60 rounded-full blur-2xl pointer-events-none" />
 
-      {/* Speech Bubble Tail Pointing Left */}
       <style jsx global>{`
         .speech-bubble-tail-left {
           position: absolute;
@@ -310,7 +307,6 @@ export default function SignupPage() {
         }
       `}</style>
 
-      {/* BACK TO HOME BUTTON */}
       <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
         <Link 
           href="/" 
@@ -323,10 +319,8 @@ export default function SignupPage() {
 
       <div className="relative max-w-md w-full pt-10">
         
-        {/* Main Outer Card Container */}
         <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
           
-          {/* STEP INDICATOR DOTS & BACK BUTTON */}
           <div className="flex items-center justify-between pb-1">
             {step === 2 ? (
               <button
@@ -341,7 +335,6 @@ export default function SignupPage() {
               <div className="w-10" />
             )}
 
-            {/* STEP DOTS */}
             <div className="flex items-center justify-center gap-2 mx-auto">
               <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
               <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
@@ -350,7 +343,6 @@ export default function SignupPage() {
             <div className="w-10" />
           </div>
 
-          {/* MASCOT & SPEECH BUBBLE */}
           <div className="flex items-center gap-3 my-2 pl-1">
             <div className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md shrink-0">
               <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
@@ -372,10 +364,9 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* STEP 1: CHOOSE AVATAR */}
           {step === 1 && (
             <form onSubmit={handleNextStep} className="space-y-4 pt-1">
-              <div className="grid grid-cols-4 gap-2.5 max-w-md mx-auto">
+              <div className="grid grid-cols-4 gap-3.5 max-w-md mx-auto">
                 {AVATARS.map((avatar) => {
                   const isSelected = selectedAvatar === avatar.url;
                   return (
@@ -390,20 +381,19 @@ export default function SignupPage() {
                       className={`relative aspect-square rounded-2xl p-1.5 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col items-center justify-center ${
                         isSelected
                           ? 'ring-4 ring-[#2563EB] scale-105 shadow-md bg-blue-50 border-2 border-[#2563EB]'
-                          : 'opacity-70 hover:opacity-100 border-2 border-slate-200 hover:scale-105'
+                          : 'opacity-80 hover:opacity-100 border-2 border-slate-200 hover:scale-105'
                       } ${lockoutSeconds > 0 || loading ? 'opacity-40 pointer-events-none' : ''}`}
                     >
                       <img
                         src={avatar.url}
                         alt={avatar.name}
-                        className="w-full h-full object-contain rounded-xl pointer-events-none"
+                        className="w-full h-full object-contain scale-125 rounded-xl pointer-events-none"
                       />
                     </button>
                   );
                 })}
               </div>
 
-              {/* PILL SHAPED NEXT BUTTON */}
               <button
                 type="submit"
                 style={{
@@ -418,7 +408,6 @@ export default function SignupPage() {
             </form>
           )}
 
-          {/* STEP 2: USER DETAILS FORM */}
           {step === 2 && (
             <form onSubmit={handleSignup} className="space-y-3.5 pt-1">
               
@@ -525,7 +514,6 @@ export default function SignupPage() {
                 </label>
               </div>
 
-              {/* PILL SHAPED CREATE ACCOUNT BUTTON */}
               <button
                 type="submit"
                 disabled={loading || lockoutSeconds > 0}
