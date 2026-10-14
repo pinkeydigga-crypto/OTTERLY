@@ -7,48 +7,50 @@ import { ArrowLeft, ChevronDown } from 'lucide-react';
 const SITE_URL = "https://www.otterleo.in";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
+const FOUNDER_IMAGE_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/harjas.jpg";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'About Us & Mission',
-  description: 'Learn drawing and sketching in a fun way with Otterleo. Discover our mission, meet Otto our mascot, and practice with gamified daily art challenges.',
+  title: 'About Us — Otterleo | Best Drawing Learning Website & Sketching Platform',
+  description: 'Discover Otterleo, the ultimate drawing learning website founded by Harjass Digga (Harjas Digga). Learn how to draw with easy sketches, grid tools, and Otto.',
   keywords: [
     'Otterleo',
     'What is Otterleo',
-    'How to learn drawing and sketching in fun way',
-    'Best fun drawing and sketching learning platform',
-    'Fun sketching website',
-    'Otterleo Drawing and Sketching App',
-    'AI Drawing and Sketching Coach',
-    'Gamified Sketching Lessons',
-    'Otto Mascot',
-    'Learn Sketching AI',
-    'Drawing and Sketching App XP Streaks'
+    'Harjass Digga',
+    'Harjas Digga',
+    'how to draw',
+    'sketching for beginners',
+    'drawing learning website',
+    'easy sketches to draw',
+    'pencil sketch tutorial',
+    'grid maker for drawing',
+    'AI Drawing Coach',
+    'Otto Mascot'
   ],
   alternates: {
     canonical: `${SITE_URL}/about`,
   },
   openGraph: {
-    title: 'About Otterleo — The Fun Way to Learn Drawing & Sketching',
-    description: 'Learn drawing and sketching with Otterleo and Otto. Make art fun, affordable, and accessible.',
+    title: 'About Otterleo — Ultimate Drawing Learning Website',
+    description: 'Learn how to draw and master sketching for beginners with Otterleo, founded by Harjass Digga (Harjas Digga).',
     url: `${SITE_URL}/about`,
     siteName: 'Otterleo',
     locale: 'en_US',
     type: 'website',
     images: [
       {
-        url: LOGO_URL,
+        url: FOUNDER_IMAGE_URL,
         width: 1200,
         height: 630,
-        alt: 'Otterleo - Fun Drawing and Sketching Platform',
+        alt: 'Harjass Digga - Founder of Otterleo Drawing Learning Website',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'About Otterleo — The Fun Way to Learn Drawing & Sketching',
-    description: 'Gamified drawing and sketching learning platform. Master art with instant AI feedback.',
-    images: [LOGO_URL],
+    title: 'About Otterleo | Drawing Learning Website',
+    description: 'Meet Harjass Digga (Harjas Digga) and learn how Otterleo is transforming sketching for beginners.',
+    images: [FOUNDER_IMAGE_URL],
   },
   robots: {
     index: true,
@@ -63,27 +65,34 @@ export default function AboutPage() {
       {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
-        "name": "Otterleo AI",
+        "name": "Otterleo",
         "url": SITE_URL,
         "logo": {
           "@type": "ImageObject",
+          "@id": `${SITE_URL}/#logo`,
           "url": LOGO_URL
         },
-        "sameAs": [
-          SITE_URL
-        ]
+        "founder": {
+          "@type": "Person",
+          "name": "Harjass Digga",
+          "alternateName": "Harjas Digga",
+          "jobTitle": "Founder of Otterleo",
+          "image": FOUNDER_IMAGE_URL,
+          "url": `${SITE_URL}/about`
+        }
       },
       {
         "@type": "WebPage",
         "@id": `${SITE_URL}/about/#webpage`,
         "url": `${SITE_URL}/about`,
-        "name": "About Otterleo & Otto Mascot",
-        "description": "Learn about Otterleo, the gamified drawing platform with AI visual feedback.",
+        "name": "About Harjass Digga & Otterleo Drawing Learning Website",
+        "description": "Learn about Harjass Digga (Harjas Digga), founder of Otterleo, the leading drawing learning website.",
         "isPartOf": {
           "@id": `${SITE_URL}/#website`
         },
         "breadcrumb": {
           "@type": "BreadcrumbList",
+          "@id": `${SITE_URL}/about/#breadcrumb`,
           "itemListElement": [
             {
               "@type": "ListItem",
@@ -106,42 +115,26 @@ export default function AboutPage() {
         "mainEntity": [
           {
             "@type": "Question",
+            "name": "Who is Harjass Digga and Harjas Digga?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Harjass Digga (also known as Harjas Digga) is the visionary founder of Otterleo, a premier drawing learning website dedicated to helping artists master sketching for beginners, easy sketches to draw, and advanced grid techniques."
+            }
+          },
+          {
+            "@type": "Question",
             "name": "What is Otterleo?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Otterleo is a fun online drawing and sketching learning platform where users complete daily challenges, practice on interactive canvas, earn XP, customize avatars, scan artwork for instant AI feedback, and compete on global leaderboards."
+              "text": "Otterleo is a top-rated drawing learning website created by Harjass Digga (Harjas Digga) where users learn how to draw through step-by-step pencil sketch tutorials, daily challenges, grid maker tools, and instant AI feedback."
             }
           },
           {
             "@type": "Question",
-            "name": "How to learn drawing and sketching in a fun way?",
+            "name": "How to learn drawing and sketching on Otterleo?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Otterleo turns learning drawing and sketching into a game with daily practice challenges, streak rewards, interactive canvas tools, leaderboard rankings, and AI-powered visual feedback."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "How does the AI Artwork Scan feature work?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Users can scan their physical paper drawings or sketches using their camera to receive instant accuracy scores, feedback on proportions, shading analysis, and tips for improvement."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is Otterleo suitable for absolute beginners in drawing and sketching?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes, Otterleo is designed for beginners of all ages. Otto guides you through step-by-step bite-sized lessons so you can master basic sketching and drawing fundamentals without feeling overwhelmed."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Can I practice drawing and sketching directly on digital canvas?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes! You can choose to draw on physical paper and scan it, or practice directly on Otterleo's interactive digital canvas using touch or stylus input."
+              "text": "Users can follow structured pencil sketch tutorials, practice easy sketches to draw, use the built-in grid maker for drawing proportions, and scan paper artwork for instant AI evaluation."
             }
           }
         ]
@@ -151,35 +144,35 @@ export default function AboutPage() {
 
   const faqs = [
     {
-      q: "What is Otterleo?",
-      a: "Otterleo is a fun online drawing and sketching learning platform where users complete daily challenges, practice on an interactive canvas, earn XP, customize avatars, scan artwork for instant AI feedback, and compete on global leaderboards while mastering art step-by-step."
+      q: "Who is Harjass Digga / Harjas Digga?",
+      a: "Harjass Digga (also known as Harjas Digga) is the founder of Otterleo. He built this drawing learning website to make sketching for beginners engaging, structured, and accessible through gamified daily challenges and smart AI feedback."
     },
     {
-      q: "How to learn drawing and sketching in a fun way?",
-      a: "Otterleo turns drawing and sketching into a game! Complete daily practice challenges, maintain streaks, track progress on leaderboards, unlock achievements, and get instant AI-powered feedback on your paper or digital sketches."
+      q: "What is Otterleo?",
+      a: "Otterleo is a premier drawing learning website where artists learn how to draw using pencil sketch tutorials, online grid maker tools, easy sketches to draw, and daily streak challenges."
+    },
+    {
+      q: "How to learn drawing and sketching effectively?",
+      a: "By mastering foundational shapes, utilizing a grid maker for drawing accurate proportions, following step-by-step pencil sketch tutorials, and practicing daily on Otterleo."
     },
     {
       q: "How does the AI Artwork Scan feature work?",
-      a: "Scan your paper drawings or sketches using your camera to get an instant precision score, feedback on proportions, line accuracy, and shading techniques powered by computer vision."
+      a: "You can scan your paper sketches with your camera on Otterleo to receive instant accuracy scores, proportion analysis, and improvement tips."
     },
     {
-      q: "Is Otterleo suitable for absolute beginners in drawing and sketching?",
-      a: "Yes! Otterleo is built for absolute beginners as well as intermediate artists. Guided by our mascot Otto, lessons are broken into simple, gamified levels to help you build core sketching skills at your own pace."
-    },
-    {
-      q: "Can I practice drawing and sketching directly on digital canvas?",
-      a: "Yes! Otterleo offers an interactive built-in canvas where you can sketch directly online. You can also practice on traditional paper and scan it anytime for instant feedback."
+      q: "Is Otterleo suitable for beginners?",
+      a: "Yes! Otterleo is specifically designed as a drawing learning website for beginners and intermediate artists, guided by our mascot Otto."
     }
   ];
 
   return (
-    <div className="bg-[#F8FAFC] text-[#1E293B] font-sans min-h-screen">
+    <div className="min-h-screen bg-[#F8FAFC] text-[#1E293B] font-sans">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
       />
 
-      <main className="max-w-4xl mx-auto px-6 py-8">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         
         {/* BACK TO HOME BUTTON */}
         <div className="mb-6">
@@ -206,31 +199,52 @@ export default function AboutPage() {
             />
           </div>
           
-          <h1 className="text-4xl md:text-5xl font-extrabold text-[#0F172A] tracking-tight mb-4">
-            Otterleo — <span className="text-[#2563EB]">The Fun Way to Learn Drawing & Sketching</span>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#0F172A] tracking-tight mb-4">
+            About Otterleo — <span className="text-[#2563EB]">The Ultimate Drawing Learning Website</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-[#64748B] max-w-2xl mx-auto font-medium">
-            Practice on canvas, scan artwork for AI feedback, complete sketch challenges, earn XP, and compete on leaderboards daily.
+          <p className="text-base sm:text-lg md:text-xl text-[#64748B] max-w-2xl mx-auto font-medium">
+            Founded by <strong>Harjass Digga (Harjas Digga)</strong>, Otterleo helps you master <strong>how to draw</strong> through easy sketches, pencil sketch tutorials, and smart grid tools.
           </p>
         </section>
 
+        {/* FOUNDER BIO SECTION (TARGETING HARJASS DIGGA / HARJAS DIGGA) */}
+        <section className="bg-white rounded-[2.5rem] p-6 sm:p-8 md:p-12 shadow-xl border-2 border-slate-100 my-8 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
+          <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-3xl overflow-hidden border-4 border-blue-600 shadow-lg shrink-0">
+            <Image 
+              src={FOUNDER_IMAGE_URL} 
+              alt="Harjass Digga (Harjas Digga) - Founder of Otterleo" 
+              width={160}
+              height={160}
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="space-y-3 text-center md:text-left">
+            <h2 className="text-2xl sm:text-3xl font-black text-[#0F172A]">
+              Meet the Founder: Harjass Digga (Harjas Digga)
+            </h2>
+            <p className="text-slate-600 font-medium text-sm sm:text-base leading-relaxed">
+              <strong>Harjass Digga</strong> (also searched as <strong>Harjas Digga</strong>) created <strong>Otterleo</strong> to bridge the gap between traditional art education and interactive digital tools. Passionate about <strong>sketching for beginners</strong>, Harjas built this <strong>drawing learning website</strong> so anyone can learn <strong>how to draw</strong> using an online <strong>grid maker for drawing</strong> and AI feedback.
+            </p>
+          </div>
+        </section>
+
         {/* MISSION & OTTO MASCOT SECTION */}
-        <section className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-[#E2E8F0] my-8 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
-          <div className="flex-1">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-[#0F172A] mb-4">
+        <section className="bg-white rounded-[2.5rem] p-6 sm:p-8 md:p-12 shadow-xl border-2 border-slate-100 my-8 flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden">
+          <div className="flex-1 space-y-3">
+            <h2 className="text-2xl md:text-3xl font-black text-[#0F172A]">
               Meet Otto & The Otterleo Mission
             </h2>
-            <p className="text-[#475569] leading-relaxed mb-4 font-normal">
-              Learning drawing and sketching shouldn't feel like a boring lecture. At <strong>Otterleo</strong>, we believe that practicing art should feel as engaging as playing your favorite game.
+            <p className="text-[#475569] leading-relaxed font-medium">
+              Learning <strong>how to draw</strong> shouldn't feel boring. At <strong>Otterleo</strong>, we combine <strong>easy sketches to draw</strong> with gamified daily challenges to make art fun and accessible.
             </p>
-            <p className="text-[#475569] leading-relaxed font-normal">
-              Guided by our mascot <strong>Otto</strong>, Otterleo turns fundamental drawing and sketching skills into bite-sized levels. Earn XP, maintain daily streaks, set custom avatars, and scan your sketches for instant AI feedback.
+            <p className="text-[#475569] leading-relaxed font-medium">
+              Guided by our mascot <strong>Otto</strong>, our <strong>drawing learning website</strong> turns fundamental <strong>pencil sketch tutorials</strong> into bite-sized levels. Earn XP, maintain daily streaks, and use our <strong>grid maker for drawing</strong> to master proportions instantly.
             </p>
           </div>
 
-          <div className="relative flex flex-col items-center">
-            <div className="bg-white border-2 border-[#1E293B] text-[#0F172A] font-bold text-xs px-3 py-1.5 rounded-full shadow-sm mb-2 z-10">
+          <div className="relative flex flex-col items-center shrink-0">
+            <div className="bg-white border-2 border-[#1E293B] text-[#0F172A] font-extrabold text-xs px-3 py-1.5 rounded-full shadow-sm mb-2 z-10">
               Hi, I'm <span className="text-[#2563EB]">Otto</span>
             </div>
             <Image 
@@ -245,44 +259,44 @@ export default function AboutPage() {
 
         {/* FEATURES SECTION */}
         <section className="my-12">
-          <h2 className="text-2xl font-extrabold text-center text-[#0F172A] mb-8">
-            Why Start Your Drawing & Sketching Journey With Otterleo?
+          <h2 className="text-2xl font-black text-center text-[#0F172A] mb-8">
+            Why Choose Our Drawing Learning Website?
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
-              <h3 className="font-bold text-lg text-[#0F172A] mb-2">Fun Challenges & XP</h3>
-              <p className="text-sm text-[#64748B] leading-relaxed">Complete daily drawing and sketching challenges, earn XP, build daily streaks, and set unique avatars.</p>
+            <div className="bg-white p-6 sm:p-8 rounded-[2rem] border-2 border-slate-100 shadow-md">
+              <h3 className="font-black text-lg text-[#0F172A] mb-2">Grid Maker for Drawing</h3>
+              <p className="text-sm text-[#64748B] leading-relaxed font-medium">Split reference photos into precise grids instantly to master proportions like a pro artist.</p>
             </div>
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
-              <h3 className="font-bold text-lg text-[#0F172A] mb-2">AI Artwork Scan</h3>
-              <p className="text-sm text-[#64748B] leading-relaxed">Scan physical paper sketches to get instant precision scores, feedback, and improvement tips.</p>
+            <div className="bg-white p-6 sm:p-8 rounded-[2rem] border-2 border-slate-100 shadow-md">
+              <h3 className="font-black text-lg text-[#0F172A] mb-2">Pencil Sketch Tutorials</h3>
+              <p className="text-sm text-[#64748B] leading-relaxed font-medium">Follow structured step-by-step guides for sketching for beginners and easy drawings.</p>
             </div>
-            <div className="bg-[#FFFFFF] p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
-              <h3 className="font-bold text-lg text-[#0F172A] mb-2">Canvas & Leaderboard</h3>
-              <p className="text-sm text-[#64748B] leading-relaxed">Practice anytime on the interactive Otterleo canvas and compete with artists on the leaderboard.</p>
+            <div className="bg-white p-6 sm:p-8 rounded-[2rem] border-2 border-slate-100 shadow-md">
+              <h3 className="font-black text-lg text-[#0F172A] mb-2">AI Artwork Scan</h3>
+              <p className="text-sm text-[#64748B] leading-relaxed font-medium">Scan your physical paper sketches with your camera for instant accuracy scores and tips.</p>
             </div>
           </div>
         </section>
 
         {/* COLLAPSIBLE FAQ SECTION */}
-        <section className="my-12 bg-white rounded-3xl p-8 md:p-10 border border-[#E2E8F0] shadow-sm">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-[#0F172A] mb-2 text-center">
+        <section className="my-12 bg-white rounded-[2.5rem] p-6 sm:p-8 md:p-10 border-2 border-slate-100 shadow-xl">
+          <h2 className="text-2xl md:text-3xl font-black text-[#0F172A] mb-2 text-center">
             Frequently Asked Questions
           </h2>
-          <p className="text-[#64748B] text-center mb-8 text-sm md:text-base">
+          <p className="text-[#64748B] text-center mb-8 text-sm md:text-base font-semibold">
             Click on any question to view the answer.
           </p>
 
           <div className="flex flex-col gap-4 max-w-2xl mx-auto">
             {faqs.map((faq, idx) => (
-              <details key={idx} className="group bg-[#F8FAFC] border border-[#E2E8F0] rounded-2xl transition-all [&_summary::-webkit-details-marker]:hidden">
-                <summary className="flex justify-between items-center cursor-pointer p-5 font-bold text-[#0F172A] text-base select-none">
+              <details key={idx} className="group bg-[#F8FAFC] border-2 border-slate-200 rounded-2xl transition-all [&_summary::-webkit-details-marker]:hidden">
+                <summary className="flex justify-between items-center cursor-pointer p-5 font-extrabold text-[#0F172A] text-base select-none">
                   <span className="flex items-center gap-2">
                     <span className="text-[#2563EB]">Q:</span> {faq.q}
                   </span>
                   <ChevronDown className="w-5 h-5 text-[#64748B] transition-transform duration-300 group-open:rotate-180 flex-shrink-0" />
                 </summary>
-                <div className="px-5 pb-5 pt-1 text-sm text-[#475569] leading-relaxed border-t border-[#E2E8F0] mt-2">
+                <div className="px-5 pb-5 pt-1 text-sm text-[#475569] leading-relaxed border-t border-slate-200 mt-2 font-medium">
                   {faq.a}
                 </div>
               </details>
@@ -291,14 +305,14 @@ export default function AboutPage() {
         </section>
 
         {/* CONTACT US SECTION */}
-        <section className="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-[#E2E8F0] text-center">
-          <h2 className="text-2xl font-bold text-[#0F172A] mb-2">Have Questions or Feedback?</h2>
-          <p className="text-[#64748B] mb-6">Reach out to the Otterleo team anytime.</p>
+        <section className="bg-white rounded-[2.5rem] p-6 sm:p-8 md:p-10 shadow-xl border-2 border-slate-100 text-center">
+          <h2 className="text-2xl font-black text-[#0F172A] mb-2">Have Questions or Feedback?</h2>
+          <p className="text-[#64748B] mb-6 font-semibold">Reach out to Harjass Digga and the Otterleo team anytime.</p>
           
-          <div className="flex justify-center items-center gap-4 text-sm font-medium">
+          <div className="flex justify-center items-center gap-4 text-sm font-bold">
             <a 
               href="mailto:otterleosupport@gmail.com" 
-              className="w-full sm:w-auto bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] px-6 py-3 rounded-xl border border-[#CBD5E1] transition-all"
+              className="w-full sm:w-auto bg-[#F8FAFC] hover:bg-[#F1F5F9] text-[#0F172A] px-6 py-3.5 rounded-2xl border-2 border-slate-200 transition-all"
             >
               otterleosupport@gmail.com
             </a>

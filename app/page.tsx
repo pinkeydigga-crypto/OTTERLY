@@ -60,15 +60,16 @@ export default function HomePage() {
         "@type": "SoftwareApplication",
         "@id": `${SITE_URL}/#application`,
         "name": "Otterleo",
-        "alternateName": "Otterleo AI Drawing Platform",
+        "alternateName": "Otterleo Drawing and Sketching Learning Platform",
         "url": SITE_URL,
         "image": LOGO_URL,
         "operatingSystem": "All (Web Browser)",
         "applicationCategory": "EducationalApplication",
-        "description": "Otterleo is a sketching and drawing learning platform. Complete challenges, get feedback, compete with artists, and improve your art daily.",
+        "description": "Otterleo is the ultimate drawing and sketching learning platform. Master how to draw through challenges, grid tools, AI feedback, and sketching for beginners.",
         "author": {
           "@type": "Person",
-          "name": "Harjas Digga"
+          "name": "Harjas Digga",
+          "alternateName": "Harjass Digga"
         },
         "offers": {
           "@type": "Offer",
@@ -90,7 +91,8 @@ export default function HomePage() {
         "logo": LOGO_URL,
         "founder": {
           "@type": "Person",
-          "name": "Harjas Digga"
+          "name": "Harjas Digga",
+          "alternateName": "Harjass Digga"
         },
         "sameAs": [
           `${SITE_URL}/about`
@@ -101,7 +103,7 @@ export default function HomePage() {
         "@id": `${SITE_URL}/#website`,
         "url": SITE_URL,
         "name": "Otterleo - Learn Drawing & Sketching Online",
-        "description": "Free online drawing and sketching platform with challenges, feedback, and artist community.",
+        "description": "Free online drawing and sketching platform with easy sketches, tutorials, grid maker, and AI feedback.",
         "publisher": { "@id": `${SITE_URL}/#organization` }
       }
     ]
@@ -174,7 +176,7 @@ export default function HomePage() {
         <div className="relative w-44 h-14 sm:w-48 sm:h-16 flex items-center justify-center">
           <Image
             src={LOGO_URL}
-            alt="Otterleo Logo - Learn Drawing Online Platform"
+            alt="Otterleo Logo - Best Drawing Learning Website"
             width={192}
             height={64}
             priority
@@ -201,7 +203,7 @@ export default function HomePage() {
           </h1>
 
           <p className="font-sans text-base sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
-            Learn drawing and sketching through fun challenges, practice regularly, climb the leaderboard, and improve your art every day.
+            Learn <strong>drawing and sketching</strong> through fun challenges, step-by-step tutorials, and smart tools to improve your art every day.
           </p>
         </div>
 
