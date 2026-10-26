@@ -15,7 +15,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-// Avatar list with bottts and lorelei avatars
 const AVATARS = [
   { id: 1, name: "Blue Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot&backgroundColor=0284c7" },
   { id: 2, name: "Green Bot", url: "https://api.dicebear.com/7.x/bottts/svg?seed=GreenBot&backgroundColor=16a34a" },
@@ -44,19 +43,15 @@ export default function ProfilePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  // Editable Form States
   const [name, setName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
-
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const triggerHaptic = () => {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(15);
-      } catch {
-        // Fallback for unsupported devices
-      }
+      } catch {}
     }
   };
 
@@ -75,7 +70,6 @@ export default function ProfilePage() {
         return;
       }
 
-      // ⚡ MAXIMUM OPTIMIZATION: Fetch ONLY essential fields (No username, xp, streak)
       const { data, error } = await supabase
         .from("profiles")
         .select("id, name, email, avatar_url")
@@ -92,10 +86,7 @@ export default function ProfilePage() {
 
       const userAvatar = data.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${data.id}`;
 
-      setProfile({
-        ...data,
-        avatar_url: userAvatar,
-      });
+      setProfile({ ...data, avatar_url: userAvatar });
       setName(data.name || "");
       setSelectedAvatar(userAvatar);
     } catch (err: unknown) {
@@ -113,9 +104,7 @@ export default function ProfilePage() {
     e.preventDefault();
     triggerHaptic();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user || user.id !== profile?.id) {
       setMessage({ type: "error", text: "Unauthorized action detected!" });
@@ -137,13 +126,7 @@ export default function ProfilePage() {
       if (error) throw error;
 
       setProfile((prev) =>
-        prev
-          ? {
-              ...prev,
-              name: name.trim(),
-              avatar_url: selectedAvatar,
-            }
-          : null
+        prev ? { ...prev, name: name.trim(), avatar_url: selectedAvatar } : null
       );
 
       const localUserData = localStorage.getItem("user");
@@ -151,11 +134,7 @@ export default function ProfilePage() {
         const parsed = JSON.parse(localUserData);
         localStorage.setItem(
           "user",
-          JSON.stringify({
-            ...parsed,
-            name: name.trim(),
-            avatar: selectedAvatar,
-          })
+          JSON.stringify({ ...parsed, name: name.trim(), avatar: selectedAvatar })
         );
       }
 
@@ -173,35 +152,36 @@ export default function ProfilePage() {
     setDeleting(true);
 
     try {
-      const {
-        data: { user },
-        error: authUserError,
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (authUserError || !user) {
-        throw new Error("User session expired. Please log in again.");
+      if (!user) {
+        throw new Error("Session expired. Please login again.");
       }
 
-      const { error: dbError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", user.id);
+      // 1. First RPC Call try karo
+      const { error: rpcError } = await supabase.rpc('delete_user_account');
 
-      if (dbError) throw dbError;
+      // 2. Call backend API for complete auth deletion
+      const apiRes = await fetch('/api/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
 
+      if (!apiRes.ok && rpcError) {
+        throw new Error("Failed to delete account from system.");
+      }
+
+      // 3. Complete Signout & Local Storage Clear
       await supabase.auth.signOut();
       localStorage.clear();
+      sessionStorage.clear();
+
       router.replace("/login");
     } catch (err: unknown) {
       console.error("Delete Account Error:", err);
-      const errMsg =
-        err instanceof Error
-          ? err.message
-          : "Failed to delete account. Please check Supabase RLS policies.";
-      setMessage({
-        type: "error",
-        text: errMsg,
-      });
+      const errMsg = err instanceof Error ? err.message : "Failed to delete account.";
+      setMessage({ type: "error", text: errMsg });
       setShowDeleteModal(false);
     } finally {
       setDeleting(false);
@@ -386,7 +366,7 @@ export default function ProfilePage() {
             <div className="space-y-2">
               <h3 className="text-xl font-black text-[#0F172A]">Are you absolutely sure?</h3>
               <p className="text-xs font-bold text-red-600 leading-relaxed bg-red-50 p-3 rounded-xl border border-red-100">
-                Your info will be deleted permanently! All your account details will be lost forever.
+                Your info will be deleted permanently! All your account details will be lost forever. Process can take upto 1 minutes.
               </p>
             </div>
 

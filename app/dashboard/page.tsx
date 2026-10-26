@@ -73,9 +73,7 @@ export default function DashboardPage() {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(15);
-      } catch {
-        // Fallback
-      }
+      } catch {}
     }
   };
 
@@ -108,9 +106,7 @@ export default function DashboardPage() {
         osc.start(ctx.currentTime + index * 0.07);
         osc.stop(ctx.currentTime + index * 0.07 + 0.3);
       });
-    } catch {
-      // Audio fallback
-    }
+    } catch {}
   };
 
   const fetchDashboardData = useCallback(async () => {
@@ -153,26 +149,45 @@ export default function DashboardPage() {
         const lastLoginRaw = profileData.last_login;
         const lastLoginStr = lastLoginRaw ? lastLoginRaw.split("T")[0] : null;
 
+        const createdAtStr = profileData.created_at ? profileData.created_at.split("T")[0] : null;
+        const isCreatedToday = createdAtStr === todayStr;
+
         if (lastLoginStr !== todayStr) {
-          const currentStreak = Number(profileData.streak) || 0;
-          const newStreak = currentStreak + 1;
+          if (isCreatedToday || !lastLoginStr) {
+            // New user or missing last_login -> set streak = 1 and last_login = today
+            const { data: updatedProfile } = await supabase
+              .from("profiles")
+              .update({
+                streak: profileData.streak || 1,
+                last_login: todayStr
+              })
+              .eq("id", user.id)
+              .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
+              .maybeSingle();
 
-          const { data: updatedProfile } = await supabase
-            .from("profiles")
-            .update({
-              streak: newStreak,
-              last_login: todayStr
-            })
-            .eq("id", user.id)
-            .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
-            .maybeSingle();
+            activeProfile = updatedProfile || { ...profileData, streak: profileData.streak || 1, last_login: todayStr };
+          } else {
+            // Any new day visit (even after missed days) -> streak increments by +1
+            const newStreak = (Number(profileData.streak) || 1) + 1;
 
-          activeProfile = updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr };
+            const { data: updatedProfile } = await supabase
+              .from("profiles")
+              .update({
+                streak: newStreak,
+                last_login: todayStr
+              })
+              .eq("id", user.id)
+              .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
+              .maybeSingle();
+
+            activeProfile = updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr };
+          }
         } else {
           activeProfile = profileData;
         }
       } else {
-        activeProfile = {
+        // Create new profile row directly in DB if missing, ensuring last_login is never null
+        const newProfilePayload = {
           id: user.id,
           name: sanitizeString(user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist"),
           username: sanitizeString(user.email?.split("@")[0] || "artist"),
@@ -183,6 +198,14 @@ export default function DashboardPage() {
           last_login: todayStr,
           created_at: new Date().toISOString()
         };
+
+        const { data: insertedProfile } = await supabase
+          .from("profiles")
+          .upsert(newProfilePayload)
+          .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
+          .single();
+
+        activeProfile = insertedProfile || newProfilePayload;
       }
 
       setProfile(activeProfile);
@@ -389,7 +412,7 @@ export default function DashboardPage() {
                 <Star className="w-3.5 h-3.5 fill-amber-300" />
               </div>
               <div className="absolute bottom-20 left-12 text-amber-300 opacity-70 pointer-events-none">
-                <Star className="w-2.5 h-2.5 fill-amber-300" />
+                <Star className="w-2.5 h-2.5 fill-amber-200" />
               </div>
               <div className="absolute bottom-6 left-10 text-amber-300 opacity-90 pointer-events-none z-20">
                 <Star className="w-4 h-4 fill-amber-300" />

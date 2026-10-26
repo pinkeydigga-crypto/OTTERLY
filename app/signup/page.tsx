@@ -20,13 +20,26 @@ const AVATARS = [
   { id: 8, name: "Lorelei Boy 2", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiBoy2&backgroundColor=f1f5f9" },
 ];
 
+const SKILL_LEVELS = [
+  { id: "beginner", label: "Beginner", desc: "Just starting out with drawing" },
+  { id: "intermediate", label: "Intermediate", desc: "Know basic sketching & shapes" },
+  { id: "advanced", label: "Advanced", desc: "Looking for challenges & mastery" },
+];
+
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export default function SignupPage() {
   const router = useRouter();
-  const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
+  const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/onboard.png';
 
-  const [step, setStep] = useState<1 | 2>(1);
-  const [animatedSteps, setAnimatedSteps] = useState<Record<number, boolean>>({});
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
+  const [skillLevel, setSkillLevel] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [consent, setConsent] = useState(false);
@@ -36,12 +49,19 @@ export default function SignupPage() {
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
   useEffect(() => {
-    const fullText = step === 1 ? "Choose your avatar!" : "Create your profile";
-
-    if (animatedSteps[step]) {
-      setTypedText(fullText);
-      setIsTypingComplete(true);
-      return;
+    let fullText = "Choose your avatar!";
+    if (step === 2) {
+      if (skillLevel === 'beginner') {
+        fullText = "That's great! We will help you build your sketching skills from scratch.";
+      } else if (skillLevel === 'intermediate') {
+        fullText = "Awesome! Let's sharpen your drawing techniques and shading.";
+      } else if (skillLevel === 'advanced') {
+        fullText = "Incredible! Let's master professional art together.";
+      } else {
+        fullText = "What's your drawing level?";
+      }
+    } else if (step === 3) {
+      fullText = "Almost done! Let's make your account.";
     }
 
     setTypedText('');
@@ -53,13 +73,12 @@ export default function SignupPage() {
         index++;
       } else {
         setIsTypingComplete(true);
-        setAnimatedSteps((prev) => ({ ...prev, [step]: true }));
         clearInterval(timer);
       }
-    }, 70);
+    }, 45);
 
     return () => clearInterval(timer);
-  }, [step, animatedSteps]);
+  }, [step, skillLevel]);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -93,18 +112,7 @@ export default function SignupPage() {
   useEffect(() => {
     syncLockoutState();
     const timer = setInterval(syncLockoutState, 1000);
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'signup_lockout_until' || e.key === 'signup_attempts') {
-        syncLockoutState();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    return () => clearInterval(timer);
   }, [syncLockoutState]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,11 +129,17 @@ export default function SignupPage() {
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
-    setStep(2);
+
+    if (step === 2 && !skillLevel) {
+      setErrorMessage('Please select your drawing level to continue.');
+      return;
+    }
+
+    setStep((prev) => (prev < 3 ? ((prev + 1) as 1 | 2 | 3) : prev));
   };
 
-  const handleSignup = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     if (lockoutSeconds > 0 || loading) return;
 
@@ -140,15 +154,15 @@ export default function SignupPage() {
       return;
     }
 
-    const nameRegex = /^[a-zA-Z\s'-]{2,8}$/;
+    const nameRegex = /^[a-zA-Z\s'-]{2,15}$/;
     if (!nameRegex.test(cleanName)) {
-      setErrorMessage('Name must be 2 to 8 characters long and contain only letters.');
+      setErrorMessage('Name must be 2 to 15 characters long and contain only letters.');
       return;
     }
 
-    const usernameRegex = /^[a-zA-Z0-9_]{2,8}$/;
+    const usernameRegex = /^[a-zA-Z0-9_]{2,12}$/;
     if (!usernameRegex.test(cleanUsername)) {
-      setErrorMessage('Username must be 2-8 characters long and contain only letters, numbers, and underscores.');
+      setErrorMessage('Username must be 2-12 characters long (letters, numbers, underscore).');
       return;
     }
 
@@ -164,13 +178,7 @@ export default function SignupPage() {
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match. Please try again.');
-      return;
-    }
-
-    const commonWeakPasswords = ['password', '12345678', 'qwertyui', '00000000', '11111111', 'abcdefgh'];
-    if (commonWeakPasswords.includes(password.toLowerCase()) || /^\d+$/.test(password)) {
-      setErrorMessage('Password is too weak. Please use a combination of letters, numbers, or symbols.');
+      setErrorMessage('Passwords do not match.');
       return;
     }
 
@@ -215,6 +223,8 @@ export default function SignupPage() {
       const user = authData.user;
       if (!user) throw new Error("Could not create authentication session.");
 
+      const todayStr = getLocalDateString();
+
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert([
@@ -224,8 +234,10 @@ export default function SignupPage() {
             username: cleanUsername,
             email: cleanEmail,
             avatar_url: selectedAvatar,
+            skill_level: skillLevel,
             xp: 0,
-            streak: 0,
+            streak: 1,
+            last_login: todayStr, // ✅ Yahan last_login explicitly set kar diya taaki kabhi null na ho!
           }
         ], { onConflict: 'id' });
 
@@ -252,6 +264,7 @@ export default function SignupPage() {
         username: cleanUsername,
         email: cleanEmail,
         avatar: selectedAvatar,
+        skill_level: skillLevel,
       };
 
       localStorage.setItem('user', JSON.stringify(userData));
@@ -261,7 +274,6 @@ export default function SignupPage() {
       router.push('/dashboard');
     } catch (err: any) {
       console.error("Signup Internal Error:", err);
-
       const remaining = MAX_ATTEMPTS - newAttempts;
       
       if (err?.status === 429 || err?.message?.toLowerCase().includes("rate limit")) {
@@ -277,7 +289,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden font-sans">
       
       <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-100/70 rounded-full blur-2xl pointer-events-none" />
       <div className="absolute top-1/2 -left-20 -translate-y-1/2 w-64 h-64 bg-indigo-100/60 rounded-full blur-2xl pointer-events-none" />
@@ -288,8 +300,7 @@ export default function SignupPage() {
           left: -7px;
           top: 50%;
           transform: translateY(-50%);
-          width: 0;
-          height: 0;
+          width: 0; height: 0;
           border-top: 5px solid transparent;
           border-bottom: 5px solid transparent;
           border-right: 7px solid #60A5FA;
@@ -299,14 +310,14 @@ export default function SignupPage() {
           left: -5px;
           top: 50%;
           transform: translateY(-50%);
-          width: 0;
-          height: 0;
+          width: 0; height: 0;
           border-top: 4px solid transparent;
           border-bottom: 4px solid transparent;
           border-right: 6px solid #F0F7FF;
         }
       `}</style>
 
+      {/* TOP BACK TO HOME BUTTON */}
       <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
         <Link 
           href="/" 
@@ -321,11 +332,15 @@ export default function SignupPage() {
         
         <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
           
+          {/* STEP INDICATORS */}
           <div className="flex items-center justify-between pb-1">
-            {step === 2 ? (
+            {step > 1 ? (
               <button
                 type="button"
-                onClick={() => setStep(1)}
+                onClick={() => {
+                  setStep((prev) => (prev - 1) as 1 | 2 | 3);
+                  setErrorMessage('');
+                }}
                 className="inline-flex items-center gap-1 text-xs font-black text-[#2563EB] hover:underline cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -338,17 +353,23 @@ export default function SignupPage() {
             <div className="flex items-center justify-center gap-2 mx-auto">
               <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
               <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+              <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 3 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
             </div>
 
             <div className="w-10" />
           </div>
 
-          <div className="flex items-center gap-3 my-2 pl-1">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md shrink-0">
-              <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
+          {/* IMAGE ON LEFT, TYPEWRITER BUBBLE WITH SLIGHTLY BIGGER PILL & TEXT */}
+          <div className="flex items-center gap-3 my-2 px-1">
+            <div className="w-24 h-20 sm:w-28 sm:h-24 drop-shadow-md shrink-0">
+              <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain scale-110" />
             </div>
 
-            <div className="relative px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-black text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-sm">
+            <div className="relative px-4 py-2.5 rounded-2xl text-sm sm:text-base font-black text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-sm flex-1">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-ping shrink-0"></span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-[#2563EB]">OTTO</span>
+              </div>
               <span>{typedText}</span>
               {!isTypingComplete && (
                 <span className="animate-pulse text-[#2563EB]">|</span>
@@ -364,8 +385,9 @@ export default function SignupPage() {
             </div>
           )}
 
+          {/* STEP 1: CHOOSE AVATAR */}
           {step === 1 && (
-            <form onSubmit={handleNextStep} className="space-y-4 pt-1">
+            <div className="space-y-4 pt-1">
               <div className="grid grid-cols-4 gap-3.5 max-w-md mx-auto">
                 {AVATARS.map((avatar) => {
                   const isSelected = selectedAvatar === avatar.url;
@@ -373,16 +395,15 @@ export default function SignupPage() {
                     <button
                       key={avatar.id}
                       type="button"
-                      disabled={lockoutSeconds > 0 || loading}
-                      onClick={(e) => {
-                        e.preventDefault();
+                      onClick={() => {
                         setSelectedAvatar(avatar.url);
+                        setErrorMessage('');
                       }}
                       className={`relative aspect-square rounded-2xl p-1.5 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col items-center justify-center ${
                         isSelected
                           ? 'ring-4 ring-[#2563EB] scale-105 shadow-md bg-blue-50 border-2 border-[#2563EB]'
                           : 'opacity-80 hover:opacity-100 border-2 border-slate-200 hover:scale-105'
-                      } ${lockoutSeconds > 0 || loading ? 'opacity-40 pointer-events-none' : ''}`}
+                      }`}
                     >
                       <img
                         src={avatar.url}
@@ -392,6 +413,69 @@ export default function SignupPage() {
                     </button>
                   );
                 })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMessage('');
+                  setStep(2);
+                }}
+                style={{
+                  backgroundColor: '#2563EB',
+                  boxShadow: '0px 6px 0px #1D4ED8',
+                }}
+                className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
+              >
+                <span>NEXT</span>
+                <ChevronRight className="w-5 h-5 stroke-[3]" />
+              </button>
+            </div>
+          )}
+
+          {/* STEP 2: DRAWING SKILL LEVEL */}
+          {step === 2 && (
+            <form onSubmit={handleNextStep} className="space-y-3 pt-1">
+              <div className="pt-1">
+                <div className="space-y-2.5">
+                  {SKILL_LEVELS.map((lvl) => {
+                    const isSelected = skillLevel === lvl.id;
+                    return (
+                      <button
+                        key={lvl.id}
+                        type="button"
+                        onClick={() => {
+                          setSkillLevel(lvl.id);
+                          setErrorMessage('');
+                        }}
+                        className={`w-full p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-center justify-between relative overflow-hidden ${
+                          isSelected
+                            ? 'border-[#2563EB] bg-[#F0F7FF] shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#2563EB]" />
+                        )}
+
+                        <div className={`pl-1 ${isSelected ? 'pl-3' : ''} min-w-0`}>
+                          <p className={`text-xs sm:text-sm font-black ${isSelected ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>
+                            {lvl.label}
+                          </p>
+                          <p className="text-[11px] font-medium text-slate-500">
+                            {lvl.desc}
+                          </p>
+                        </div>
+
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          isSelected ? 'border-[#2563EB] bg-[#2563EB]' : 'border-slate-300'
+                        }`}>
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <button
@@ -408,38 +492,42 @@ export default function SignupPage() {
             </form>
           )}
 
-          {step === 2 && (
-            <form onSubmit={handleSignup} className="space-y-3.5 pt-1">
-              
-              <div className="grid grid-cols-2 gap-3">
+          {/* STEP 3: NAME, USERNAME, EMAIL & PASSWORD */}
+          {step === 3 && (
+            <form onSubmit={handleSignup} className="space-y-3 pt-1">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
+                  <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
                   <div className="relative flex items-center">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
                     <input
                       type="text"
                       name="name"
-                      disabled={lockoutSeconds > 0 || loading}
                       value={formData.name}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setErrorMessage('');
+                      }}
                       placeholder="John Doe"
-                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                      className="w-full pl-9 pr-2.5 py-2 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Username</label>
+                  <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Username</label>
                   <div className="relative flex items-center">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
                     <input
                       type="text"
                       name="username"
-                      disabled={lockoutSeconds > 0 || loading}
                       value={formData.username}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setErrorMessage('');
+                      }}
                       placeholder="john12"
-                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                      className="w-full pl-9 pr-2.5 py-2 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A]"
                     />
                   </div>
                 </div>
@@ -454,7 +542,10 @@ export default function SignupPage() {
                     name="email"
                     disabled={lockoutSeconds > 0 || loading}
                     value={formData.email}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      setErrorMessage('');
+                    }}
                     placeholder="youremail@gmail.com"
                     className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
                   />
@@ -470,7 +561,10 @@ export default function SignupPage() {
                     name="password"
                     disabled={lockoutSeconds > 0 || loading}
                     value={formData.password}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      setErrorMessage('');
+                    }}
                     placeholder="At least 8 characters"
                     className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
                   />
@@ -486,7 +580,10 @@ export default function SignupPage() {
                     name="confirmPassword"
                     disabled={lockoutSeconds > 0 || loading}
                     value={formData.confirmPassword}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      handleChange(e);
+                      setErrorMessage('');
+                    }}
                     placeholder="Re-enter password"
                     className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
                   />
@@ -499,7 +596,10 @@ export default function SignupPage() {
                   id="consent"
                   disabled={lockoutSeconds > 0 || loading}
                   checked={consent}
-                  onChange={(e) => setConsent(e.target.checked)}
+                  onChange={(e) => {
+                    setConsent(e.target.checked);
+                    setErrorMessage('');
+                  }}
                   className="mt-0.5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
                 />
                 <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
