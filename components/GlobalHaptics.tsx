@@ -40,17 +40,22 @@ export default function GlobalHaptics() {
       const ctx = audioCtxRef.current;
       if (!ctx) return;
 
+      // Agar context running nahi hai, toh turant resume karo taaki sound miss na ho
+      if (ctx.state !== "running") {
+        ctx.resume();
+      }
+
       try {
         const now = ctx.currentTime;
 
-        // 1. Warm Triangle Wave (Soft & Sweet, no harsh sine/square noise)
+        // 1. Warm Triangle Wave (Soft & Sweet)
         const osc = ctx.createOscillator();
         osc.type = "triangle";
 
-        // 2. Low-Pass Filter (Chubhne wali sharp frequencies ko cut/mellow karne ke liye)
+        // 2. Low-Pass Filter (Sharp frequencies cut karne ke liye)
         const filter = ctx.createBiquadFilter();
         filter.type = "lowpass";
-        filter.frequency.setValueAtTime(1200, now); // Warm Cutoff
+        filter.frequency.setValueAtTime(1200, now);
 
         // 3. Smooth Volume Envelope
         const gain = ctx.createGain();
@@ -59,18 +64,18 @@ export default function GlobalHaptics() {
         osc.frequency.setValueAtTime(420, now);
         osc.frequency.exponentialRampToValueAtTime(180, now + 0.035);
 
-        // Soft Attack & Decay (Non-piercing)
+        // Soft Attack & Decay
         gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.22, now + 0.005); // Smooth 5ms attack
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035); // Gentle decay
+        gain.gain.linearRampToValueAtTime(0.22, now + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
 
-        // Node Connections: Oscillator -> Low Pass Filter -> Gain Envelope -> Speakers
+        // Node Connections
         osc.connect(filter);
         filter.connect(gain);
         gain.connect(ctx.destination);
 
         osc.start(now);
-        osc.stop(now + 0.035); // ~35ms exact sweet duration
+        osc.stop(now + 0.035);
       } catch {
         // Suppress audio restriction errors
       }
@@ -97,22 +102,19 @@ export default function GlobalHaptics() {
       }
     };
 
-    // Unlock Audio Context on first gesture
-    const unlockAudioOnFirstGesture = () => {
+    // Unlock Audio Context on first gestures and keep it active
+    const unlockAudio = () => {
       initAudioContext();
-      window.removeEventListener("pointerdown", unlockAudioOnFirstGesture);
-      window.removeEventListener("keydown", unlockAudioOnFirstGesture);
     };
 
-    window.addEventListener("pointerdown", unlockAudioOnFirstGesture, { once: true });
-    window.addEventListener("keydown", unlockAudioOnFirstGesture, { once: true });
-
+    window.addEventListener("pointerdown", unlockAudio, { passive: true });
+    window.addEventListener("keydown", unlockAudio, { passive: true });
     window.addEventListener("touchstart", handleInteraction, { passive: true });
     window.addEventListener("click", handleInteraction);
 
     return () => {
-      window.removeEventListener("pointerdown", unlockAudioOnFirstGesture);
-      window.removeEventListener("keydown", unlockAudioOnFirstGesture);
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
       window.removeEventListener("touchstart", handleInteraction);
       window.removeEventListener("click", handleInteraction);
     };

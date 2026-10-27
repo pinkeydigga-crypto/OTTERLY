@@ -154,7 +154,6 @@ export default function DashboardPage() {
 
         if (lastLoginStr !== todayStr) {
           if (isCreatedToday || !lastLoginStr) {
-            // New user or missing last_login -> set streak = 1 and last_login = today
             const { data: updatedProfile } = await supabase
               .from("profiles")
               .update({
@@ -167,7 +166,6 @@ export default function DashboardPage() {
 
             activeProfile = updatedProfile || { ...profileData, streak: profileData.streak || 1, last_login: todayStr };
           } else {
-            // Any new day visit (even after missed days) -> streak increments by +1
             const newStreak = (Number(profileData.streak) || 1) + 1;
 
             const { data: updatedProfile } = await supabase
@@ -186,7 +184,6 @@ export default function DashboardPage() {
           activeProfile = profileData;
         }
       } else {
-        // Create new profile row directly in DB if missing, ensuring last_login is never null
         const newProfilePayload = {
           id: user.id,
           name: sanitizeString(user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist"),
@@ -755,7 +752,7 @@ export default function DashboardPage() {
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {[
             { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-            { name: "Ideas", path: "/generator", icon: Sparkles },
+            { name: "Practice", path: "/practice", icon: Palette },
             { name: "Challenges", path: "/challenges", icon: Swords },
             { name: "Scan", path: "/scan", icon: Scan },
             { name: "Leaderboard", path: "/leaderboard", icon: Trophy },

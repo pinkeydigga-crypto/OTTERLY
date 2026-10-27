@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -44,9 +44,7 @@ export default function LeaderboardPage() {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(15);
-      } catch {
-        // Safe fallback
-      }
+      } catch {}
     }
   };
 
@@ -193,7 +191,7 @@ export default function LeaderboardPage() {
 
   const mobileNavItems = [
     { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Ideas", path: "/generator", icon: Sparkles },
+    { name: "Practice", path: "/practice", icon: Palette },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", active: true, icon: Trophy },

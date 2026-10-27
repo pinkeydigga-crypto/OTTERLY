@@ -31,6 +31,7 @@ interface Profile {
   name: string;
   email: string;
   avatar_url: string;
+  skill_level: string;
 }
 
 export default function ProfilePage() {
@@ -44,6 +45,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [name, setName] = useState("");
+  const [skillLevel, setSkillLevel] = useState("beginner");
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -72,7 +74,7 @@ export default function ProfilePage() {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, name, email, avatar_url")
+        .select("id, name, email, avatar_url, skill_level")
         .eq("id", user.id)
         .single();
 
@@ -88,6 +90,7 @@ export default function ProfilePage() {
 
       setProfile({ ...data, avatar_url: userAvatar });
       setName(data.name || "");
+      setSkillLevel(data.skill_level || "beginner");
       setSelectedAvatar(userAvatar);
     } catch (err: unknown) {
       console.error("Profile fetch error:", err);
@@ -120,13 +123,14 @@ export default function ProfilePage() {
         .update({
           name: name.trim(),
           avatar_url: selectedAvatar,
+          skill_level: skillLevel,
         })
         .eq("id", user.id);
 
       if (error) throw error;
 
       setProfile((prev) =>
-        prev ? { ...prev, name: name.trim(), avatar_url: selectedAvatar } : null
+        prev ? { ...prev, name: name.trim(), avatar_url: selectedAvatar, skill_level: skillLevel } : null
       );
 
       const localUserData = localStorage.getItem("user");
@@ -134,7 +138,7 @@ export default function ProfilePage() {
         const parsed = JSON.parse(localUserData);
         localStorage.setItem(
           "user",
-          JSON.stringify({ ...parsed, name: name.trim(), avatar: selectedAvatar })
+          JSON.stringify({ ...parsed, name: name.trim(), avatar: selectedAvatar, skill_level: skillLevel })
         );
       }
 
@@ -158,10 +162,8 @@ export default function ProfilePage() {
         throw new Error("Session expired. Please login again.");
       }
 
-      // 1. First RPC Call try karo
       const { error: rpcError } = await supabase.rpc('delete_user_account');
 
-      // 2. Call backend API for complete auth deletion
       const apiRes = await fetch('/api/delete-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -172,7 +174,6 @@ export default function ProfilePage() {
         throw new Error("Failed to delete account from system.");
       }
 
-      // 3. Complete Signout & Local Storage Clear
       await supabase.auth.signOut();
       localStorage.clear();
       sessionStorage.clear();
@@ -244,6 +245,9 @@ export default function ProfilePage() {
           <div className="text-center sm:text-left space-y-1 flex-1">
             <h2 className="text-2xl font-black text-[#0F172A]">{name || "User Name"}</h2>
             <p className="text-xs font-bold text-slate-400">{profile?.email}</p>
+            <div className="inline-block px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-wider mt-1">
+              Level: {skillLevel}
+            </div>
           </div>
         </div>
 
@@ -308,6 +312,21 @@ export default function ProfilePage() {
               placeholder="Your Full Name"
               className="w-full px-4 py-3 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-bold text-[#0F172A]"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-black text-[#0F172A] uppercase tracking-wider mb-2">
+              Skill Level
+            </label>
+            <select
+              value={skillLevel}
+              onChange={(e) => setSkillLevel(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-bold text-[#0F172A] capitalize cursor-pointer"
+            >
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
           </div>
 
           <div>

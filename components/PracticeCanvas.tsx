@@ -40,15 +40,12 @@ export default function PracticeCanvas() {
   const [pencilColor, setPencilColor] = useState(PENCIL_COLORS[1].value);
   const [highlighterColor, setHighlighterColor] = useState(HIGHLIGHTER_COLORS[0].value);
 
-  // History Stack for Undo & Redo
   const [history, setHistory] = useState<ImageData[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
 
-  // Drawing Path Points Ref
   const currentPathRef = useRef<{ x: number; y: number }[]>([]);
   const baseImageDataRef = useRef<ImageData | null>(null);
 
-  // Save State to History Stack
   const saveState = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -64,7 +61,6 @@ export default function PracticeCanvas() {
     setHistoryIndex((prev) => prev + 1);
   }, [historyIndex]);
 
-  // Init Canvas Dimensions
   const initCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -77,7 +73,6 @@ export default function PracticeCanvas() {
     canvas.width = rect.width;
     canvas.height = rect.height;
 
-    // Fill Solid White Background
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -92,7 +87,6 @@ export default function PracticeCanvas() {
     return () => window.removeEventListener("resize", initCanvas);
   }, [initCanvas]);
 
-  // Undo Function
   const handleUndo = () => {
     if (historyIndex <= 0) return;
     const canvas = canvasRef.current;
@@ -105,7 +99,6 @@ export default function PracticeCanvas() {
     setHistoryIndex(newIndex);
   };
 
-  // Redo Function
   const handleRedo = () => {
     if (historyIndex >= history.length - 1) return;
     const canvas = canvasRef.current;
@@ -118,7 +111,6 @@ export default function PracticeCanvas() {
     setHistoryIndex(newIndex);
   };
 
-  // Coordinate Helper
   const getCoordinates = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -151,7 +143,6 @@ export default function PracticeCanvas() {
     };
   };
 
-  // Start Drawing Stroke
   const startDrawing = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -170,7 +161,6 @@ export default function PracticeCanvas() {
     setIsDrawing(true);
   };
 
-  // Render Whole Stroke Continuously
   const draw = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
@@ -223,7 +213,6 @@ export default function PracticeCanvas() {
     ctx.globalAlpha = 1.0;
   };
 
-  // Finish Stroke
   const stopDrawing = () => {
     if (isDrawing) {
       setIsDrawing(false);
@@ -365,11 +354,11 @@ export default function PracticeCanvas() {
           </button>
         </div>
 
-        {/* Dynamic Color Palette for Pencil */}
+        {/* Dynamic Color Palette for Pencil (2 rows on mobile via grid-cols-5) */}
         {activeTool === "pencil" && (
-          <div className="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white px-3 py-2.5 rounded-xl border border-slate-200 w-full">
             <span className="text-[11px] font-black text-slate-500 shrink-0">Pencil Color:</span>
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <div className="grid grid-cols-5 sm:flex sm:flex-wrap items-center gap-2">
               {PENCIL_COLORS.map((c) => (
                 <button
                   type="button"
@@ -377,7 +366,7 @@ export default function PracticeCanvas() {
                   title={c.name}
                   onClick={() => setPencilColor(c.value)}
                   style={{ backgroundColor: c.value }}
-                  className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${
+                  className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 transition-all cursor-pointer mx-auto ${
                     pencilColor === c.value
                       ? "border-blue-600 scale-110 shadow-sm"
                       : "border-slate-300 hover:scale-105"
@@ -388,11 +377,11 @@ export default function PracticeCanvas() {
           </div>
         )}
 
-        {/* Dynamic Color Palette for Highlighter */}
+        {/* Dynamic Color Palette for Highlighter (2 rows on mobile via grid-cols-5) */}
         {activeTool === "highlighter" && (
-          <div className="flex flex-wrap items-center justify-between gap-2 bg-white px-3 py-2 rounded-xl border border-slate-200 w-full">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white px-3 py-2.5 rounded-xl border border-slate-200 w-full">
             <span className="text-[11px] font-black text-slate-500 shrink-0">Highlighter Color:</span>
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <div className="grid grid-cols-5 sm:flex sm:flex-wrap items-center gap-2">
               {HIGHLIGHTER_COLORS.map((c) => (
                 <button
                   type="button"
@@ -400,7 +389,7 @@ export default function PracticeCanvas() {
                   title={c.name}
                   onClick={() => setHighlighterColor(c.value)}
                   style={{ backgroundColor: c.value.replace(/0\.\d+/, "0.9") }}
-                  className={`w-6 h-6 rounded-full border-2 transition-all cursor-pointer ${
+                  className={`w-7 h-7 sm:w-6 sm:h-6 rounded-full border-2 transition-all cursor-pointer mx-auto ${
                     highlighterColor === c.value
                       ? "border-slate-800 scale-110 shadow-sm"
                       : "border-slate-300 hover:scale-105"

@@ -6,7 +6,7 @@ import Image from "next/image";
 import PracticeCanvas from "@/components/PracticeCanvas";
 import { 
   Download, RotateCcw, ArrowLeft, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, Award, User, Settings, Flame, PanelLeft,
+  Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
   X, Palette, Grid, ShieldAlert, AlertCircle, Sparkles
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -48,9 +48,7 @@ export default function PracticePage() {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(15);
-      } catch {
-        // Fallback
-      }
+      } catch {}
     }
   };
 
@@ -230,7 +228,7 @@ export default function PracticePage() {
 
   const mobileNavItems: NavItem[] = [
     { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Ideas", path: "/generator", icon: Sparkles },
+    { name: "Practice", path: "/practice", active: true, icon: Palette },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
@@ -452,10 +450,11 @@ export default function PracticePage() {
           </Link>
         </div>
 
-        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs space-y-4">
-          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="text-center sm:text-left flex-1 space-y-1">
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+        {/* Banner Card: Text Left, Image Right forced */}
+        <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs">
+          <div className="w-full flex flex-row items-center justify-between gap-4">
+            <div className="text-left flex-1 space-y-1">
+              <h1 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 Practice Canvas
               </h1>
               <p className="text-slate-500 font-bold text-xs sm:text-sm max-w-md">
@@ -463,7 +462,7 @@ export default function PracticePage() {
               </p>
             </div>
 
-            <div className="w-28 sm:w-36 h-auto shrink-0 flex items-center justify-center">
+            <div className="w-24 sm:w-36 h-auto shrink-0 flex items-center justify-center">
               <img
                 src={mascotImageUrl}
                 alt="Mascot"

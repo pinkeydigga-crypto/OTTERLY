@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useOfflineGuard } from "@/hooks/useOfflineGuard";
+import LoadingScreen from "@/components/LoadingScreen";
 import {
   ArrowLeft,
   Upload,
@@ -423,14 +424,7 @@ export default function ScanPage() {
   const userName = rawUserName.replace(/<[^>]*>?/gm, "").trim();
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen bg-[#F6FAFF] flex items-center justify-center">
-        <div className="flex items-center gap-3 text-[#2563eb] font-black text-base">
-          <Loader2 className="w-6 h-6 animate-spin" />
-          <span>Verifying access...</span>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
@@ -934,7 +928,7 @@ export default function ScanPage() {
         <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
           {[
             { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-            { name: "Ideas", path: "/generator", icon: Sparkles },
+            { name: "Practice", path: "/practice", icon: Palette },
             { name: "Challenges", path: "/challenges", icon: Swords },
             { name: "Scan", path: "/scan", icon: Scan, active: true },
             { name: "Leaderboard", path: "/leaderboard", icon: Trophy },

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  ArrowLeft, CheckCircle2, Loader2, LayoutDashboard,
+  ArrowLeft, CheckCircle2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, PanelLeft, X, ChevronRight,
   Sparkles, Check, ShieldAlert, Palette, Grid, Zap, RefreshCw, Star
 } from "lucide-react";
@@ -12,6 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
 import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import PracticeCanvas from "@/components/PracticeCanvas";
+import LoadingScreen from "@/components/LoadingScreen";
 import { playCelebrationSound } from "@/lib/sound";
 
 function TypewriterText({ text, speed = 50 }: { text: string; speed?: number }) {
@@ -183,7 +184,7 @@ export default function ChallengesPage() {
   const [currentStep, setCurrentStep] = useState<number>(0);
 
   const [showClaimModal, setShowClaimModal] = useState<boolean>(false);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<"beginner" | "intermediate" | "advanced" | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
   const [showLevelModal, setShowLevelModal] = useState<boolean>(false);
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
@@ -193,30 +194,28 @@ export default function ChallengesPage() {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(15);
-      } catch {
-        // Fallback
-      }
+      } catch {}
     }
   };
 
   useEffect(() => {
     setMounted(true);
-    if (typeof window !== "undefined") {
-      const savedLevel = localStorage.getItem("user_drawing_level") as "beginner" | "intermediate" | "advanced" | null;
-      if (savedLevel) {
-        setSelectedDifficulty(savedLevel);
-      } else {
-        setShowLevelModal(true);
-      }
-    }
+  }, []);
+
+  useEffect(() => {
+    LOCAL_CHALLENGES.forEach((challenge) => {
+      challenge.steps.forEach((st) => {
+        if (st.imageUrl) {
+          const img = new window.Image();
+          img.src = st.imageUrl;
+        }
+      });
+    });
   }, []);
 
   const handleSelectLevel = (level: "beginner" | "intermediate" | "advanced") => {
     triggerHaptic();
     setSelectedDifficulty(level);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("user_drawing_level", level);
-    }
     setShowLevelModal(false);
   };
 
@@ -250,7 +249,7 @@ export default function ChallengesPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("name, username, avatar_url, xp")
+        .select("name, username, avatar_url, xp, skill_level")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -266,6 +265,13 @@ export default function ChallengesPage() {
           name: (profile.name || profile.username || "Artist").replace(/<[^>]*>?/gm, "").trim(),
           avatar_url: profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`
         });
+
+        if (profile.skill_level) {
+          const fetchedLevel = profile.skill_level.toLowerCase() as "beginner" | "intermediate" | "advanced";
+          if (["beginner", "intermediate", "advanced"].includes(fetchedLevel)) {
+            setSelectedDifficulty(fetchedLevel);
+          }
+        }
       } else {
         setUserProfile({
           name: user.email?.split("@")[0] || "Artist",
@@ -391,11 +397,7 @@ export default function ChallengesPage() {
   };
 
   if (!mounted || loading) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (isVerified === false && !isOffline) {
@@ -454,7 +456,7 @@ export default function ChallengesPage() {
 
   const mobileNavItems = [
     { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Ideas", path: "/generator", icon: Sparkles },
+    { name: "Practice", path: "/practice", icon: Palette },
     { name: "Challenges", path: "/challenges", icon: Swords, active: true },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
@@ -493,7 +495,7 @@ export default function ChallengesPage() {
               className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-base rounded-full shadow-lg shadow-blue-500/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
             >
               {claimingId === currentChallenge.id ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
                   <Star className="w-5 h-5 fill-white text-white" />
@@ -773,12 +775,10 @@ export default function ChallengesPage() {
                       )}
 
                       <div className="w-full h-36 sm:h-44 flex items-center justify-center relative">
-                        <Image
+                        <img
                           src={challenge.previewImage}
                           alt={challenge.title}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                          className="object-contain hover:scale-105 transition-all duration-300"
+                          className="w-full h-full object-contain hover:scale-105 transition-all duration-300"
                         />
                       </div>
 
@@ -861,17 +861,14 @@ export default function ChallengesPage() {
                 <PracticeCanvas />
               </div>
             ) : activeStepList[currentStep].typewriterText ? (
-              <div className="w-full flex flex-col sm:flex-row-reverse items-center justify-center gap-3 sm:gap-5 py-2 px-1">
+              <div key={currentStep} className="w-full flex flex-col sm:flex-row-reverse items-center justify-center gap-3 sm:gap-5 py-2 px-1">
                 
                 <div className="w-48 h-48 sm:w-56 sm:h-56 shrink-0 flex items-center justify-center relative">
                   {activeStepList[currentStep].imageUrl && (
-                    <Image
+                    <img
                       src={activeStepList[currentStep].imageUrl!}
-                      alt="Otto Mascot"
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-contain"
-                      unoptimized
+                      alt="Otto Mascot Step"
+                      className="w-full h-full object-contain"
                     />
                   )}
                 </div>
@@ -892,14 +889,12 @@ export default function ChallengesPage() {
 
               </div>
             ) : (
-              <div className="w-full h-48 sm:h-56 flex items-center justify-center relative overflow-hidden">
+              <div key={currentStep} className="w-full h-48 sm:h-56 flex items-center justify-center relative overflow-hidden bg-slate-50/50 rounded-2xl">
                 {activeStepList[currentStep].imageUrl && (
-                  <Image
+                  <img
                     src={activeStepList[currentStep].imageUrl!}
                     alt="Tutorial step reference"
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-contain scale-100 transition-transform duration-300"
+                    className="w-full h-full object-contain scale-100 transition-all duration-200"
                   />
                 )}
               </div>
