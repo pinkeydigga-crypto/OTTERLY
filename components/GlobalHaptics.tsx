@@ -1,122 +1,74 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
-// Minimal 20ms haptic vibration for mobile devices
 const triggerSubtleVibration = () => {
   if (typeof window !== "undefined" && "vibrate" in navigator) {
     try {
       navigator.vibrate(20);
-    } catch {
-      // Ignore vibration restrictions
-    }
+    } catch {}
   }
 };
 
 export default function GlobalHaptics() {
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const isTouchRef = useRef<boolean>(false);
-
   useEffect(() => {
-    // Single persistent AudioContext initialize
-    const initAudioContext = () => {
-      if (!audioCtxRef.current && typeof window !== "undefined") {
+    const playDeepButtonSound = () => {
+      try {
         const AudioClass =
           window.AudioContext ||
           (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        if (AudioClass) {
-          audioCtxRef.current = new AudioClass();
+        
+        if (!AudioClass) return;
+
+        // Har click par ek fresh standalone context taaki volume overlap ya compress na ho
+        const ctx = new AudioClass();
+        if (ctx.state === "suspended") {
+          ctx.resume();
         }
-      }
 
-      if (audioCtxRef.current && audioCtxRef.current.state === "suspended") {
-        audioCtxRef.current.resume();
-      }
-    };
-
-    // Warm, Soft, Sweet 30ms Bubble Pop Sound
-    const playWarmSweetPopSound = () => {
-      initAudioContext();
-      const ctx = audioCtxRef.current;
-      if (!ctx) return;
-
-      // Agar context running nahi hai, toh turant resume karo taaki sound miss na ho
-      if (ctx.state !== "running") {
-        ctx.resume();
-      }
-
-      try {
         const now = ctx.currentTime;
-
-        // 1. Warm Triangle Wave (Soft & Sweet)
         const osc = ctx.createOscillator();
-        osc.type = "triangle";
-
-        // 2. Low-Pass Filter (Sharp frequencies cut karne ke liye)
-        const filter = ctx.createBiquadFilter();
-        filter.type = "lowpass";
-        filter.frequency.setValueAtTime(1200, now);
-
-        // 3. Smooth Volume Envelope
         const gain = ctx.createGain();
 
-        // Sweet Pitch Drop (420Hz down to 180Hz)
-        osc.frequency.setValueAtTime(420, now);
-        osc.frequency.exponentialRampToValueAtTime(180, now + 0.035);
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
 
-        // Soft Attack & Decay
+        // Solid stable envelope taaki volume hamesha 100% full rahe
         gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.22, now + 0.005);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+        gain.gain.linearRampToValueAtTime(0.4, now + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
-        // Node Connections
-        osc.connect(filter);
-        filter.connect(gain);
+        osc.connect(gain);
         gain.connect(ctx.destination);
 
         osc.start(now);
-        osc.stop(now + 0.035);
-      } catch {
-        // Suppress audio restriction errors
-      }
+        osc.stop(now + 0.085);
+
+        // Turant cleanup taaki memory clean rahe
+        setTimeout(() => {
+          try {
+            ctx.close();
+          } catch {}
+        }, 120);
+      } catch {}
     };
 
-    const handleInteraction = (event: Event) => {
-      if (event.type === "touchstart") {
-        isTouchRef.current = true;
-      } else if (event.type === "click" && isTouchRef.current) {
-        isTouchRef.current = false;
-        return; // Prevent double trigger on touch devices
-      }
+    const handleGlobalInteractions = (event: Event) => {
+      const target = (event.target as HTMLElement | null)?.closest(
+        "button, a, [role='button'], input[type='submit'], nav a, .cursor-pointer"
+      );
 
-      const target = event.target as HTMLElement | null;
+      if (!target) return;
 
-      if (
-        target?.closest("button") ||
-        target?.closest("a") ||
-        target?.closest('input[type="submit"]') ||
-        target?.getAttribute("role") === "button"
-      ) {
-        triggerSubtleVibration();
-        playWarmSweetPopSound();
-      }
+      triggerSubtleVibration();
+      playDeepButtonSound();
     };
 
-    // Unlock Audio Context on first gestures and keep it active
-    const unlockAudio = () => {
-      initAudioContext();
-    };
-
-    window.addEventListener("pointerdown", unlockAudio, { passive: true });
-    window.addEventListener("keydown", unlockAudio, { passive: true });
-    window.addEventListener("touchstart", handleInteraction, { passive: true });
-    window.addEventListener("click", handleInteraction);
+    window.addEventListener("pointerdown", handleGlobalInteractions, { passive: true });
 
     return () => {
-      window.removeEventListener("pointerdown", unlockAudio);
-      window.removeEventListener("keydown", unlockAudio);
-      window.removeEventListener("touchstart", handleInteraction);
-      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("pointerdown", handleGlobalInteractions);
     };
   }, []);
 

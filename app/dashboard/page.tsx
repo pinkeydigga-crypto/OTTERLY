@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const isOffline = useOfflineGuard();
 
   const welcomeMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
+  const practiceMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/DRAW%20OTTO.png";
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
   const [loading, setLoading] = useState(true);
@@ -452,7 +453,9 @@ export default function DashboardPage() {
                   You're building a habit!
                 </h2>
                 <p className="text-xs font-bold text-slate-500">
-                  Come back tomorrow to reach Day {userStreak + 1}.
+                  {userStreak === 1
+                    ? "Your art learning journey starts"
+                    : `Come back tomorrow to reach Day ${userStreak + 1}.`}
                 </p>
               </div>
 
@@ -722,27 +725,58 @@ export default function DashboardPage() {
           <XpWheel />
         </section>
 
-        <div className="bg-[#2563EB] text-[#2563EB] p-7 sm:p-9 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-4 max-w-lg z-10 text-white">
-            <h2 className="text-2xl sm:text-3xl font-black leading-tight">
+        {/* Scan & Analyze Card */}
+        <div className="bg-[#2563EB] text-white p-6 sm:p-9 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-row items-center justify-between gap-4">
+          <div className="space-y-3 max-w-[65%] sm:max-w-lg z-10">
+            <h2 className="text-xl sm:text-3xl font-black leading-tight text-white">
               Scan & Analyze Your Artwork
             </h2>
-            <p className="text-sm font-semibold text-blue-100 leading-relaxed">
+            <p className="text-xs sm:text-sm font-semibold text-blue-100 leading-relaxed">
               Upload your drawing to get instant AI-powered feedback, score, and tips to improve!
             </p>
             <div className="pt-1">
               <Link
                 href="/scan"
                 onClick={triggerHaptic}
-                className="inline-flex items-center gap-1.5 bg-white text-[#2563EB] px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-wider border-2 border-slate-200 border-b-4 border-b-slate-300 hover:bg-slate-50 active:border-b-2 active:translate-y-[2px] transition-all"
+                className="inline-flex items-center gap-1.5 bg-white text-[#2563EB] px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-slate-200 border-b-4 border-b-slate-300 hover:bg-slate-50 active:border-b-2 active:translate-y-[2px] transition-all"
               >
                 Start Scanning <ChevronRight className="w-4 h-4 stroke-[3]" />
               </Link>
             </div>
           </div>
 
-          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white/10 rounded-3xl flex items-center justify-center border-2 border-white/20 shrink-0 z-10">
-            <Scan className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
+          <div className="w-20 h-20 sm:w-32 sm:h-32 bg-white/10 rounded-3xl flex items-center justify-center border-2 border-white/20 shrink-0 z-10">
+            <Scan className="w-10 h-10 sm:w-16 sm:h-16 text-white" />
+          </div>
+        </div>
+
+        {/* Practice Section Card */}
+        <div className="bg-[#F0F6FF] border-2 border-blue-200/80 text-slate-900 p-6 sm:p-9 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-row items-center justify-between gap-4">
+          <div className="space-y-3 max-w-[62%] sm:max-w-lg z-10">
+            <h2 className="text-xl sm:text-3xl font-black leading-tight text-[#0F172A]">
+              Free Practice Canvas
+            </h2>
+            <p className="text-xs sm:text-sm font-semibold text-slate-600 leading-relaxed">
+              Polish your drawing skills freely without any restrictions! Try new ideas and download your digital doodles instantly.
+            </p>
+            <div className="pt-1">
+              <Link
+                href="/practice"
+                onClick={triggerHaptic}
+                className="inline-flex items-center gap-1.5 bg-[#2563EB] text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-700 active:border-b-0 active:translate-y-1 transition-all shadow-md"
+              >
+                Start Practicing <Palette className="w-4 h-4 stroke-[2.5]" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="w-24 h-24 sm:w-36 sm:h-36 shrink-0 z-10 flex items-center justify-center">
+            <img
+              src={practiceMascotUrl}
+              alt="Practice Otto"
+              className="w-full h-auto object-contain drop-shadow-md"
+              crossOrigin="anonymous"
+            />
           </div>
         </div>
 

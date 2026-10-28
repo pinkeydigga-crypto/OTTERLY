@@ -465,73 +465,82 @@ export default function LeaderboardPage() {
         {leaderboardData.length > 0 ? (
           <div className="pt-4 pb-1 grid grid-cols-3 gap-2 sm:gap-4 md:gap-5 items-end w-full max-w-xl mx-auto">
             
+            {/* 2nd Rank (Silver 3D Block) */}
             <div className="flex flex-col items-center">
               {rank2 ? (
                 <>
                   <img
                     src={rank2.avatar_url}
                     alt={rank2.full_name}
-                    className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover mb-1.5 shadow-2xs"
+                    className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover mb-1.5 shadow-2xl"
                     crossOrigin="anonymous"
                   />
-                  <h3 className="font-extrabold text-slate-800 text-[11px] sm:text-xs truncate max-w-[90px] sm:max-w-[120px] text-center">
+                  <h3 className="font-extrabold text-slate-800 text-[11px] sm:text-xs truncate max-w-[90px] sm:max-w-[120px] text-center mb-1">
                     {rank2.full_name}
                   </h3>
-                  <div className="w-full bg-gradient-to-b from-[#e2e8f0]/80 via-[#f1f5f9]/40 to-transparent rounded-t-2xl pt-3 pb-2 px-1 mt-1 text-center flex flex-col items-center min-h-[75px] sm:min-h-[90px] justify-start">
-                    <span className="text-xs sm:text-base font-black text-[#475569] block">
-                      {rank2.xp_points.toLocaleString()}
+                  <div className="w-full bg-[#e2e8f0] rounded-t-3xl pt-3 pb-3 px-1 mt-1 text-center flex flex-col items-center min-h-[85px] sm:min-h-[105px] justify-between border-t-4 border-white shadow-[inset_0_4px_0_0_rgba(255,255,255,0.6),0_6px_0_0_#94a3b8]">
+                    <span className="text-sm sm:text-lg font-black text-[#334155] block">
+                      2
                     </span>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-                      pts
-                    </span>
+                    <div className="bg-slate-700/10 rounded-lg px-1.5 py-0.5">
+                      <span className="text-[10px] sm:text-xs font-black text-[#475569] block">
+                        {rank2.xp_points.toLocaleString()} pts
+                      </span>
+                    </div>
                   </div>
                 </>
               ) : <div className="h-24" />}
             </div>
 
+            {/* 1st Rank (Gold 3D Block) */}
             <div className="flex flex-col items-center">
               {rank1 ? (
                 <>
                   <img
                     src={rank1.avatar_url}
                     alt={rank1.full_name}
-                    className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl object-cover mb-1.5 shadow-xs"
+                    className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl object-cover mb-1.5 shadow-2xl"
                     crossOrigin="anonymous"
                   />
-                  <h3 className="font-black text-slate-900 text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[130px] text-center">
+                  <h3 className="font-black text-slate-900 text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[130px] text-center mb-1">
                     {rank1.full_name}
                   </h3>
-                  <div className="w-full bg-gradient-to-b from-[#fef3c7] via-[#fffbeb]/50 to-transparent rounded-t-2xl pt-3.5 pb-2 px-1 mt-1 text-center flex flex-col items-center min-h-[95px] sm:min-h-[115px] justify-start">
-                    <span className="text-sm sm:text-lg font-black text-[#d97706] block">
-                      {rank1.xp_points.toLocaleString()}
+                  <div className="w-full bg-[#fbbf24] rounded-t-3xl pt-3.5 pb-3 px-1 mt-1 text-center flex flex-col items-center min-h-[105px] sm:min-h-[130px] justify-between border-t-4 border-yellow-100 shadow-[inset_0_4px_0_0_rgba(255,255,255,0.6),0_6px_0_0_#d97706]">
+                    <span className="text-base sm:text-xl font-black text-[#78350f] block">
+                      1
                     </span>
-                    <span className="text-[9px] sm:text-[10px] font-extrabold text-amber-500/80 uppercase tracking-wide">
-                      pts
-                    </span>
+                    <div className="bg-amber-900/10 rounded-lg px-1.5 py-0.5">
+                      <span className="text-[10px] sm:text-xs font-black text-[#78350f] block">
+                        {rank1.xp_points.toLocaleString()} pts
+                      </span>
+                    </div>
                   </div>
                 </>
               ) : <div className="h-32" />}
             </div>
 
+            {/* 3rd Rank (Bronze 3D Block) */}
             <div className="flex flex-col items-center">
               {rank3 ? (
                 <>
                   <img
                     src={rank3.avatar_url}
                     alt={rank3.full_name}
-                    className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover mb-1.5 shadow-2xs"
+                    className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover mb-1.5 shadow-2xl"
                     crossOrigin="anonymous"
                   />
-                  <h3 className="font-extrabold text-slate-800 text-[11px] sm:text-xs truncate max-w-[90px] sm:max-w-[120px] text-center">
+                  <h3 className="font-extrabold text-slate-800 text-[11px] sm:text-xs truncate max-w-[90px] sm:max-w-[120px] text-center mb-1">
                     {rank3.full_name}
                   </h3>
-                  <div className="w-full bg-gradient-to-b from-[#ffedd5]/80 via-[#fff7ed]/40 to-transparent rounded-t-2xl pt-3 pb-2 px-1 mt-1 text-center flex flex-col items-center min-h-[60px] sm:min-h-[75px] justify-start">
-                    <span className="text-xs sm:text-base font-black text-[#c2410c] block">
-                      {rank3.xp_points.toLocaleString()}
+                  <div className="w-full bg-[#d97706] rounded-t-3xl pt-2.5 pb-3 px-1 mt-1 text-center flex flex-col items-center min-h-[65px] sm:min-h-[85px] justify-between border-t-4 border-amber-300 shadow-[inset_0_4px_0_0_rgba(255,255,255,0.4),0_6px_0_0_#b45309]">
+                    <span className="text-sm sm:text-lg font-black text-amber-950 block">
+                      3
                     </span>
-                    <span className="text-[9px] sm:text-[10px] font-bold text-orange-400 uppercase tracking-wide">
-                      pts
-                    </span>
+                    <div className="bg-amber-950/10 rounded-lg px-1.5 py-0.5">
+                      <span className="text-[10px] sm:text-xs font-black text-amber-950 block">
+                        {rank3.xp_points.toLocaleString()} pts
+                      </span>
+                    </div>
                   </div>
                 </>
               ) : <div className="h-20" />}
@@ -554,17 +563,21 @@ export default function LeaderboardPage() {
             <div className="space-y-2">
               {leaderboardData.map((user) => {
                 const isSelf = currentUser && user.id === currentUser.id;
+                const isOddRank = user.rank !== undefined && user.rank % 2 !== 0;
+
                 return (
                   <div
                     key={user.id}
                     className={`flex items-center justify-between p-3 rounded-2xl transition-all ${
                       isSelf
                         ? "bg-blue-50/80 border-2 border-blue-200 shadow-2xs"
+                        : isOddRank
+                        ? "bg-blue-100/70 border border-blue-200"
                         : "bg-[#f8fafc] border border-slate-100"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className={`text-xs font-black w-6 shrink-0 text-center ${isSelf ? "text-[#2563eb]" : "text-slate-400"}`}>
+                      <span className={`text-xs font-black w-6 shrink-0 text-center ${isSelf ? "text-[#2563eb]" : "text-slate-500"}`}>
                         #{user.rank}
                       </span>
                       <div className="flex items-center gap-2.5 min-w-0">
