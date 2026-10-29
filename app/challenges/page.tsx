@@ -198,6 +198,34 @@ export default function ChallengesPage() {
     }
   };
 
+  // Fixed sweet girl voice with robust engine wake-up buffer to prevent word clipping after idle gaps
+  const speakStepText = useCallback((title: string, instruction: string) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      
+      setTimeout(() => {
+        const textToSpeak = `${title}. ${instruction || ""}`;
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.rate = 1.0; 
+        utterance.pitch = 1.8; // Sweet cute girl pitch
+
+        const voices = window.speechSynthesis.getVoices();
+        const sweetVoice = voices.find(v => 
+          (v.name.includes('Google UK English Female') || v.name.includes('Zira') || v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Female')) && v.lang.includes('en')
+        ) || voices.find(v => v.lang.includes('en'));
+
+        if (sweetVoice) {
+          utterance.voice = sweetVoice;
+        }
+
+        window.speechSynthesis.speak(utterance);
+      }, 250);
+    }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -212,6 +240,21 @@ export default function ChallengesPage() {
       });
     });
   }, []);
+
+  useEffect(() => {
+    if (activeView === 'challenge-flow') {
+      const challenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
+      const stepObj = challenge.steps[currentStep];
+      if (stepObj) {
+        speakStepText(stepObj.title, stepObj.instruction || stepObj.typewriterText || "");
+      }
+    }
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [activeView, activeChallengeId, currentStep, speakStepText]);
 
   const handleSelectLevel = (level: "beginner" | "intermediate" | "advanced") => {
     triggerHaptic();
@@ -313,6 +356,9 @@ export default function ChallengesPage() {
 
   const handleReviewChallenge = async () => {
     triggerHaptic();
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
@@ -332,6 +378,9 @@ export default function ChallengesPage() {
 
   const handleOpenClaimModal = () => {
     triggerHaptic();
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
     playCelebrationSound();
     setShowClaimModal(true);
   };
@@ -833,6 +882,9 @@ export default function ChallengesPage() {
               <button
                 onClick={() => {
                   triggerHaptic();
+                  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+                    window.speechSynthesis.cancel();
+                  }
                   setActiveView('hub');
                 }}
                 className="text-xs font-black text-slate-500 hover:text-slate-800 bg-slate-100 px-3 py-1.5 rounded-xl transition cursor-pointer"
