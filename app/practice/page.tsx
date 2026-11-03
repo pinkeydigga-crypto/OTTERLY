@@ -450,7 +450,6 @@ export default function PracticePage() {
           </Link>
         </div>
 
-        {/* Banner Card: Text Left, Image Right forced */}
         <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs">
           <div className="w-full flex flex-row items-center justify-between gap-4">
             <div className="text-left flex-1 space-y-1">
@@ -480,7 +479,7 @@ export default function PracticePage() {
           </div>
         )}
 
-        <div ref={containerRef} className="w-full bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-xs overflow-hidden p-2 sm:p-4">
+        <div ref={containerRef} className="w-full bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-xs overflow-hidden p-2 sm:p-4 touch-none">
           <PracticeCanvas />
         </div>
 

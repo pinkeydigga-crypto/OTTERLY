@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   ArrowLeft, CheckCircle2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, PanelLeft, X, ChevronRight,
-  Sparkles, Check, ShieldAlert, Palette, Grid, Zap, RefreshCw, Star
+  Sparkles, Check, ShieldAlert, Palette, Grid, Zap, RefreshCw, Star, Volume2, VolumeX
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
@@ -71,30 +71,30 @@ const EYE_STEPS: TutorialStep[] = [
   },
   {
     step: 2,
-    title: "Step 2: Basic Eye Outline & Crease",
-    instruction: "Draw an almond shape outline for the eye. Add the tear duct curve on the left and a gentle lid fold above.",
+    title: "Step 2: Basic Eye Outline and Crease",
+    instruction: "Draw an almond shape outline for the eye. Add the tear duct curve on the left, and a gentle lid fold above.",
     tips: ["Keep your strokes very light and smooth", "Focus on clean symmetrical curves"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye1.jpeg"
   },
   {
     step: 3,
-    title: "Step 3: Iris, Pupil & Highlight Circle",
+    title: "Step 3: Iris, Pupil and Highlight Circle",
     instruction: "Draw a large circular iris with a dark pupil inside. Keep a crisp white circle reserved for the bright reflection highlight.",
     tips: ["Shade radial lines outward from the pupil", "Do not draw over the highlight circle"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye2.jpeg"
   },
   {
     step: 4,
-    title: "Step 4: Upper Eyelashes & Eyelid Depth",
+    title: "Step 4: Upper Eyelashes and Eyelid Depth",
     instruction: "Add long, curved eyelashes along the top lash line. Shade softly along the upper eyelid fold to create natural depth.",
     tips: ["Sweep lashes outwards in natural curves", "Thicken the top eyelash border slightly"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye3.jpeg"
   },
   {
     step: 5,
-    title: "Step 5: Lower Lashes & Final Shading Details",
+    title: "Step 5: Lower Lashes and Final Details",
     instruction: "Add shorter bottom eyelashes. Softly shade the tear duct area and rim to complete a realistic 3D look.",
-    tips: ["Keep bottom lashes sparse and lighter", "Blend edge shadows for a soft realistic realistic touch"],
+    tips: ["Keep bottom lashes sparse and lighter", "Blend edge shadows for a soft realistic touch"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye4.jpeg"
   },
   {
@@ -117,28 +117,28 @@ const LIP_STEPS: TutorialStep[] = [
   },
   {
     step: 2,
-    title: "Step 2: Outline & Cupid's Bow",
+    title: "Step 2: Outline and Cupids Bow",
     instruction: "Sketch the outer lip boundary, center line, and V-shaped Cupid's bow gently.",
     tips: ["Keep lines soft to blend easily later", "Ensure lip proportions are balanced"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips1.jpeg"
   },
   {
     step: 3,
-    title: "Step 3: Base Shading & Volume",
-    instruction: "Apply soft base graphite shading across both lips to establish a round, 3D structure.",
+    title: "Step 3: Base Shading and Volume",
+    instruction: "Apply soft base graphite shading across both lips, to establish a round, 3D structure.",
     tips: ["Darken near the center lip fold", "Blend using tissue or a stump"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips2.jpeg"
   },
   {
     step: 4,
     title: "Step 4: Vertical Texturing",
-    instruction: "Add light curved vertical creases following the lip contours to simulate natural skin texture.",
+    instruction: "Add light curved vertical creases following the lip contours, to simulate natural skin texture.",
     tips: ["Curve the lines slightly instead of straight lines", "Maintain a gentle touch"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips3.jpeg"
   },
   {
     step: 5,
-    title: "Step 5: High Contrast & Gloss Highlight",
+    title: "Step 5: High Contrast and Gloss Highlight",
     instruction: "Darken corners and center opening. Use a precise eraser to pull crisp white highlights on the lower lip.",
     tips: ["High contrast creates a glossy sheen", "Now test your skills on the canvas"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips%204.jpeg"
@@ -183,6 +183,9 @@ export default function ChallengesPage() {
   const [activeChallengeId, setActiveChallengeId] = useState<string>("eye-drawing-1min");
   const [currentStep, setCurrentStep] = useState<number>(0);
 
+  // Audio mute state
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+
   const [showClaimModal, setShowClaimModal] = useState<boolean>(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
   const [showLevelModal, setShowLevelModal] = useState<boolean>(false);
@@ -198,33 +201,64 @@ export default function ChallengesPage() {
     }
   };
 
-  // Fixed sweet girl voice with robust engine wake-up buffer to prevent word clipping after idle gaps
+  // Loud, Clear, Natural Male Voice with Punctuation Pauses
   const speakStepText = useCallback((title: string, instruction: string) => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+      
+      if (isMuted) return;
+
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
       }
       
       setTimeout(() => {
-        const textToSpeak = `${title}. ${instruction || ""}`;
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.rate = 1.0; 
-        utterance.pitch = 1.8; // Sweet cute girl pitch
+        let formattedText = `${title}. ${instruction || ""}`;
+        formattedText = formattedText
+          .replace(/,/g, ", ")
+          .replace(/\./g, "... ");
+
+        const utterance = new SpeechSynthesisUtterance(formattedText);
+        utterance.rate = 0.90; // Steady and articulate speed
+        utterance.pitch = 0.90; // Deeper, confident male tone
+        utterance.volume = 1.0;  // Max volume for loud playback on phone/laptop speakers
 
         const voices = window.speechSynthesis.getVoices();
-        const sweetVoice = voices.find(v => 
-          (v.name.includes('Google UK English Female') || v.name.includes('Zira') || v.name.includes('Samantha') || v.name.includes('Victoria') || v.name.includes('Female')) && v.lang.includes('en')
+        const maleVoice = voices.find(v => 
+          (v.name.includes('Google UK English Male') || 
+           v.name.includes('Google US English Male') || 
+           v.name.includes('David') || 
+           v.name.includes('George') || 
+           v.name.includes('Male')) && v.lang.includes('en')
         ) || voices.find(v => v.lang.includes('en'));
 
-        if (sweetVoice) {
-          utterance.voice = sweetVoice;
+        if (maleVoice) {
+          utterance.voice = maleVoice;
         }
 
         window.speechSynthesis.speak(utterance);
       }, 250);
     }
-  }, []);
+  }, [isMuted]);
+
+  const toggleMute = () => {
+    triggerHaptic();
+    setIsMuted(prev => {
+      const nextMute = !prev;
+      if (nextMute) {
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+      } else {
+        const challenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
+        const stepObj = challenge.steps[currentStep];
+        if (stepObj) {
+          speakStepText(stepObj.title, stepObj.instruction || stepObj.typewriterText || "");
+        }
+      }
+      return nextMute;
+    });
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -270,6 +304,10 @@ export default function ChallengesPage() {
       }
     }
 
+    const safetyTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 1500);
+
     try {
       const { data: { session }, error: authError } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
@@ -278,13 +316,11 @@ export default function ChallengesPage() {
         if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
           setIsVerified(false);
         }
-        setLoading(false);
         return;
       }
 
       if (!user.email_confirmed_at) {
         setIsVerified(false);
-        setLoading(false);
         return;
       }
 
@@ -333,6 +369,7 @@ export default function ChallengesPage() {
     } catch (err) {
       console.error("Error loading data:", err);
     } finally {
+      clearTimeout(safetyTimeout);
       setLoading(false);
     }
   }, [isOffline]);
@@ -977,6 +1014,19 @@ export default function ChallengesPage() {
                 className="px-4 py-2 rounded-xl font-black text-xs bg-slate-100 text-slate-600 hover:bg-slate-200 disabled:opacity-40 transition cursor-pointer"
               >
                 Previous
+              </button>
+
+              {/* Sound Mute / Unmute Toggle Button */}
+              <button
+                onClick={toggleMute}
+                className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                  isMuted 
+                    ? "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100" 
+                    : "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
+                }`}
+                title={isMuted ? "Unmute Voice" : "Mute Voice"}
+              >
+                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
               </button>
 
               {!isLastStep ? (
