@@ -88,24 +88,29 @@ export default function DashboardPage() {
       const ctx = new AudioContext();
 
       if (ctx.state === "suspended") {
-        await ctx.resume();
+        await ctx.resume().catch(() => {});
       }
+
+      if (ctx.state === "closed") return;
 
       const notes = [329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
       notes.forEach((freq, index) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "square";
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.07);
+        try {
+          if (ctx.state === "closed") return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "square";
+          osc.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.07);
 
-        gain.gain.setValueAtTime(0.2, ctx.currentTime + index * 0.07);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + index * 0.07 + 0.3);
+          gain.gain.setValueAtTime(0.2, ctx.currentTime + index * 0.07);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + index * 0.07 + 0.3);
 
-        osc.connect(gain);
-        gain.connect(ctx.destination);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
 
-        osc.start(ctx.currentTime + index * 0.07);
-        osc.stop(ctx.currentTime + index * 0.07 + 0.3);
+          osc.start(ctx.currentTime + index * 0.07);
+          osc.stop(ctx.currentTime + index * 0.07 + 0.3);
+        } catch {}
       });
     } catch {}
   };
@@ -380,61 +385,61 @@ export default function DashboardPage() {
     { name: "Settings", path: "/settings", icon: Settings }
   ];
 
+  // Supabase storage icon URLs with matching size
+  const mobileGamifiedNav = [
+    {
+      path: "/dashboard",
+      label: "Home",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/HOME.png",
+      sizeClass: "w-[28px] h-[28px]"
+    },
+    {
+      path: "/challenges",
+      label: "Challenges",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/SWORD.png",
+      sizeClass: "w-[28px] h-[28px]"
+    },
+    {
+      path: "/practice",
+      label: "Practice",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/PAINT.png",
+      sizeClass: "w-[28px] h-[28px]"
+    },
+    {
+      path: "/scan",
+      label: "Scan",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/EYES%20NAV.png",
+      sizeClass: "w-[32px] h-[32px]"
+    },
+    {
+      path: "/leaderboard",
+      label: "Leaderboard",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon.png",
+      sizeClass: "w-[32px] h-[32px]"
+    }
+  ];
+
   const currentSlideData = slidesData[currentSlide];
 
   return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-20 md:pb-0 font-sans overflow-x-hidden relative">
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-24 md:pb-0 font-sans overflow-x-hidden relative">
       
       {showStreakPopup && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] max-w-sm w-full overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 border border-slate-100">
-            
             <div className="relative bg-[#0D47A1] pt-8 pb-16 px-6 flex items-center justify-between overflow-hidden shadow-inner">
-              
               <div className="absolute top-3 left-6 text-amber-300 opacity-90 animate-pulse pointer-events-none">
                 <Star className="w-4 h-4 fill-amber-300" />
-              </div>
-              <div className="absolute top-9 left-28 text-amber-300 opacity-80 pointer-events-none">
-                <Star className="w-3.5 h-3.5 fill-amber-300" />
-              </div>
-              <div className="absolute top-2 right-24 text-amber-400 opacity-90 pointer-events-none">
-                <Star className="w-4.5 h-4.5 fill-amber-400" />
-              </div>
-              <div className="absolute top-10 right-10 text-amber-300 opacity-75 pointer-events-none">
-                <Star className="w-3 h-3 fill-amber-300" />
-              </div>
-              <div className="absolute top-4 left-44 text-amber-200 opacity-80 pointer-events-none">
-                <Star className="w-2.5 h-2.5 fill-amber-200" />
-              </div>
-              <div className="absolute bottom-16 right-32 text-amber-300 opacity-85 pointer-events-none">
-                <Star className="w-3.5 h-3.5 fill-amber-300" />
-              </div>
-              <div className="absolute bottom-20 left-12 text-amber-300 opacity-70 pointer-events-none">
-                <Star className="w-2.5 h-2.5 fill-amber-200" />
               </div>
               <div className="absolute bottom-6 left-10 text-amber-300 opacity-90 pointer-events-none z-20">
                 <Star className="w-4 h-4 fill-amber-300" />
               </div>
-
-              <div className="absolute -bottom-1 left-0 right-0 w-[102%] -ml-[1%] overflow-hidden leading-none pointer-events-none opacity-40">
-                <svg className="relative block w-full h-12 text-[#42A5F5]" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="currentColor">
-                  <path d="M0,160L48,176C96,192,192,224,288,213.3C384,203,480,149,576,138.7C672,128,768,160,864,181.3C960,203,1056,213,1152,192C1248,171,1344,117,1392,90.7L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-                </svg>
-              </div>
-
-              <div className="absolute -bottom-1 left-0 right-0 w-[102%] -ml-[1%] overflow-hidden leading-none pointer-events-none z-10">
-                <svg className="relative block w-full h-12 text-white" viewBox="0 0 1440 320" preserveAspectRatio="none" fill="currentColor">
-                  <path d="M0,192L48,181.3C96,171,192,149,288,160C384,171,480,213,576,213.3C672,213,768,171,864,149.3C960,128,1056,128,1152,149.3C1248,171,1344,213,1392,234.7L1440,256L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
-                </svg>
-              </div>
-
               <div className="relative z-20 flex items-center gap-3 bg-white/15 backdrop-blur-md border border-white/25 px-5 py-3 rounded-2xl text-white shadow-md">
                 <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center shadow-lg shrink-0">
                   <Flame className="w-6 h-6 fill-white text-white" />
                 </div>
                 <span className="font-black text-base tracking-wider">DAY {userStreak}</span>
               </div>
-
               <div className="relative z-20 w-28 h-28 shrink-0 flex items-end justify-center -mr-2 -mb-6">
                 <Image
                   src={welcomeMascotUrl}
@@ -446,7 +451,6 @@ export default function DashboardPage() {
                 />
               </div>
             </div>
-
             <div className="bg-white pt-6 pb-8 px-6 text-center space-y-6">
               <div className="space-y-1.5">
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">
@@ -458,7 +462,6 @@ export default function DashboardPage() {
                     : `Come back tomorrow to reach Day ${userStreak + 1}.`}
                 </p>
               </div>
-
               <button
                 onClick={() => {
                   triggerHaptic();
@@ -470,11 +473,11 @@ export default function DashboardPage() {
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
-
           </div>
         </div>
       )}
 
+      {/* HEADER */}
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -497,11 +500,6 @@ export default function DashboardPage() {
             priority
           />
         </div>
-
-        <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 px-3 py-1.5 rounded-full text-orange-600 font-extrabold text-xs">
-          <Flame className="w-4 h-4 fill-orange-500 stroke-orange-500" />
-          <span>{userStreak}</span>
-        </div>
       </header>
 
       {isMobileSidebarOpen && (
@@ -513,7 +511,6 @@ export default function DashboardPage() {
               setIsMobileSidebarOpen(false);
             }}
           />
-          
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -525,7 +522,6 @@ export default function DashboardPage() {
                   className="h-10 w-auto object-contain"
                 />
               </div>
-
               <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)]">
                 {navItems.map((item) => {
                   const Icon = item.icon;
@@ -550,7 +546,6 @@ export default function DashboardPage() {
                 })}
               </nav>
             </div>
-
             <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
               <Image
                 src={profile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
@@ -580,7 +575,6 @@ export default function DashboardPage() {
               priority
             />
           </div>
-
           <nav className="space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -602,7 +596,6 @@ export default function DashboardPage() {
             })}
           </nav>
         </div>
-
         <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
           <Image
             src={profile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
@@ -619,7 +612,6 @@ export default function DashboardPage() {
       </aside>
 
       <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto space-y-6 overflow-y-auto w-full">
-        
         <div
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -627,7 +619,6 @@ export default function DashboardPage() {
           className="relative px-6 py-6 sm:px-8 sm:py-8 flex items-center justify-between min-h-[170px] sm:min-h-[190px] bg-[#EBF3FF] rounded-[2.2rem] border border-blue-100/90 shadow-xs overflow-hidden select-none touch-pan-y"
         >
           <div className="z-10 max-w-[60%] sm:max-w-[65%] md:max-w-md flex flex-col justify-center space-y-1.5">
-
             {currentSlideData.isWelcome ? (
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#0B192C] tracking-tight leading-tight">
                 <div>{currentSlideData.titleLine1}</div>
@@ -638,11 +629,9 @@ export default function DashboardPage() {
                 {currentSlideData.title}
               </h1>
             )}
-
             <p className="text-xs sm:text-base font-semibold text-slate-600 leading-snug pt-0.5">
               {currentSlideData.description}
             </p>
-
             {currentSlideData.buttonText && currentSlideData.buttonPath ? (
               <div className="pt-2">
                 <Link
@@ -655,7 +644,6 @@ export default function DashboardPage() {
                 </Link>
               </div>
             ) : null}
-
             <div className="flex items-center gap-2 pt-3">
               {slidesData.map((_, idx) => (
                 <button
@@ -673,9 +661,7 @@ export default function DashboardPage() {
                 />
               ))}
             </div>
-
           </div>
-
           <div className="absolute right-1 bottom-0 sm:right-4 md:right-8 z-20 flex items-end shrink-0 pointer-events-none">
             <Image
               src={currentSlideData.mascot}
@@ -686,7 +672,6 @@ export default function DashboardPage() {
               priority
             />
           </div>
-
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4.5 pt-1">
@@ -699,7 +684,6 @@ export default function DashboardPage() {
               <h3 className="text-2xl sm:text-3xl font-black text-[#0F172A]">{userXp.toLocaleString()} XP</h3>
             </div>
           </div>
-
           <div className="bg-orange-50/60 p-6 rounded-[2.2rem] border border-orange-200/70 shadow-xs flex items-center gap-4 transition-all hover:scale-[1.01]">
             <div className="w-16 h-16 rounded-2xl bg-orange-500 text-white flex items-center justify-center border-b-4 border-orange-700 shrink-0 shadow-sm">
               <Flame className="w-11 h-11 fill-white stroke-orange-500" />
@@ -709,7 +693,6 @@ export default function DashboardPage() {
               <h3 className="text-2xl sm:text-3xl font-black text-[#0F172A]">{userStreak} Days</h3>
             </div>
           </div>
-
           <div className="bg-blue-50/60 p-6 rounded-[2.2rem] border border-blue-200/70 shadow-xs flex items-center gap-4 transition-all hover:scale-[1.01]">
             <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center border-b-4 border-blue-800 shrink-0 shadow-sm">
               <Trophy className="w-10 h-10 fill-white stroke-blue-600" />
@@ -744,7 +727,6 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
-
           <div className="w-20 h-20 sm:w-32 sm:h-32 bg-white/10 rounded-3xl flex items-center justify-center border-2 border-white/20 shrink-0 z-10">
             <Scan className="w-10 h-10 sm:w-16 sm:h-16 text-white" />
           </div>
@@ -769,7 +751,6 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
-
           <div className="w-24 h-24 sm:w-36 sm:h-36 shrink-0 z-10 flex items-center justify-center">
             <img
               src={practiceMascotUrl}
@@ -779,49 +760,41 @@ export default function DashboardPage() {
             />
           </div>
         </div>
-
       </main>
 
-      <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
-        <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          {[
-            { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-            { name: "Practice", path: "/practice", icon: Palette },
-            { name: "Challenges", path: "/challenges", icon: Swords },
-            { name: "Scan", path: "/scan", icon: Scan },
-            { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isActive = item.path === "/dashboard";
+      {/* FLOATING BOTTOM NAVBAR WITH LIGHT BLUE BG AND LONG OVAL PILL HIGHLIGHT */}
+      <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[370px] sm:mx-auto z-[399] transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden">
+        <div className="w-full rounded-full border transition-colors duration-300 pointer-events-auto backdrop-blur-2xl shadow-2xl overflow-hidden bg-[#F0F6FF]/90 border-blue-100/80 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+          <nav className="w-full max-w-sm mx-auto h-[56px] grid grid-cols-5 items-stretch justify-items-center relative px-2">
+            {mobileGamifiedNav.map((item) => {
+              const isActive = item.path === "/dashboard";
 
-            return (
-              <Link
-                key={item.name}
-                href={item.path}
-                onClick={triggerHaptic}
-                className="group relative flex flex-1 flex-col items-center gap-1 py-1 transition-all"
-              >
-                <span
-                  className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
-                    isActive
-                      ? "bg-[#2563EB] text-white shadow-md shadow-blue-500/20"
-                      : "bg-transparent text-slate-400 group-hover:text-slate-600"
-                  }`}
+              return (
+                <Link
+                  key={item.label}
+                  href={item.path}
+                  onClick={triggerHaptic}
+                  aria-label={item.label}
+                  className="group relative w-full h-full flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-150 pointer-events-auto"
                 >
-                  <Icon className={`h-5 w-5 ${isActive ? "text-white" : "text-slate-400"}`} />
-                </span>
-                <span
-                  className={`text-[10px] font-bold leading-tight transition-colors ${
-                    isActive ? "text-[#2563EB]" : "text-slate-400"
-                  }`}
-                >
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
+                  <div className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
+                    isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[52px] h-[38px]" : "w-[40px] h-[40px]"
+                  }`}>
+                    <div className="relative flex items-center justify-center w-full h-full">
+                      <img
+                        alt={item.label}
+                        className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
+                        src={item.iconUrl}
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-      </nav>
+      </div>
 
     </div>
   );

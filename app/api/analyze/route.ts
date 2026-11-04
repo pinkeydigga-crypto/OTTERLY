@@ -49,7 +49,6 @@ function isValidImageHeader(buffer: Buffer): boolean {
 const isValidUUID = (id: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-// Local Date Formatter YYYY-MM-DD
 const getTodayLocalDate = () => {
   const d = new Date();
   const year = d.getFullYear();
@@ -61,9 +60,6 @@ const getTodayLocalDate = () => {
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function POST(req: Request) {
-  console.log("\n--------------------------------------------------");
-  console.log("🚀 [API START] Scan request received!");
-
   try {
     const forwardedFor = req.headers.get("x-forwarded-for");
     const realIp = req.headers.get("x-real-ip");
@@ -80,7 +76,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Checking Env Variables with exact custom variable name support
     const supabaseUrl =
       process.env.NEXT_PUBLIC_SUPABASE_URL ||
       process.env.SUPABASE_URL ||
@@ -89,14 +84,11 @@ export async function POST(req: Request) {
     const supabaseKey =
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      process.env["NEXT_PUBLIC_SUAbPABASE_ANON_KEY"] || // Exact env variable check
       process.env.SUPABASE_ANON_KEY;
 
     const body = await req.json().catch(() => null);
     const rawUserId = body?.userId ? String(body.userId).trim() : null;
     const todayStr = getTodayLocalDate();
-
-    console.log("👤 User ID Received:", rawUserId || "MISSING");
 
     if (!rawUserId || !isValidUUID(rawUserId)) {
       return NextResponse.json(
@@ -115,44 +107,35 @@ export async function POST(req: Request) {
         supabase = createClient(supabaseUrl, supabaseKey, {
           auth: { persistSession: false },
         });
-      } catch (err: any) {
-        console.error("❌ [Supabase Init Error]:", err?.message);
-      }
+      } catch (err: any) {}
     }
 
     if (!supabase) {
-      console.error("❌ DB Client Creation Failed! Check env key.");
       return NextResponse.json(
         { isDrawing: false, message: "Database connection failed. (#110)", errorCode: "#110" },
         { status: 500 }
       );
     }
 
-    // 1. DIRECT DB CHECK: User ne aaj scan kiya hai ya nahi?
     const { data: profileData, error: dbQueryError } = await supabase
       .from("profiles")
       .select("last_scanned_at")
       .eq("id", rawUserId)
       .maybeSingle();
 
-    if (dbQueryError) {
-      console.error("❌ Supabase Select Query Error:", dbQueryError.message);
-    } else if (profileData && profileData.last_scanned_at) {
+    if (!dbQueryError && profileData && profileData.last_scanned_at) {
       const lastScanDate = new Date(profileData.last_scanned_at);
       const lastYear = lastScanDate.getFullYear();
       const lastMonth = String(lastScanDate.getMonth() + 1).padStart(2, "0");
       const lastDay = String(lastScanDate.getDate()).padStart(2, "0");
       const dbScanDateStr = `${lastYear}-${lastMonth}-${lastDay}`;
 
-      console.log(`📊 DB Last Scan Date: ${dbScanDateStr} | Today: ${todayStr}`);
-
       if (dbScanDateStr === todayStr) {
-        console.log("🔒 LOCK: User already scanned today!");
         return NextResponse.json(
           {
             isDrawing: false,
             lockActive: true,
-            message: "Daily scan limit reached! Unlocks tomorrow at midnight. (#101)",
+            message: "Your scan limit is out. Come back tomorrow!",
             errorCode: "#101",
           },
           { status: 423 }
@@ -238,8 +221,6 @@ export async function POST(req: Request) {
 
     let jsonResult: any = null;
 
-    console.log("📡 Calling Gemini API...");
-
     modelLoop: for (const modelName of MODELS_TO_TRY) {
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
@@ -275,7 +256,6 @@ export async function POST(req: Request) {
             if (rawText) {
               const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
               jsonResult = JSON.parse(cleanJsonText);
-              console.log(`✅ SUCCESS with Gemini Model: ${modelName}`);
               break modelLoop;
             }
           } else {
@@ -299,21 +279,13 @@ export async function POST(req: Request) {
       jsonResult.isDrawing === "true" ||
       String(jsonResult.isDrawing).toLowerCase() === "true";
 
-    // 2. RESULT MILNE PAR HI DB UPDATE HOGA
     if (isDrawingValid) {
-      console.log("🟢 Result mil gaya! Profiles table me timestamp update kar rahe hain...");
       const nowTimestampz = new Date().toISOString();
 
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ last_scanned_at: nowTimestampz })
         .eq("id", rawUserId);
-
-      if (updateError) {
-        console.error("❌ [SUPABASE UPDATE ERROR]:", updateError.message);
-      } else {
-        console.log(`🎉 [SUCCESS]: 'last_scanned_at' updated to ${nowTimestampz}`);
-      }
 
       return NextResponse.json(jsonResult, { status: 200 });
     }
@@ -325,7 +297,6 @@ export async function POST(req: Request) {
     return NextResponse.json(jsonResult, { status: 200 });
 
   } catch (error: any) {
-    console.error("❌ Internal Error:", error);
     return NextResponse.json(
       { isDrawing: false, message: "Something went wrong. Please try again. (#500)", errorCode: "#500" },
       { status: 500 }

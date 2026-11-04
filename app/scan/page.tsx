@@ -128,11 +128,23 @@ export default function ScanPage() {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(15);
-      } catch {
-        // Fallback for unsupported devices
-      }
+      } catch {}
     }
   };
+
+  // Safe AudioContext resume handler to prevent InvalidStateError
+  useEffect(() => {
+    const handleAudioResume = () => {
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          // Prevent unhandled resume on closed context
+        }
+      } catch (e) {}
+    };
+    window.addEventListener("click", handleAudioResume, { once: true });
+    return () => window.removeEventListener("click", handleAudioResume);
+  }, []);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -157,19 +169,19 @@ export default function ScanPage() {
 
             if (profileData.last_scanned_at) {
               const lastScan = new Date(profileData.last_scanned_at);
-              const now = new Date();
-              const hoursDiff = (now.getTime() - lastScan.getTime()) / (1000 * 60 * 60);
+              const todayMidnight = new Date();
+              todayMidnight.setHours(0, 0, 0, 0);
 
-              if (hoursDiff < 24) {
-                const nextAllowedIso = new Date(
-                  lastScan.getTime() + 24 * 60 * 60 * 1000
-                ).toISOString();
+              if (lastScan.getTime() >= todayMidnight.getTime()) {
+                const nextMidnight = new Date();
+                nextMidnight.setHours(24, 0, 0, 0);
 
                 setAnalysis({
                   isDrawing: true,
                   lockActive: true,
-                  nextAllowedTime: nextAllowedIso,
+                  nextAllowedTime: nextMidnight.toISOString(),
                 });
+                setErrorMessage("Your scan limit is out. Come back tomorrow!");
               }
             }
           } else {
@@ -185,7 +197,6 @@ export default function ScanPage() {
           }
         }
       } catch (err) {
-        console.error("Auth check error:", err);
       } finally {
         setAuthLoading(false);
       }
@@ -231,41 +242,27 @@ export default function ScanPage() {
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     triggerHaptic();
     if (countdown || (analysis && analysis.lockActive)) {
-      setErrorMessage(
-        "Otto AI is facing high demand. Please try again in few minutes. #101"
-      );
+      setErrorMessage("Your scan limit is out. Come back tomorrow!");
       return;
     }
 
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const ALLOWED_MIME_TYPES = [
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-      "image/webp",
-    ];
+    const ALLOWED_MIME_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
     const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"];
     const MAX_FILE_SIZE_MB = 5;
     const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
     const extension = file.name.split(".").pop()?.toLowerCase() || "";
-    if (
-      !ALLOWED_EXTENSIONS.includes(extension) ||
-      !ALLOWED_MIME_TYPES.includes(file.type)
-    ) {
-      setErrorMessage(
-        "Please upload a valid artwork image format (JPG, PNG, or WEBP)."
-      );
+    if (!ALLOWED_EXTENSIONS.includes(extension) || !ALLOWED_MIME_TYPES.includes(file.type)) {
+      setErrorMessage("Please upload a valid artwork image format (JPG, PNG, or WEBP).");
       e.target.value = "";
       return;
     }
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      setErrorMessage(
-        "Image size is too large. Please upload an image under 5MB."
-      );
+      setErrorMessage("Image size is too large. Please upload an image under 5MB.");
       e.target.value = "";
       return;
     }
@@ -279,9 +276,7 @@ export default function ScanPage() {
     reader.onloadend = () => {
       const img = new Image();
       img.onerror = () => {
-        setErrorMessage(
-          "Invalid or corrupted image file."
-        );
+        setErrorMessage("Invalid or corrupted image file.");
         setSelectedImage(null);
         e.target.value = "";
       };
@@ -347,27 +342,32 @@ export default function ScanPage() {
         const data: AIAnalysisResult = await res.json();
 
         if (res.status === 423 && data.lockActive) {
-          setErrorMessage(
-            data.message || "Daily scan limit reached for your account."
-          );
-          setAnalysis(data);
+          const nextMidnight = new Date();
+          nextMidnight.setHours(24, 0, 0, 0);
+
+          setErrorMessage(data.message || "Your scan limit is out. Come back tomorrow!");
+          setAnalysis({
+            isDrawing: true,
+            lockActive: true,
+            nextAllowedTime: nextMidnight.toISOString(),
+          });
           setSelectedImage(null);
           success = true;
           return;
         }
 
         if (!res.ok) {
-          setErrorMessage(
-            data.message || "Otto AI is facing high demand. Please try again in few minutes."
-          );
+          setErrorMessage(data.message || "Otto AI is facing high demand. Please try again in few minutes.");
           setAnalysis(null);
         } else if (data.isDrawing === false) {
-          setErrorMessage(
-            data.message || "Please upload a valid artwork image."
-          );
+          setErrorMessage(data.message || "Please upload a valid artwork image.");
           setAnalysis(null);
         } else {
           setAnalysis(data);
+          const nextMidnight = new Date();
+          nextMidnight.setHours(24, 0, 0, 0);
+
+          setAnalysis((prev) => prev ? { ...prev, lockActive: true, nextAllowedTime: nextMidnight.toISOString() } : prev);
           const nowIso = new Date().toISOString();
           setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
         }
@@ -375,20 +375,14 @@ export default function ScanPage() {
       } catch (err: unknown) {
         clearTimeout(timeoutId);
         if (err instanceof Error && err.name === "AbortError") {
-          setErrorMessage(
-            "Request timed out. Please try again."
-          );
+          setErrorMessage("Request timed out. Please try again.");
           break;
         } else {
           attempt++;
           if (attempt < maxRetries) {
-            await new Promise((resolve) =>
-              setTimeout(resolve, 1500)
-            );
+            await new Promise((resolve) => setTimeout(resolve, 1500));
           } else {
-            setErrorMessage(
-              "Unable to connect to Otto AI server. Please try again."
-            );
+            setErrorMessage("Unable to connect to Otto AI server. Please try again.");
           }
         }
       } finally {
@@ -419,6 +413,39 @@ export default function ScanPage() {
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
+  const mobileGamifiedNav = [
+    {
+      path: "/dashboard",
+      label: "Home",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/HOME.png",
+      sizeClass: "w-[28px] h-[28px]"
+    },
+    {
+      path: "/challenges",
+      label: "Challenges",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/SWORD.png",
+      sizeClass: "w-[28px] h-[28px]"
+    },
+    {
+      path: "/practice",
+      label: "Practice",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/PAINT.png",
+      sizeClass: "w-[28px] h-[28px]"
+    },
+    {
+      path: "/scan",
+      label: "Scan",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/EYES%20NAV.png",
+      sizeClass: "w-[32px] h-[32px]"
+    },
+    {
+      path: "/leaderboard",
+      label: "Leaderboard",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon.png",
+      sizeClass: "w-[32px] h-[32px]"
+    }
+  ];
+
   const userXp = Number(profile?.xp) || 0;
   const rawUserName = profile?.name || profile?.username || "Artist";
   const userName = rawUserName.replace(/<[^>]*>?/gm, "").trim();
@@ -428,8 +455,10 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-20 md:pb-0">
-      <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-28 md:pb-0">
+      
+      {/* FIXED MOBILE HEADER WITH SOLID BACKGROUND TO PREVENT OVERLAP */}
+      <header className="md:hidden sticky top-0 z-50 bg-white shadow-xs border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
@@ -444,7 +473,7 @@ export default function ScanPage() {
           <img
             src={logoUrl}
             alt="Otterleo Logo"
-            className="h-14 w-auto object-contain max-h-16"
+            className="h-10 w-auto object-contain"
           />
         </div>
       </header>
@@ -464,7 +493,7 @@ export default function ScanPage() {
                 <img
                   src={logoUrl}
                   alt="Otterleo Logo"
-                  className="h-14 w-auto object-contain"
+                  className="h-12 w-auto object-contain"
                 />
                 <button
                   onClick={() => {
@@ -607,7 +636,7 @@ export default function ScanPage() {
                 </span>
               </div>
               <p className="text-sm font-bold text-slate-500">
-                Upload a clear image of your drawing to start analysis.
+                Upload a clear image of your drawing to start analysis it will take only 1-2 minutes.
               </p>
             </div>
 
@@ -623,10 +652,10 @@ export default function ScanPage() {
                       Refreshes Daily
                     </span>
                     <p className="text-lg font-black tracking-tight text-amber-950 uppercase">
-                      Daily Scan Limit Active
+                      Your scan limit is out. Come back tomorrow!
                     </p>
                     <p className="text-sm font-extrabold text-amber-800 leading-relaxed max-w-xs">
-                      Otto AI allows 1 scan per day to ensure balanced practice. Your limit resets every 24 hours.
+                      Otto AI allows 1 scan per day. Your limit resets everyday at midnight.
                     </p>
                   </div>
 
@@ -639,9 +668,7 @@ export default function ScanPage() {
                         Hours
                       </span>
                     </div>
-                    <span className="text-3xl font-black text-amber-300 -mt-3">
-                      :
-                    </span>
+                    <span className="text-3xl font-black text-amber-300 -mt-3">:</span>
                     <div className="flex flex-col items-center">
                       <span className="text-3xl font-black text-amber-600 tabular-nums">
                         {String(countdown.minutes).padStart(2, "0")}
@@ -650,9 +677,7 @@ export default function ScanPage() {
                         Minutes
                       </span>
                     </div>
-                    <span className="text-3xl font-black text-amber-300 -mt-3">
-                      :
-                    </span>
+                    <span className="text-3xl font-black text-amber-300 -mt-3">:</span>
                     <div className="flex flex-col items-center">
                       <span className="text-3xl font-black text-amber-600 tabular-nums">
                         {String(countdown.seconds).padStart(2, "0")}
@@ -691,7 +716,7 @@ export default function ScanPage() {
                   </div>
                   <p className="text-base font-black text-[#0F172A] text-center">
                     {countdown
-                      ? "Daily Limit Locked (Refreshes Daily)"
+                      ? "Your scan limit is out. Come back tomorrow!"
                       : "Click or drag artwork here to scan"}
                   </p>
                   <p className="text-xs font-bold text-slate-400 mt-1">
@@ -730,16 +755,16 @@ export default function ScanPage() {
             {errorMessage && (
               <div
                 className={`border p-5 rounded-2xl flex items-start gap-3 ${
-                  errorMessage.includes("Limit") ||
-                  errorMessage.includes("locked")
+                  errorMessage.includes("limit") ||
+                  errorMessage.includes("out")
                     ? "bg-amber-50 border-amber-200"
                     : "bg-rose-50 border-rose-200"
                 }`}
               >
                 <AlertTriangle
                   className={`w-5 h-5 mt-0.5 shrink-0 ${
-                    errorMessage.includes("Limit") ||
-                    errorMessage.includes("locked")
+                    errorMessage.includes("limit") ||
+                    errorMessage.includes("out")
                       ? "text-amber-600"
                       : "text-rose-600"
                   }`}
@@ -747,8 +772,8 @@ export default function ScanPage() {
                 <div className="space-y-1">
                   <p
                     className={`text-xs font-black uppercase tracking-wider ${
-                      errorMessage.includes("Limit") ||
-                      errorMessage.includes("locked")
+                      errorMessage.includes("limit") ||
+                      errorMessage.includes("out")
                         ? "text-amber-800"
                         : "text-rose-800"
                     }`}
@@ -757,8 +782,8 @@ export default function ScanPage() {
                   </p>
                   <p
                     className={`text-xs font-extrabold leading-relaxed ${
-                      errorMessage.includes("Limit") ||
-                      errorMessage.includes("locked")
+                      errorMessage.includes("limit") ||
+                      errorMessage.includes("out")
                         ? "text-amber-950"
                         : "text-rose-950"
                     }`}
@@ -783,7 +808,7 @@ export default function ScanPage() {
                 ) : countdown ? (
                   <>
                     <ShieldAlert className="w-5 h-5 text-amber-300" />
-                    <span>Scan Disabled (Refreshes Daily)</span>
+                    <span>Scan Limit Out (Come Back Tomorrow)</span>
                   </>
                 ) : (
                   <>
@@ -800,21 +825,12 @@ export default function ScanPage() {
                   <div className="flex gap-3">
                     <ShieldAlert className="w-6 h-6 text-amber-600" />
                     <div>
-                      <span>Next artwork scan available in:</span>
+                      <span>Next artwork scan available tomorrow:</span>
                       <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">
-                        Refreshes Daily
+                        Resets at Midnight
                       </p>
                     </div>
                   </div>
-                  {analysis.nextAllowedTime && (
-                    <div className="bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-200 text-slate-800 font-bold text-sm tabular-nums flex items-center gap-1">
-                      <RefreshCw className="w-3.5 h-3.5 text-amber-700" />
-                      {new Date(analysis.nextAllowedTime).toLocaleString(
-                        "en-US",
-                        { hour: "numeric", minute: "numeric", hour12: true }
-                      ) + " Tomorrow"}
-                    </div>
-                  )}
                 </div>
 
                 <div className="bg-slate-900 text-white p-5 rounded-2xl flex items-center justify-between">
@@ -852,7 +868,6 @@ export default function ScanPage() {
                       <p className="text-xs font-extrabold text-slate-800 leading-relaxed mt-0.5 relative z-10">
                         "{analysis.motivationalFeedback}"
                       </p>
-                      <div className="absolute top-1/2 -left-2.5 -translate-y-1/2 w-0 h-0 border-t-[8px] border-t-transparent border-r-[10px] border-r-blue-100 border-b-[8px] border-b-transparent z-0" />
                     </div>
                   </div>
                 )}
@@ -865,10 +880,7 @@ export default function ScanPage() {
                     </div>
                     <ul className="space-y-2.5 pl-1">
                       {analysis.strengths.map((item, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-start gap-2.5 text-xs font-extrabold text-emerald-950 leading-relaxed"
-                        >
+                        <li key={idx} className="flex items-start gap-2.5 text-xs font-extrabold text-emerald-950 leading-relaxed">
                           <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                           <span>{item}</span>
                         </li>
@@ -877,26 +889,22 @@ export default function ScanPage() {
                   </div>
                 )}
 
-                {analysis.areasToImprove &&
-                  analysis.areasToImprove.length > 0 && (
-                    <div className="bg-amber-50/80 border border-amber-200/80 p-5 rounded-2xl space-y-3 shadow-inner">
-                      <div className="flex items-center gap-2 text-amber-800 font-black text-sm uppercase tracking-wider">
-                        <Target className="w-5 h-5 text-amber-600 shrink-0" />
-                        <span>Primary Areas to Refine</span>
-                      </div>
-                      <ul className="space-y-2.5 pl-1">
-                        {analysis.areasToImprove.map((item, idx) => (
-                          <li
-                            key={idx}
-                            className="flex items-start gap-2.5 text-xs font-extrabold text-amber-950 leading-relaxed"
-                          >
-                            <span className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
+                {analysis.areasToImprove && analysis.areasToImprove.length > 0 && (
+                  <div className="bg-amber-50/80 border border-amber-200/80 p-5 rounded-2xl space-y-3 shadow-inner">
+                    <div className="flex items-center gap-2 text-amber-800 font-black text-sm uppercase tracking-wider">
+                      <Target className="w-5 h-5 text-amber-600 shrink-0" />
+                      <span>Primary Areas to Refine</span>
                     </div>
-                  )}
+                    <ul className="space-y-2.5 pl-1">
+                      {analysis.areasToImprove.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2.5 text-xs font-extrabold text-amber-950 leading-relaxed">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {analysis.practiceRecommendation && (
                   <div className="bg-purple-50 border border-purple-200 p-5 rounded-2xl flex items-start gap-3 shadow-sm border-l-4">
@@ -911,59 +919,44 @@ export default function ScanPage() {
                     </div>
                   </div>
                 )}
-
-                <button
-                  disabled={true}
-                  className="w-full bg-slate-100 text-slate-500 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all disabled:opacity-70 cursor-not-allowed"
-                >
-                  Daily Scan Limit Reached (Refreshes Daily)
-                </button>
               </div>
             )}
           </div>
         </div>
       </main>
 
-      <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
-        <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          {[
-            { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-            { name: "Practice", path: "/practice", icon: Palette },
-            { name: "Challenges", path: "/challenges", icon: Swords },
-            { name: "Scan", path: "/scan", icon: Scan, active: true },
-            { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isActive = item.active;
+      <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[370px] sm:mx-auto z-[399] transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden">
+        <div className="w-full rounded-full border transition-colors duration-300 pointer-events-auto backdrop-blur-2xl shadow-2xl overflow-hidden bg-[#F0F6FF]/90 border-blue-100/80 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+          <nav className="w-full max-w-sm mx-auto h-[56px] grid grid-cols-5 items-stretch justify-items-center relative px-2">
+            {mobileGamifiedNav.map((item) => {
+              const isActive = item.path === "/scan";
 
-            return (
-              <Link
-                key={item.name}
-                href={item.path}
-                onClick={triggerHaptic}
-                className="group relative flex flex-1 flex-col items-center gap-0.5 py-1 transition-all"
-              >
-                <span
-                  className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
-                    isActive
-                      ? "bg-[#2563EB] text-white shadow-md shadow-blue-500/30"
-                      : "text-slate-400 group-hover:text-slate-700"
-                  }`}
+              return (
+                <Link
+                  key={item.label}
+                  href={item.path}
+                  onClick={triggerHaptic}
+                  aria-label={item.label}
+                  className="group relative w-full h-full flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-150 pointer-events-auto"
                 >
-                  <Icon className="h-5 w-5" />
-                </span>
-                <span
-                  className={`text-[10px] font-bold leading-tight transition-colors ${
-                    isActive ? "text-[#2563EB]" : "text-slate-400"
-                  }`}
-                >
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
+                  <div className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
+                    isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[52px] h-[38px]" : "w-[40px] h-[40px]"
+                  }`}>
+                    <div className="relative flex items-center justify-center w-full h-full">
+                      <img
+                        alt={item.label}
+                        className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
+                        src={item.iconUrl}
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-      </nav>
+      </div>
     </div>
   );
 }

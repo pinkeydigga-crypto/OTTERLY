@@ -6,7 +6,7 @@ import Image from "next/image";
 import PracticeCanvas from "@/components/PracticeCanvas";
 import { 
   Download, RotateCcw, ArrowLeft, LayoutDashboard,
-  Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
+  Swords, Scan, Trophy, Compass, User, Settings, PanelLeft,
   X, Palette, Grid, ShieldAlert, AlertCircle, Sparkles
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -17,7 +17,6 @@ interface ProfileUser {
   id: string;
   full_name: string;
   avatar_url: string;
-  streak: number;
   xp_points: number;
 }
 
@@ -90,14 +89,12 @@ export default function PracticePage() {
 
       if (profile) {
         const p = profile as any;
-        const streak = p.streak ?? p.current_streak ?? p.streak_count ?? 0;
         const xp = Number(p.xp_points ?? p.xp ?? 0);
 
         setCurrentUser({
           id: p.id,
           full_name: p.full_name || p.name || p.username || "Artist",
           avatar_url: p.avatar_url || p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-          streak: Number(streak),
           xp_points: xp,
         });
       }
@@ -226,12 +223,37 @@ export default function PracticePage() {
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
-  const mobileNavItems: NavItem[] = [
-    { name: "Home", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Practice", path: "/practice", active: true, icon: Palette },
-    { name: "Challenges", path: "/challenges", icon: Swords },
-    { name: "Scan", path: "/scan", icon: Scan },
-    { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
+  const mobileGamifiedNav = [
+    {
+      path: "/dashboard",
+      label: "Home",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/HOME.png",
+      sizeClass: "w-[28px] h-[28px]"
+    },
+    {
+      path: "/challenges",
+      label: "Challenges",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/SWORD.png",
+      sizeClass: "w-[28px] h-[28px]"
+    },
+    {
+      path: "/practice",
+      label: "Practice",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/PAINT.png",
+      sizeClass: "w-[28px] h-[28px]"
+    },
+    {
+      path: "/scan",
+      label: "Scan",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/EYES%20NAV.png",
+      sizeClass: "w-[32px] h-[32px]"
+    },
+    {
+      path: "/leaderboard",
+      label: "Leaderboard",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon.png",
+      sizeClass: "w-[32px] h-[32px]"
+    }
   ];
 
   if (loading) {
@@ -273,7 +295,7 @@ export default function PracticePage() {
   }
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-28 md:pb-0">
 
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -297,13 +319,6 @@ export default function PracticePage() {
             priority
           />
         </div>
-
-        {currentUser && (
-          <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200/80 px-3 py-1 rounded-full text-orange-600 font-extrabold text-xs">
-            <Flame className="w-4 h-4 fill-orange-500 stroke-orange-500" />
-            <span>{currentUser.streak}</span>
-          </div>
-        )}
       </header>
 
       {isMobileSidebarOpen && (
@@ -479,7 +494,8 @@ export default function PracticePage() {
           </div>
         )}
 
-        <div ref={containerRef} className="w-full bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-xs overflow-hidden p-2 sm:p-4 touch-none">
+        {/* CONTAINER WITH touch-pan-y FIXED SO PAGE CAN SCROLL NORMALLY */}
+        <div ref={containerRef} className="w-full bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-xs overflow-hidden p-2 sm:p-4 touch-pan-y">
           <PracticeCanvas />
         </div>
 
@@ -510,40 +526,38 @@ export default function PracticePage() {
 
       </main>
 
-      <nav className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-lg">
-        <div className="mx-auto flex w-full items-center justify-around px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-          {mobileNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = Boolean(item.active);
+      <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[370px] sm:mx-auto z-[399] transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden">
+        <div className="w-full rounded-full border transition-colors duration-300 pointer-events-auto backdrop-blur-2xl shadow-2xl overflow-hidden bg-[#F0F6FF]/90 border-blue-100/80 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+          <nav className="w-full max-w-sm mx-auto h-[56px] grid grid-cols-5 items-stretch justify-items-center relative px-2">
+            {mobileGamifiedNav.map((item) => {
+              const isActive = item.path === "/practice";
 
-            return (
-              <Link
-                key={item.name}
-                href={item.path}
-                onClick={triggerHaptic}
-                className="group relative flex flex-1 flex-col items-center gap-0.5 py-1 transition-all"
-              >
-                <span
-                  className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 ${
-                    isActive
-                      ? "bg-[#2563EB] text-white shadow-md shadow-blue-500/30"
-                      : "text-slate-400 group-hover:text-slate-700"
-                  }`}
+              return (
+                <Link
+                  key={item.label}
+                  href={item.path}
+                  onClick={triggerHaptic}
+                  aria-label={item.label}
+                  className="group relative w-full h-full flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-150 pointer-events-auto"
                 >
-                  <Icon className="h-5 w-5" />
-                </span>
-                <span
-                  className={`text-[10px] font-bold leading-tight transition-colors ${
-                    isActive ? "text-[#2563EB]" : "text-slate-400"
-                  }`}
-                >
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
+                  <div className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
+                    isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[52px] h-[38px]" : "w-[40px] h-[40px]"
+                  }`}>
+                    <div className="relative flex items-center justify-center w-full h-full">
+                      <img
+                        alt={item.label}
+                        className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
+                        src={item.iconUrl}
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
-      </nav>
+      </div>
 
     </div>
   );
