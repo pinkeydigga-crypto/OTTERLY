@@ -132,20 +132,6 @@ export default function ScanPage() {
     }
   };
 
-  // Safe AudioContext resume handler to prevent InvalidStateError
-  useEffect(() => {
-    const handleAudioResume = () => {
-      try {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        if (AudioCtx) {
-          // Prevent unhandled resume on closed context
-        }
-      } catch (e) {}
-    };
-    window.addEventListener("click", handleAudioResume, { once: true });
-    return () => window.removeEventListener("click", handleAudioResume);
-  }, []);
-
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -166,24 +152,7 @@ export default function ScanPage() {
 
           if (profileData) {
             setProfile(profileData);
-
-            if (profileData.last_scanned_at) {
-              const lastScan = new Date(profileData.last_scanned_at);
-              const todayMidnight = new Date();
-              todayMidnight.setHours(0, 0, 0, 0);
-
-              if (lastScan.getTime() >= todayMidnight.getTime()) {
-                const nextMidnight = new Date();
-                nextMidnight.setHours(24, 0, 0, 0);
-
-                setAnalysis({
-                  isDrawing: true,
-                  lockActive: true,
-                  nextAllowedTime: nextMidnight.toISOString(),
-                });
-                setErrorMessage("Your scan limit is out. Come back tomorrow!");
-              }
-            }
+            // Page load par ab automatic lock nahi lagayenge taaki user bina scan kiye block na ho.
           } else {
             setProfile({
               id: user.id,
@@ -241,11 +210,6 @@ export default function ScanPage() {
 
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     triggerHaptic();
-    if (countdown || (analysis && analysis.lockActive)) {
-      setErrorMessage("Your scan limit is out. Come back tomorrow!");
-      return;
-    }
-
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -318,78 +282,50 @@ export default function ScanPage() {
     const { data: { user } } = await supabase.auth.getUser();
     const activeUserId = profile?.id || user?.id;
 
-    const maxRetries = 2;
-    let attempt = 0;
-    let success = false;
+    try {
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          image: selectedImage,
+          userId: activeUserId 
+        }),
+      });
 
-    while (attempt < maxRetries && !success) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      const data: AIAnalysisResult = await res.json();
 
-      try {
-        const res = await fetch("/api/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            image: selectedImage,
-            userId: activeUserId 
-          }),
-          signal: controller.signal,
+      // Agar backend se limit out ka status aaye tabhi lock active karein
+      if (res.status === 423 && data.lockActive) {
+        const nextMidnight = new Date();
+        nextMidnight.setHours(24, 0, 0, 0);
+
+        setErrorMessage(data.message || "Your scan limit is out. Come back tomorrow!");
+        setAnalysis({
+          isDrawing: true,
+          lockActive: true,
+          nextAllowedTime: nextMidnight.toISOString(),
         });
-
-        clearTimeout(timeoutId);
-
-        const data: AIAnalysisResult = await res.json();
-
-        if (res.status === 423 && data.lockActive) {
-          const nextMidnight = new Date();
-          nextMidnight.setHours(24, 0, 0, 0);
-
-          setErrorMessage(data.message || "Your scan limit is out. Come back tomorrow!");
-          setAnalysis({
-            isDrawing: true,
-            lockActive: true,
-            nextAllowedTime: nextMidnight.toISOString(),
-          });
-          setSelectedImage(null);
-          success = true;
-          return;
-        }
-
-        if (!res.ok) {
-          setErrorMessage(data.message || "Otto AI is facing high demand. Please try again in few minutes.");
-          setAnalysis(null);
-        } else if (data.isDrawing === false) {
-          setErrorMessage(data.message || "Please upload a valid artwork image.");
-          setAnalysis(null);
-        } else {
-          setAnalysis(data);
-          const nextMidnight = new Date();
-          nextMidnight.setHours(24, 0, 0, 0);
-
-          setAnalysis((prev) => prev ? { ...prev, lockActive: true, nextAllowedTime: nextMidnight.toISOString() } : prev);
-          const nowIso = new Date().toISOString();
-          setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
-        }
-        success = true;
-      } catch (err: unknown) {
-        clearTimeout(timeoutId);
-        if (err instanceof Error && err.name === "AbortError") {
-          setErrorMessage("Request timed out. Please try again.");
-          break;
-        } else {
-          attempt++;
-          if (attempt < maxRetries) {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-          } else {
-            setErrorMessage("Unable to connect to Otto AI server. Please try again.");
-          }
-        }
-      } finally {
-        if (success || attempt >= maxRetries) {
-          setIsAnalyzing(false);
-        }
+        setCountdown({ hours: 23, minutes: 59, seconds: 59 });
+        setSelectedImage(null);
+        return;
       }
+
+      if (!res.ok) {
+        setErrorMessage(data.message || "Otto AI is facing high demand. Please try again in a few minutes.");
+        setAnalysis(null);
+      } else if (data.isDrawing === false) {
+        setErrorMessage(data.message || "Please upload a valid artwork image.");
+        setAnalysis(null);
+      } else {
+        // Successful run ke baad hi result show karein aur lock active karein
+        setAnalysis(data);
+        const nowIso = new Date().toISOString();
+        setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
+      }
+    } catch (err: unknown) {
+      setErrorMessage("Unable to connect to Otto AI server. Please try again.");
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -457,7 +393,6 @@ export default function ScanPage() {
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-28 md:pb-0">
       
-      {/* FIXED MOBILE HEADER WITH SOLID BACKGROUND TO PREVENT OVERLAP */}
       <header className="md:hidden sticky top-0 z-50 bg-white shadow-xs border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -636,7 +571,7 @@ export default function ScanPage() {
                 </span>
               </div>
               <p className="text-sm font-bold text-slate-500">
-                Upload a clear image of your drawing to start analysis it will take only 1-2 minutes.
+                Upload a clear image of your drawing to start analysis.
               </p>
             </div>
 
@@ -691,33 +626,18 @@ export default function ScanPage() {
               )}
 
               {!selectedImage ? (
-                <label
-                  className={`w-full border-3 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center cursor-pointer transition-all group min-h-[260px] ${
-                    countdown
-                      ? "bg-amber-50/50 border-amber-200 cursor-not-allowed"
-                      : "border-slate-200 hover:border-blue-500 hover:bg-blue-50/30"
-                  }`}
-                >
+                <label className="w-full border-3 border-dashed rounded-[2rem] p-8 flex flex-col items-center justify-center cursor-pointer transition-all group min-h-[260px] border-slate-200 hover:border-blue-500 hover:bg-blue-50/30">
                   <input
                     type="file"
                     accept="image/png, image/jpeg, image/jpg, image/webp"
                     onChange={handleImageUpload}
                     className="hidden"
-                    disabled={!!countdown}
                   />
-                  <div
-                    className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform ${
-                      countdown
-                        ? "bg-amber-100 text-amber-500"
-                        : "bg-blue-50 text-blue-600"
-                    }`}
-                  >
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform bg-blue-50 text-blue-600">
                     <Upload className="w-8 h-8 stroke-[2.5]" />
                   </div>
                   <p className="text-base font-black text-[#0F172A] text-center">
-                    {countdown
-                      ? "Your scan limit is out. Come back tomorrow!"
-                      : "Click or drag artwork here to scan"}
+                    Click or drag artwork here to scan
                   </p>
                   <p className="text-xs font-bold text-slate-400 mt-1">
                     Supports PNG, JPG, JPEG, WEBP (Max 5MB • Drawings ONLY)
@@ -753,41 +673,13 @@ export default function ScanPage() {
             </div>
 
             {errorMessage && (
-              <div
-                className={`border p-5 rounded-2xl flex items-start gap-3 ${
-                  errorMessage.includes("limit") ||
-                  errorMessage.includes("out")
-                    ? "bg-amber-50 border-amber-200"
-                    : "bg-rose-50 border-rose-200"
-                }`}
-              >
-                <AlertTriangle
-                  className={`w-5 h-5 mt-0.5 shrink-0 ${
-                    errorMessage.includes("limit") ||
-                    errorMessage.includes("out")
-                      ? "text-amber-600"
-                      : "text-rose-600"
-                  }`}
-                />
+              <div className="border p-5 rounded-2xl flex items-start gap-3 bg-rose-50 border-rose-200">
+                <AlertTriangle className="w-5 h-5 mt-0.5 shrink-0 text-rose-600" />
                 <div className="space-y-1">
-                  <p
-                    className={`text-xs font-black uppercase tracking-wider ${
-                      errorMessage.includes("limit") ||
-                      errorMessage.includes("out")
-                        ? "text-amber-800"
-                        : "text-rose-800"
-                    }`}
-                  >
+                  <p className="text-xs font-black uppercase tracking-wider text-rose-800">
                     Otto AI Notice
                   </p>
-                  <p
-                    className={`text-xs font-extrabold leading-relaxed ${
-                      errorMessage.includes("limit") ||
-                      errorMessage.includes("out")
-                        ? "text-amber-950"
-                        : "text-rose-950"
-                    }`}
-                  >
+                  <p className="text-xs font-extrabold leading-relaxed text-rose-950">
                     {errorMessage}
                   </p>
                 </div>
@@ -797,18 +689,13 @@ export default function ScanPage() {
             {selectedImage && !analysis && (
               <button
                 onClick={handleAnalyze}
-                disabled={isAnalyzing || !!countdown}
+                disabled={isAnalyzing}
                 className="w-full bg-[#2563EB] text-white py-4 rounded-2xl font-black text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-600 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isAnalyzing ? (
                   <>
                     <RefreshCw className="w-5 h-5 animate-spin" />
                     <span>Otto AI Scanning Artwork...</span>
-                  </>
-                ) : countdown ? (
-                  <>
-                    <ShieldAlert className="w-5 h-5 text-amber-300" />
-                    <span>Scan Limit Out (Come Back Tomorrow)</span>
                   </>
                 ) : (
                   <>

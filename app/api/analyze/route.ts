@@ -79,12 +79,13 @@ export async function POST(req: Request) {
     const supabaseUrl =
       process.env.NEXT_PUBLIC_SUPABASE_URL ||
       process.env.SUPABASE_URL ||
-      "https://otsiwrtnkzhrztl.supabase.co";
+      "";
 
     const supabaseKey =
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      process.env.SUPABASE_ANON_KEY;
+      process.env.SUPABASE_ANON_KEY ||
+      "";
 
     const body = await req.json().catch(() => null);
     const rawUserId = body?.userId ? String(body.userId).trim() : null;
@@ -107,39 +108,37 @@ export async function POST(req: Request) {
         supabase = createClient(supabaseUrl, supabaseKey, {
           auth: { persistSession: false },
         });
-      } catch (err: any) {}
+      } catch (err: any) {
+        console.error("Supabase init error:", err?.message);
+      }
     }
 
-    if (!supabase) {
-      return NextResponse.json(
-        { isDrawing: false, message: "Database connection failed. (#110)", errorCode: "#110" },
-        { status: 500 }
-      );
-    }
+    // Agar supabase initialize ho gaya hai tabhi check karenge, warna crash ya false lock nahi lagayenge
+    if (supabase) {
+      const { data: profileData, error: dbQueryError } = await supabase
+        .from("profiles")
+        .select("last_scanned_at")
+        .eq("id", rawUserId)
+        .maybeSingle();
 
-    const { data: profileData, error: dbQueryError } = await supabase
-      .from("profiles")
-      .select("last_scanned_at")
-      .eq("id", rawUserId)
-      .maybeSingle();
+      if (!dbQueryError && profileData && profileData.last_scanned_at) {
+        const lastScanDate = new Date(profileData.last_scanned_at);
+        const lastYear = lastScanDate.getFullYear();
+        const lastMonth = String(lastScanDate.getMonth() + 1).padStart(2, "0");
+        const lastDay = String(lastScanDate.getDate()).padStart(2, "0");
+        const dbScanDateStr = `${lastYear}-${lastMonth}-${lastDay}`;
 
-    if (!dbQueryError && profileData && profileData.last_scanned_at) {
-      const lastScanDate = new Date(profileData.last_scanned_at);
-      const lastYear = lastScanDate.getFullYear();
-      const lastMonth = String(lastScanDate.getMonth() + 1).padStart(2, "0");
-      const lastDay = String(lastScanDate.getDate()).padStart(2, "0");
-      const dbScanDateStr = `${lastYear}-${lastMonth}-${lastDay}`;
-
-      if (dbScanDateStr === todayStr) {
-        return NextResponse.json(
-          {
-            isDrawing: false,
-            lockActive: true,
-            message: "Your scan limit is out. Come back tomorrow!",
-            errorCode: "#101",
-          },
-          { status: 423 }
-        );
+        if (dbScanDateStr === todayStr) {
+          return NextResponse.json(
+            {
+              isDrawing: false,
+              lockActive: true,
+              message: "Your scan limit is out. Come back tomorrow!",
+              errorCode: "#101",
+            },
+            { status: 423 }
+          );
+        }
       }
     }
 
@@ -279,15 +278,12 @@ export async function POST(req: Request) {
       jsonResult.isDrawing === "true" ||
       String(jsonResult.isDrawing).toLowerCase() === "true";
 
-    if (isDrawingValid) {
+    if (isDrawingValid && supabase) {
       const nowTimestampz = new Date().toISOString();
-
-      const { error: updateError } = await supabase
+      await supabase
         .from("profiles")
         .update({ last_scanned_at: nowTimestampz })
         .eq("id", rawUserId);
-
-      return NextResponse.json(jsonResult, { status: 200 });
     }
 
     if (!jsonResult.message) {

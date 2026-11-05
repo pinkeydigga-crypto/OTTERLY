@@ -23,7 +23,8 @@ import {
   Palette,
   Grid,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Volume2
 } from "lucide-react";
 
 interface Profile {
@@ -54,7 +55,7 @@ export default function DashboardPage() {
   const isOffline = useOfflineGuard();
 
   const welcomeMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
-  const practiceMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/DRAW%20OTTO.png";
+  const scanMascotGifUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/WhatsAppVideo2026-09-22at14.44.02online-video-cutter.com-ezgif.com-video-to-gif-converter__1__transparent.gif";
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
   const [loading, setLoading] = useState(true);
@@ -67,7 +68,6 @@ export default function DashboardPage() {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const soundPlayedRef = useRef(false);
-
   const isFetchingRef = useRef(false);
 
   const triggerHaptic = () => {
@@ -86,31 +86,19 @@ export default function DashboardPage() {
       const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
-
-      if (ctx.state === "suspended") {
-        await ctx.resume().catch(() => {});
-      }
-
+      if (ctx.state === "suspended") await ctx.resume().catch(() => {});
       if (ctx.state === "closed") return;
 
-      const notes = [329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
-      notes.forEach((freq, index) => {
-        try {
-          if (ctx.state === "closed") return;
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = "square";
-          osc.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.07);
-
-          gain.gain.setValueAtTime(0.2, ctx.currentTime + index * 0.07);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + index * 0.07 + 0.3);
-
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-
-          osc.start(ctx.currentTime + index * 0.07);
-          osc.stop(ctx.currentTime + index * 0.07 + 0.3);
-        } catch {}
+      const t = ctx.currentTime;
+      [261.63, 329.63, 392.00, 523.25].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0.1, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(t); osc.stop(t + 0.3);
       });
     } catch {}
   };
@@ -385,7 +373,6 @@ export default function DashboardPage() {
     { name: "Settings", path: "/settings", icon: Settings }
   ];
 
-  // Supabase storage icon URLs with matching size
   const mobileGamifiedNav = [
     {
       path: "/dashboard",
@@ -708,7 +695,7 @@ export default function DashboardPage() {
           <XpWheel />
         </section>
 
-        {/* Scan & Analyze Card */}
+        {/* Scan & Analyze Card with GIF Mascot */}
         <div className="bg-[#2563EB] text-white p-6 sm:p-9 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-row items-center justify-between gap-4">
           <div className="space-y-3 max-w-[65%] sm:max-w-lg z-10">
             <h2 className="text-xl sm:text-3xl font-black leading-tight text-white">
@@ -727,37 +714,44 @@ export default function DashboardPage() {
               </Link>
             </div>
           </div>
-          <div className="w-20 h-20 sm:w-32 sm:h-32 bg-white/10 rounded-3xl flex items-center justify-center border-2 border-white/20 shrink-0 z-10">
-            <Scan className="w-10 h-10 sm:w-16 sm:h-16 text-white" />
+          <div className="w-24 h-24 sm:w-36 sm:h-36 bg-white/10 rounded-3xl flex items-center justify-center border-2 border-white/20 shrink-0 z-10 overflow-hidden">
+            <img
+              src={scanMascotGifUrl}
+              alt="Scan Mascot"
+              className="w-full h-full object-contain"
+              crossOrigin="anonymous"
+            />
           </div>
         </div>
 
-        {/* Practice Section Card */}
+        {/* Grid Maker Section Card with Top-Right Red "NEW" Ribbon */}
         <div className="bg-[#F0F6FF] border-2 border-blue-200/80 text-slate-900 p-6 sm:p-9 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-row items-center justify-between gap-4">
+          {/* Top Right Red Ribbon "NEW" */}
+          <div className="absolute top-0 right-0 overflow-hidden w-28 h-28 pointer-events-none z-30">
+            <div className="absolute transform rotate-45 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest py-1 right-[-35px] top-[22px] w-[120px] text-center shadow-md">
+              NEW
+            </div>
+          </div>
+
           <div className="space-y-3 max-w-[62%] sm:max-w-lg z-10">
             <h2 className="text-xl sm:text-3xl font-black leading-tight text-[#0F172A]">
-              Free Practice Canvas
+              Grid Maker for Artists
             </h2>
             <p className="text-xs sm:text-sm font-semibold text-slate-600 leading-relaxed">
-              Polish your drawing skills freely without any restrictions! Try new ideas and download your digital doodles instantly.
+              Overlay precise grid lines onto your reference photos to master proportions and make accurate drawings effortlessly!
             </p>
             <div className="pt-1">
               <Link
-                href="/practice"
+                href="/grid-maker"
                 onClick={triggerHaptic}
                 className="inline-flex items-center gap-1.5 bg-[#2563EB] text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-700 active:border-b-0 active:translate-y-1 transition-all shadow-md"
               >
-                Start Practicing <Palette className="w-4 h-4 stroke-[2.5]" />
+                Open Grid Maker <Grid className="w-4 h-4 stroke-[2.5]" />
               </Link>
             </div>
           </div>
-          <div className="w-24 h-24 sm:w-36 sm:h-36 shrink-0 z-10 flex items-center justify-center">
-            <img
-              src={practiceMascotUrl}
-              alt="Practice Otto"
-              className="w-full h-auto object-contain drop-shadow-md"
-              crossOrigin="anonymous"
-            />
+          <div className="w-20 h-20 sm:w-28 sm:h-28 bg-blue-100/80 rounded-3xl shrink-0 z-10 flex items-center justify-center border border-blue-200">
+            <Grid className="w-10 h-10 sm:w-14 sm:h-14 text-blue-600" />
           </div>
         </div>
       </main>
