@@ -30,6 +30,7 @@ import {
   Star,
   Palette,
   Grid,
+  MoreHorizontal,
 } from "lucide-react";
 
 interface AIAnalysisResult {
@@ -152,7 +153,24 @@ export default function ScanPage() {
 
           if (profileData) {
             setProfile(profileData);
-            // Page load par ab automatic lock nahi lagayenge taaki user bina scan kiye block na ho.
+
+            // Check page load par if user already scanned today based on last_scanned_at
+            if (profileData.last_scanned_at) {
+              const lastScan = new Date(profileData.last_scanned_at);
+              const now = new Date();
+
+              if (lastScan.toDateString() === now.toDateString()) {
+                const nextMidnight = new Date();
+                nextMidnight.setHours(24, 0, 0, 0);
+
+                setAnalysis({
+                  isDrawing: true,
+                  lockActive: true,
+                  nextAllowedTime: nextMidnight.toISOString(),
+                });
+                setCountdown({ hours: 23, minutes: 59, seconds: 59 });
+              }
+            }
           } else {
             setProfile({
               id: user.id,
@@ -294,7 +312,6 @@ export default function ScanPage() {
 
       const data: AIAnalysisResult = await res.json();
 
-      // Agar backend se limit out ka status aaye tabhi lock active karein
       if (res.status === 423 && data.lockActive) {
         const nextMidnight = new Date();
         nextMidnight.setHours(24, 0, 0, 0);
@@ -317,10 +334,14 @@ export default function ScanPage() {
         setErrorMessage(data.message || "Please upload a valid artwork image.");
         setAnalysis(null);
       } else {
-        // Successful run ke baad hi result show karein aur lock active karein
         setAnalysis(data);
         const nowIso = new Date().toISOString();
         setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
+        
+        // Lock immediately upon successful result
+        const nextMidnight = new Date();
+        nextMidnight.setHours(24, 0, 0, 0);
+        setCountdown({ hours: 23, minutes: 59, seconds: 59 });
       }
     } catch (err: unknown) {
       setErrorMessage("Unable to connect to Otto AI server. Please try again.");
@@ -338,7 +359,7 @@ export default function ScanPage() {
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { name: "Idea Generator", path: "/generator", icon: Sparkles },
+    { name: "Tools", path: "/tools", icon: Sparkles },
     { name: "Practice", path: "/practice", icon: Palette },
     { name: "Grid Maker", path: "/grid-maker", icon: Grid },
     { name: "Challenges", path: "/challenges", icon: Swords },
@@ -354,31 +375,37 @@ export default function ScanPage() {
       path: "/dashboard",
       label: "Home",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/HOME.png",
-      sizeClass: "w-[28px] h-[28px]"
+      sizeClass: "w-[26px] h-[26px]"
     },
     {
       path: "/challenges",
       label: "Challenges",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/SWORD.png",
-      sizeClass: "w-[28px] h-[28px]"
+      sizeClass: "w-[26px] h-[26px]"
     },
     {
       path: "/practice",
       label: "Practice",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/PAINT.png",
-      sizeClass: "w-[28px] h-[28px]"
+      sizeClass: "w-[26px] h-[26px]"
     },
     {
       path: "/scan",
       label: "Scan",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/EYES%20NAV.png",
-      sizeClass: "w-[32px] h-[32px]"
+      sizeClass: "w-[30px] h-[30px]"
     },
     {
       path: "/leaderboard",
       label: "Leaderboard",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon.png",
-      sizeClass: "w-[32px] h-[32px]"
+      sizeClass: "w-[30px] h-[30px]"
+    },
+    {
+      path: "/tools",
+      label: "Tools",
+      isCustomIcon: true,
+      sizeClass: "w-[26px] h-[26px]"
     }
   ];
 
@@ -391,9 +418,9 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-28 md:pb-0">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-28 md:pb-0">
       
-      <header className="md:hidden sticky top-0 z-50 bg-white shadow-xs border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+      <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
@@ -414,7 +441,7 @@ export default function ScanPage() {
       </header>
 
       {isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
+        <div className="fixed inset-0 z-[9999] md:hidden flex">
           <div
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => {
@@ -422,7 +449,7 @@ export default function ScanPage() {
               setIsMobileSidebarOpen(false);
             }}
           />
-          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
+          <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10 overflow-y-auto">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <img
@@ -435,7 +462,8 @@ export default function ScanPage() {
                     triggerHaptic();
                     setIsMobileSidebarOpen(false);
                   }}
-                  className="p-2 rounded-xl text-slate-400 hover:bg-slate-100"
+                  className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-all border border-slate-200"
+                  aria-label="Close sidebar"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -454,7 +482,7 @@ export default function ScanPage() {
                       }}
                       className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                         item.active
-                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
+                          ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
                           : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
@@ -501,7 +529,7 @@ export default function ScanPage() {
                   onClick={triggerHaptic}
                   className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-black text-sm transition-all ${
                     item.active
-                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800"
+                      ? "bg-[#2563EB] text-white border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
@@ -571,7 +599,7 @@ export default function ScanPage() {
                 </span>
               </div>
               <p className="text-sm font-bold text-slate-500">
-                Upload a clear image of your drawing to start analysis.
+                Upload a clear image of your drawing to start analysis . it might take 1-2 minutes .
               </p>
             </div>
 
@@ -690,7 +718,7 @@ export default function ScanPage() {
               <button
                 onClick={handleAnalyze}
                 disabled={isAnalyzing}
-                className="w-full bg-[#2563EB] text-white py-4 rounded-2xl font-black text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-600 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full bg-[#2563EB] text-white py-4 rounded-2xl font-black text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-600 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isAnalyzing ? (
                   <>
@@ -812,38 +840,45 @@ export default function ScanPage() {
         </div>
       </main>
 
-      <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[370px] sm:mx-auto z-[399] transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden">
-        <div className="w-full rounded-full border transition-colors duration-300 pointer-events-auto backdrop-blur-2xl shadow-2xl overflow-hidden bg-[#F0F6FF]/90 border-blue-100/80 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
-          <nav className="w-full max-w-sm mx-auto h-[56px] grid grid-cols-5 items-stretch justify-items-center relative px-2">
-            {mobileGamifiedNav.map((item) => {
-              const isActive = item.path === "/scan";
+      {!isMobileSidebarOpen && (
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[410px] sm:mx-auto z-[399] transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden">
+          <div className="w-full rounded-full border transition-colors duration-300 pointer-events-auto backdrop-blur-2xl shadow-2xl overflow-hidden bg-[#F0F6FF]/95 border-blue-100/80 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+            <nav className="w-full max-w-md mx-auto h-[56px] grid grid-cols-6 items-stretch justify-items-center relative px-2">
+              {mobileGamifiedNav.map((item) => {
+                const isActive = item.path === "/scan";
 
-              return (
-                <Link
-                  key={item.label}
-                  href={item.path}
-                  onClick={triggerHaptic}
-                  aria-label={item.label}
-                  className="group relative w-full h-full flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-150 pointer-events-auto"
-                >
-                  <div className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
-                    isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[52px] h-[38px]" : "w-[40px] h-[40px]"
-                  }`}>
-                    <div className="relative flex items-center justify-center w-full h-full">
-                      <img
-                        alt={item.label}
-                        className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
-                        src={item.iconUrl}
-                        crossOrigin="anonymous"
-                      />
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.path}
+                    onClick={triggerHaptic}
+                    aria-label={item.label}
+                    className="group relative w-full h-full flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-150 pointer-events-auto"
+                  >
+                    <div className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
+                      isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[48px] h-[36px]" : "w-[38px] h-[38px]"
+                    }`}>
+                      <div className="relative flex items-center justify-center w-full h-full">
+                        {item.isCustomIcon ? (
+                          <MoreHorizontal className="w-6 h-6 text-slate-700 drop-shadow-sm select-none" />
+                        ) : (
+                          <img
+                            alt={item.label}
+                            className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
+                            src={item.iconUrl}
+                            crossOrigin="anonymous"
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </nav>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </div>
-      </div>
+      )}
+
     </div>
   );
 }

@@ -24,7 +24,8 @@ import {
   Grid,
   ArrowRight,
   Sparkles,
-  Volume2
+  MoreHorizontal,
+  X
 } from "lucide-react";
 
 interface Profile {
@@ -67,6 +68,7 @@ export default function DashboardPage() {
 
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const soundPlayedRef = useRef(false);
   const isFetchingRef = useRef(false);
 
@@ -83,14 +85,23 @@ export default function DashboardPage() {
     soundPlayedRef.current = true;
 
     try {
-      const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      if (ctx.state === "suspended") await ctx.resume().catch(() => {});
-      if (ctx.state === "closed") return;
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+
+      if (!audioCtxRef.current || (audioCtxRef.current.state as string) === "closed") {
+        audioCtxRef.current = new AudioCtx();
+      }
+      const ctx = audioCtxRef.current;
+
+      if ((ctx.state as string) === "closed") return;
+      if (ctx.state === "suspended") {
+        await ctx.resume().catch(() => {});
+      }
+      if ((ctx.state as string) === "closed") return;
 
       const t = ctx.currentTime;
       [261.63, 329.63, 392.00, 523.25].forEach((freq) => {
+        if ((ctx.state as string) === "closed") return;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "sine";
@@ -262,6 +273,9 @@ export default function DashboardPage() {
     window.addEventListener("xpUpdated", handleXpUpdated as EventListener);
     return () => {
       window.removeEventListener("xpUpdated", handleXpUpdated as EventListener);
+      if (audioCtxRef.current && (audioCtxRef.current.state as string) !== "closed") {
+        audioCtxRef.current.close().catch(() => {});
+      }
     };
   }, [fetchDashboardData]);
 
@@ -362,7 +376,7 @@ export default function DashboardPage() {
 
   const navItems = [
     { name: "Dashboard", path: "/dashboard", active: true, icon: LayoutDashboard },
-    { name: "Idea Generator", path: "/generator", icon: Sparkles },
+    { name: "Tools", path: "/tools", icon: Sparkles },
     { name: "Practice", path: "/practice", icon: Palette },
     { name: "Grid Maker", path: "/grid-maker", icon: Grid },
     { name: "Challenges", path: "/challenges", icon: Swords },
@@ -378,31 +392,37 @@ export default function DashboardPage() {
       path: "/dashboard",
       label: "Home",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/HOME.png",
-      sizeClass: "w-[28px] h-[28px]"
+      sizeClass: "w-[26px] h-[26px]"
     },
     {
       path: "/challenges",
       label: "Challenges",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/SWORD.png",
-      sizeClass: "w-[28px] h-[28px]"
+      sizeClass: "w-[26px] h-[26px]"
     },
     {
       path: "/practice",
       label: "Practice",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/PAINT.png",
-      sizeClass: "w-[28px] h-[28px]"
+      sizeClass: "w-[26px] h-[26px]"
     },
     {
       path: "/scan",
       label: "Scan",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/EYES%20NAV.png",
-      sizeClass: "w-[32px] h-[32px]"
+      sizeClass: "w-[30px] h-[30px]"
     },
     {
       path: "/leaderboard",
       label: "Leaderboard",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon.png",
-      sizeClass: "w-[32px] h-[32px]"
+      sizeClass: "w-[30px] h-[30px]"
+    },
+    {
+      path: "/tools",
+      label: "Tools",
+      isCustomIcon: true,
+      sizeClass: "w-[26px] h-[26px]"
     }
   ];
 
@@ -412,33 +432,27 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-24 md:pb-0 font-sans overflow-x-hidden relative">
       
       {showStreakPopup && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] max-w-sm w-full overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 border border-slate-100">
-            <div className="relative bg-[#0D47A1] pt-8 pb-16 px-6 flex items-center justify-between overflow-hidden shadow-inner">
-              <div className="absolute top-3 left-6 text-amber-300 opacity-90 animate-pulse pointer-events-none">
-                <Star className="w-4 h-4 fill-amber-300" />
-              </div>
-              <div className="absolute bottom-6 left-10 text-amber-300 opacity-90 pointer-events-none z-20">
-                <Star className="w-4 h-4 fill-amber-300" />
-              </div>
+            <div className="relative bg-[#0D47A1] pt-6 pb-4 px-6 flex items-center justify-between overflow-hidden shadow-inner">
               <div className="relative z-20 flex items-center gap-3 bg-white/15 backdrop-blur-md border border-white/25 px-5 py-3 rounded-2xl text-white shadow-md">
                 <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center shadow-lg shrink-0">
                   <Flame className="w-6 h-6 fill-white text-white" />
                 </div>
                 <span className="font-black text-base tracking-wider">DAY {userStreak}</span>
               </div>
-              <div className="relative z-20 w-28 h-28 shrink-0 flex items-end justify-center -mr-2 -mb-6">
+              <div className="relative z-20 w-28 h-28 shrink-0 flex items-end justify-center ml-2 mr-0 translate-y-6">
                 <Image
                   src={welcomeMascotUrl}
                   alt="Otto Mascot"
                   width={120}
                   height={120}
-                  className="w-full h-auto object-contain drop-shadow-md translate-y-2"
+                  className="w-full h-auto object-contain drop-shadow-md"
                   priority
                 />
               </div>
             </div>
-            <div className="bg-white pt-6 pb-8 px-6 text-center space-y-6">
+            <div className="bg-white pt-8 pb-8 px-6 text-center space-y-6">
               <div className="space-y-1.5">
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">
                   You're building a habit!
@@ -464,7 +478,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* HEADER */}
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -490,7 +503,7 @@ export default function DashboardPage() {
       </header>
 
       {isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
+        <div className="fixed inset-0 z-[9999] md:hidden flex">
           <div
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => {
@@ -508,6 +521,16 @@ export default function DashboardPage() {
                   height={48}
                   className="h-10 w-auto object-contain"
                 />
+                <button
+                  onClick={() => {
+                    triggerHaptic();
+                    setIsMobileSidebarOpen(false);
+                  }}
+                  className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-all border border-slate-200"
+                  aria-label="Close sidebar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
               <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)]">
                 {navItems.map((item) => {
@@ -695,7 +718,6 @@ export default function DashboardPage() {
           <XpWheel />
         </section>
 
-        {/* Scan & Analyze Card with GIF Mascot */}
         <div className="bg-[#2563EB] text-white p-6 sm:p-9 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-row items-center justify-between gap-4">
           <div className="space-y-3 max-w-[65%] sm:max-w-lg z-10">
             <h2 className="text-xl sm:text-3xl font-black leading-tight text-white">
@@ -724,9 +746,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Grid Maker Section Card with Top-Right Red "NEW" Ribbon */}
         <div className="bg-[#F0F6FF] border-2 border-blue-200/80 text-slate-900 p-6 sm:p-9 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-row items-center justify-between gap-4">
-          {/* Top Right Red Ribbon "NEW" */}
           <div className="absolute top-0 right-0 overflow-hidden w-28 h-28 pointer-events-none z-30">
             <div className="absolute transform rotate-45 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest py-1 right-[-35px] top-[22px] w-[120px] text-center shadow-md">
               NEW
@@ -756,39 +776,44 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* FLOATING BOTTOM NAVBAR WITH LIGHT BLUE BG AND LONG OVAL PILL HIGHLIGHT */}
-      <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[370px] sm:mx-auto z-[399] transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden">
-        <div className="w-full rounded-full border transition-colors duration-300 pointer-events-auto backdrop-blur-2xl shadow-2xl overflow-hidden bg-[#F0F6FF]/90 border-blue-100/80 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
-          <nav className="w-full max-w-sm mx-auto h-[56px] grid grid-cols-5 items-stretch justify-items-center relative px-2">
-            {mobileGamifiedNav.map((item) => {
-              const isActive = item.path === "/dashboard";
+      {!showStreakPopup && !isMobileSidebarOpen && (
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[410px] sm:mx-auto z-[399] transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden">
+          <div className="w-full rounded-full border transition-colors duration-300 pointer-events-auto backdrop-blur-2xl shadow-2xl overflow-hidden bg-[#F0F6FF]/95 border-blue-100/80 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
+            <nav className="w-full max-w-md mx-auto h-[56px] grid grid-cols-6 items-stretch justify-items-center relative px-2">
+              {mobileGamifiedNav.map((item) => {
+                const isActive = item.path === "/dashboard";
 
-              return (
-                <Link
-                  key={item.label}
-                  href={item.path}
-                  onClick={triggerHaptic}
-                  aria-label={item.label}
-                  className="group relative w-full h-full flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-150 pointer-events-auto"
-                >
-                  <div className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
-                    isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[52px] h-[38px]" : "w-[40px] h-[40px]"
-                  }`}>
-                    <div className="relative flex items-center justify-center w-full h-full">
-                      <img
-                        alt={item.label}
-                        className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
-                        src={item.iconUrl}
-                        crossOrigin="anonymous"
-                      />
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.path}
+                    onClick={triggerHaptic}
+                    aria-label={item.label}
+                    className="group relative w-full h-full flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-150 pointer-events-auto"
+                  >
+                    <div className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
+                      isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[48px] h-[36px]" : "w-[38px] h-[38px]"
+                    }`}>
+                      <div className="relative flex items-center justify-center w-full h-full">
+                        {item.isCustomIcon ? (
+                          <MoreHorizontal className="w-6 h-6 text-slate-700 drop-shadow-sm select-none" />
+                        ) : (
+                          <img
+                            alt={item.label}
+                            className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
+                            src={item.iconUrl}
+                            crossOrigin="anonymous"
+                          />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </nav>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
         </div>
-      </div>
+      )}
 
     </div>
   );

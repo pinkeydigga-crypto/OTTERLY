@@ -48,6 +48,20 @@ export default function SignupPage() {
   const [typedText, setTypedText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
+  // Global reliable sound and haptic trigger
+  const triggerSoundAndHaptic = () => {
+    if (typeof window !== "undefined") {
+      try {
+        if ("vibrate" in navigator) {
+          navigator.vibrate(20);
+        }
+        const audio = new Audio("https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/click.mp3");
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+      } catch (e) {}
+    }
+  };
+
   useEffect(() => {
     let fullText = "Choose your avatar!";
     if (step === 2) {
@@ -128,6 +142,7 @@ export default function SignupPage() {
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
+    triggerSoundAndHaptic();
     setErrorMessage('');
 
     if (step === 2 && !skillLevel) {
@@ -140,6 +155,7 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    triggerSoundAndHaptic();
 
     if (lockoutSeconds > 0 || loading) return;
 
@@ -237,7 +253,7 @@ export default function SignupPage() {
             skill_level: skillLevel,
             xp: 0,
             streak: 1,
-            last_login: todayStr, // ✅ Yahan last_login explicitly set kar diya taaki kabhi null na ho!
+            last_login: todayStr,
           }
         ], { onConflict: 'id' });
 
@@ -321,7 +337,8 @@ export default function SignupPage() {
       <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
         <Link 
           href="/" 
-          className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-full border-2 border-slate-200 shadow-sm transition-all active:scale-95"
+          onClick={triggerSoundAndHaptic}
+          className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-full border-2 border-slate-200 shadow-sm transition-all active:scale-95 cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4 text-[#2563EB]" />
           <span>Back to Home</span>
@@ -338,6 +355,7 @@ export default function SignupPage() {
               <button
                 type="button"
                 onClick={() => {
+                  triggerSoundAndHaptic();
                   setStep((prev) => (prev - 1) as 1 | 2 | 3);
                   setErrorMessage('');
                 }}
@@ -359,7 +377,6 @@ export default function SignupPage() {
             <div className="w-10" />
           </div>
 
-          {/* IMAGE ON LEFT, TYPEWRITER BUBBLE WITH SLIGHTLY BIGGER PILL & TEXT */}
           <div className="flex items-center gap-3 my-2 px-1">
             <div className="w-24 h-20 sm:w-28 sm:h-24 drop-shadow-md shrink-0">
               <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain scale-110" />
@@ -396,6 +413,7 @@ export default function SignupPage() {
                       key={avatar.id}
                       type="button"
                       onClick={() => {
+                        triggerSoundAndHaptic();
                         setSelectedAvatar(avatar.url);
                         setErrorMessage('');
                       }}
@@ -418,6 +436,7 @@ export default function SignupPage() {
               <button
                 type="button"
                 onClick={() => {
+                  triggerSoundAndHaptic();
                   setErrorMessage('');
                   setStep(2);
                 }}
@@ -445,6 +464,7 @@ export default function SignupPage() {
                         key={lvl.id}
                         type="button"
                         onClick={() => {
+                          triggerSoundAndHaptic();
                           setSkillLevel(lvl.id);
                           setErrorMessage('');
                         }}
@@ -597,6 +617,7 @@ export default function SignupPage() {
                   disabled={lockoutSeconds > 0 || loading}
                   checked={consent}
                   onChange={(e) => {
+                    triggerSoundAndHaptic();
                     setConsent(e.target.checked);
                     setErrorMessage('');
                   }}
@@ -604,11 +625,11 @@ export default function SignupPage() {
                 />
                 <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
                   I consent to the collection and processing of my personal data in accordance with our{' '}
-                  <Link href="/terms" className="text-[#2563EB] font-bold hover:underline">
+                  <Link href="/terms" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
                     Terms & Conditions
                   </Link>{' '}
                   and{' '}
-                  <Link href="/privacy" className="text-[#2563EB] font-bold hover:underline">
+                  <Link href="/privacy" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
                     Privacy Policy
                   </Link>.
                 </label>
@@ -635,7 +656,7 @@ export default function SignupPage() {
           <div className="pt-1 text-center">
             <p className="text-xs font-semibold text-[#0F172A]/60">
               Already have an account?{' '}
-              <Link href="/login" className="text-[#2563EB] font-black hover:underline">
+              <Link href="/login" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-black hover:underline">
                 Log In
               </Link>
             </p>
