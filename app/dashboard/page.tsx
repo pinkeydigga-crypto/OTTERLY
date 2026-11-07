@@ -80,6 +80,7 @@ export default function DashboardPage() {
     }
   };
 
+  // Fixed Celebration Fanfare sound to prevent short 'tuk' clipping issue
   const playCelebrationSound = async () => {
     if (typeof window === "undefined" || soundPlayedRef.current) return;
     soundPlayedRef.current = true;
@@ -99,17 +100,25 @@ export default function DashboardPage() {
       }
       if ((ctx.state as string) === "closed") return;
 
-      const t = ctx.currentTime;
-      [261.63, 329.63, 392.00, 523.25].forEach((freq) => {
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 Fanfare
+      
+      notes.forEach((freq, idx) => {
         if ((ctx.state as string) === "closed") return;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, t);
-        gain.gain.setValueAtTime(0.1, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(t); osc.stop(t + 0.3);
+
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
+
+        gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.1);
+        gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + idx * 0.1 + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.4);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime + idx * 0.1);
+        osc.stop(ctx.currentTime + idx * 0.1 + 0.4);
       });
     } catch {}
   };
@@ -216,7 +225,9 @@ export default function DashboardPage() {
       if (lastPopupDate !== todayStr) {
         setShowStreakPopup(true);
         localStorage.setItem("streak_popup_shown_date", todayStr);
-        playCelebrationSound();
+        setTimeout(() => {
+          playCelebrationSound();
+        }, 150);
       }
 
       if (typeof window !== "undefined") {

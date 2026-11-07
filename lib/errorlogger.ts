@@ -46,7 +46,6 @@ export const logErrorSecurely = async ({
   };
 
   try {
-    // Agar user offline hai toh DB network call skip karein
     if (typeof window !== 'undefined' && !navigator.onLine) {
       console.warn("Offline mode: Skipping DB error log insert.");
       return errorCode;

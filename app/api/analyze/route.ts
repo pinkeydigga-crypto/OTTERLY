@@ -113,6 +113,7 @@ export async function POST(req: Request) {
       }
     }
 
+    // 1. Strict Midnight Check from Database
     if (supabase) {
       const { data: profileData, error: dbQueryError } = await supabase
         .from("profiles")
@@ -287,6 +288,7 @@ export async function POST(req: Request) {
       jsonResult.isDrawing === "true" ||
       String(jsonResult.isDrawing).toLowerCase() === "true";
 
+    // ONLY Lock if drawing evaluation is successful!
     if (isDrawingValid && supabase) {
       const nowTimestampz = new Date().toISOString();
       await supabase

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, ChangeEvent, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -19,14 +19,12 @@ import {
   Scan,
   Trophy,
   Compass,
-  Award,
   User,
   Settings,
   AlertTriangle,
   Target,
   ShieldAlert,
   Flame,
-  Loader2,
   Star,
   Palette,
   Grid,
@@ -114,6 +112,8 @@ export default function ScanPage() {
   const [analysis, setAnalysis] = useState<AIAnalysisResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isLockedToday, setIsLockedToday] = useState(false);
+  const [nextAllowedTimeStr, setNextAllowedTimeStr] = useState<string | null>(null);
   const [countdown, setCountdown] = useState<{
     hours: number;
     minutes: number;
@@ -154,7 +154,7 @@ export default function ScanPage() {
           if (profileData) {
             setProfile(profileData);
 
-            // Check page load par if user already scanned today based on last_scanned_at
+            // Verified Midnight Lock Check
             if (profileData.last_scanned_at) {
               const lastScan = new Date(profileData.last_scanned_at);
               const now = new Date();
@@ -163,12 +163,8 @@ export default function ScanPage() {
                 const nextMidnight = new Date();
                 nextMidnight.setHours(24, 0, 0, 0);
 
-                setAnalysis({
-                  isDrawing: true,
-                  lockActive: true,
-                  nextAllowedTime: nextMidnight.toISOString(),
-                });
-                setCountdown({ hours: 23, minutes: 59, seconds: 59 });
+                setIsLockedToday(true);
+                setNextAllowedTimeStr(nextMidnight.toISOString());
               }
             }
           } else {
@@ -192,41 +188,37 @@ export default function ScanPage() {
     checkUser();
   }, [router, isOffline]);
 
-  const clearLock = useCallback(() => {
-    setCountdown(null);
-    setAnalysis((prev) => (prev?.lockActive ? null : prev));
-  }, []);
-
   const calculateCountdown = useCallback(() => {
-    const nextAllowedIso = analysis?.nextAllowedTime;
-    if (!nextAllowedIso) {
-      clearLock();
+    if (!nextAllowedTimeStr) {
+      setCountdown(null);
       return;
     }
 
-    const nextAllowed = new Date(nextAllowedIso);
+    const nextAllowed = new Date(nextAllowedTimeStr);
     const currentTime = new Date();
     const difference = nextAllowed.getTime() - currentTime.getTime();
 
     if (difference <= 0) {
-      clearLock();
+      setIsLockedToday(false);
+      setNextAllowedTimeStr(null);
+      setCountdown(null);
     } else {
       const h = Math.floor((difference / (1000 * 60 * 60)) % 24);
       const m = Math.floor((difference / (1000 * 60)) % 60);
       const s = Math.floor((difference / 1000) % 60);
       setCountdown({ hours: h, minutes: m, seconds: s });
     }
-  }, [analysis?.nextAllowedTime, clearLock]);
+  }, [nextAllowedTimeStr]);
 
   useEffect(() => {
-    if (analysis?.nextAllowedTime) {
+    if (nextAllowedTimeStr) {
       calculateCountdown();
       const timerInterval = setInterval(calculateCountdown, 1000);
       return () => clearInterval(timerInterval);
     }
-  }, [analysis?.nextAllowedTime, calculateCountdown]);
+  }, [nextAllowedTimeStr, calculateCountdown]);
 
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     triggerHaptic();
     const file = e.target.files?.[0];
     if (!file) return;
@@ -295,7 +287,6 @@ export default function ScanPage() {
     if (!selectedImage) return;
     setIsAnalyzing(true);
     setErrorMessage(null);
-    setAnalysis(null);
 
     const { data: { user } } = await supabase.auth.getUser();
     const activeUserId = profile?.id || user?.id;
@@ -312,36 +303,31 @@ export default function ScanPage() {
 
       const data: AIAnalysisResult = await res.json();
 
-      if (res.status === 423 && data.lockActive) {
+      if (res.status === 423 || data.lockActive) {
         const nextMidnight = new Date();
         nextMidnight.setHours(24, 0, 0, 0);
 
         setErrorMessage(data.message || "Your scan limit is out. Come back tomorrow!");
-        setAnalysis({
-          isDrawing: true,
-          lockActive: true,
-          nextAllowedTime: nextMidnight.toISOString(),
-        });
-        setCountdown({ hours: 23, minutes: 59, seconds: 59 });
+        setIsLockedToday(true);
+        setNextAllowedTimeStr(nextMidnight.toISOString());
         setSelectedImage(null);
         return;
       }
 
       if (!res.ok) {
         setErrorMessage(data.message || "Otto AI is facing high demand. Please try again in a few minutes.");
-        setAnalysis(null);
       } else if (data.isDrawing === false) {
         setErrorMessage(data.message || "Please upload a valid artwork image.");
-        setAnalysis(null);
       } else {
+        // Successful Result: Set Analysis Result AND Lock Midnight Timer
         setAnalysis(data);
         const nowIso = new Date().toISOString();
         setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
         
-        // Lock immediately upon successful result
         const nextMidnight = new Date();
         nextMidnight.setHours(24, 0, 0, 0);
-        setCountdown({ hours: 23, minutes: 59, seconds: 59 });
+        setIsLockedToday(true);
+        setNextAllowedTimeStr(nextMidnight.toISOString());
       }
     } catch (err: unknown) {
       setErrorMessage("Unable to connect to Otto AI server. Please try again.");
@@ -604,7 +590,8 @@ export default function ScanPage() {
             </div>
 
             <div className="w-full relative">
-              {countdown && (
+              {/* Midnight Lock Screen Overlay (Only shows if no active analysis result on screen) */}
+              {isLockedToday && countdown && !analysis && (
                 <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-8 flex flex-col items-center justify-center space-y-6 border-3 border-amber-300 border-dashed text-center">
                   <div className="w-20 h-20 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center border-2 border-amber-200">
                     <ShieldAlert className="w-10 h-10 stroke-[2]" />
@@ -687,7 +674,7 @@ export default function ScanPage() {
                     </>
                   )}
 
-                  {!isAnalyzing && (
+                  {!isAnalyzing && !analysis && (
                     <button
                       onClick={handleReset}
                       className="absolute top-4 right-4 bg-slate-900/80 text-white p-2.5 rounded-xl hover:bg-slate-900 transition-all backdrop-blur-sm z-20"
@@ -734,7 +721,7 @@ export default function ScanPage() {
               </button>
             )}
 
-            {analysis && analysis.isDrawing === true && !analysis.lockActive && (
+            {analysis && analysis.isDrawing === true && (
               <div className="space-y-5">
                 <div className="bg-amber-50 border-2 border-dashed border-amber-200 p-5 rounded-2xl flex items-center justify-between text-amber-950 text-sm font-extrabold gap-3">
                   <div className="flex gap-3">
