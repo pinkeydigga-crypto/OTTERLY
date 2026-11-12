@@ -80,8 +80,8 @@ export default function DashboardPage() {
     }
   };
 
-  // Fixed Celebration Fanfare sound to prevent short 'tuk' clipping issue
-  const playCelebrationSound = async () => {
+  // Smooth, warm 2-second celebration chime
+  const playCelebrationSound = useCallback(async () => {
     if (typeof window === "undefined" || soundPlayedRef.current) return;
     soundPlayedRef.current = true;
 
@@ -100,28 +100,41 @@ export default function DashboardPage() {
       }
       if ((ctx.state as string) === "closed") return;
 
-      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 Fanfare
-      
+      const now = ctx.currentTime;
+      const notes = [523.25, 659.25, 783.99, 987.77, 1174.66]; // C5, E5, G5, B5, D6
+
       notes.forEach((freq, idx) => {
         if ((ctx.state as string) === "closed") return;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
 
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
+        osc.type = "sine";
+        const startTime = now + idx * 0.14;
+        const noteDuration = 1.3;
 
-        gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.1);
-        gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + idx * 0.1 + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.1 + 0.4);
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(0.11, startTime + 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.0008, startTime + noteDuration);
 
         osc.connect(gain);
         gain.connect(ctx.destination);
 
-        osc.start(ctx.currentTime + idx * 0.1);
-        osc.stop(ctx.currentTime + idx * 0.1 + 0.4);
+        osc.start(startTime);
+        osc.stop(startTime + noteDuration);
       });
     } catch {}
-  };
+  }, []);
+
+  useEffect(() => {
+    if (showStreakPopup) {
+      const timer = setTimeout(() => {
+        playCelebrationSound();
+      }, 320);
+      return () => clearTimeout(timer);
+    }
+  }, [showStreakPopup, playCelebrationSound]);
 
   const fetchDashboardData = useCallback(async () => {
     if (isFetchingRef.current) return;
@@ -225,9 +238,6 @@ export default function DashboardPage() {
       if (lastPopupDate !== todayStr) {
         setShowStreakPopup(true);
         localStorage.setItem("streak_popup_shown_date", todayStr);
-        setTimeout(() => {
-          playCelebrationSound();
-        }, 150);
       }
 
       if (typeof window !== "undefined") {
@@ -446,12 +456,24 @@ export default function DashboardPage() {
         <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] max-w-sm w-full overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 border border-slate-100">
             <div className="relative bg-[#0D47A1] pt-6 pb-4 px-6 flex items-center justify-between overflow-hidden shadow-inner">
+              
+              {/* ⭐ Exactly 8 Original 5-Pointed Stars */}
+              <Star className="absolute top-2.5 left-4 w-4 h-4 text-amber-200 fill-amber-200 opacity-90 pointer-events-none animate-pulse" />
+              <Star className="absolute bottom-2 left-[18%] w-3.5 h-3.5 text-yellow-300 fill-yellow-300 opacity-80 pointer-events-none" />
+              <Star className="absolute top-3 left-[34%] w-3 h-3 text-orange-300 fill-orange-300 opacity-85 pointer-events-none" />
+              <Star className="absolute bottom-3 left-[48%] w-4 h-4 text-amber-100 fill-amber-100 opacity-90 pointer-events-none animate-pulse" />
+              <Star className="absolute top-2 right-[38%] w-3.5 h-3.5 text-yellow-200 fill-yellow-200 opacity-80 pointer-events-none" />
+              <Star className="absolute bottom-2 right-[24%] w-3 h-3 text-amber-300 fill-amber-300 opacity-85 pointer-events-none" />
+              <Star className="absolute top-3 right-12 w-4 h-4 text-orange-200 fill-orange-200 opacity-90 pointer-events-none animate-pulse" />
+              <Star className="absolute bottom-3 right-3 w-3.5 h-3.5 text-yellow-100 fill-yellow-100 opacity-80 pointer-events-none" />
+
               <div className="relative z-20 flex items-center gap-3 bg-white/15 backdrop-blur-md border border-white/25 px-5 py-3 rounded-2xl text-white shadow-md">
                 <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center shadow-lg shrink-0">
                   <Flame className="w-6 h-6 fill-white text-white" />
                 </div>
                 <span className="font-black text-base tracking-wider">DAY {userStreak}</span>
               </div>
+
               <div className="relative z-20 w-28 h-28 shrink-0 flex items-end justify-center ml-2 mr-0 translate-y-6">
                 <Image
                   src={welcomeMascotUrl}
@@ -463,10 +485,11 @@ export default function DashboardPage() {
                 />
               </div>
             </div>
+
             <div className="bg-white pt-8 pb-8 px-6 text-center space-y-6">
               <div className="space-y-1.5">
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                  You're building a habit!
+                  You&apos;re building a habit!
                 </h2>
                 <p className="text-xs font-bold text-slate-500">
                   {userStreak === 1
@@ -481,7 +504,7 @@ export default function DashboardPage() {
                 }}
                 className="w-full py-3.5 bg-[#2563EB] hover:bg-blue-700 border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 text-white font-black text-sm rounded-2xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Let's learn</span>
+                <span>Let&apos;s learn</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
