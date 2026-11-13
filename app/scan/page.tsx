@@ -154,12 +154,20 @@ export default function ScanPage() {
           if (profileData) {
             setProfile(profileData);
 
-            // Verified Midnight Lock Check
+            // Strict Midnight Lock Check on Load & Refresh
             if (profileData.last_scanned_at) {
               const lastScan = new Date(profileData.last_scanned_at);
               const now = new Date();
 
-              if (lastScan.toDateString() === now.toDateString()) {
+              const lastYear = lastScan.getFullYear();
+              const lastMonth = lastScan.getMonth();
+              const lastDay = lastScan.getDate();
+
+              const nowYear = now.getFullYear();
+              const nowMonth = now.getMonth();
+              const nowDay = now.getDate();
+
+              if (lastYear === nowYear && lastMonth === nowMonth && lastDay === nowDay) {
                 const nextMidnight = new Date();
                 nextMidnight.setHours(24, 0, 0, 0);
 
@@ -319,7 +327,7 @@ export default function ScanPage() {
       } else if (data.isDrawing === false) {
         setErrorMessage(data.message || "Please upload a valid artwork image.");
       } else {
-        // Successful Result: Set Analysis Result AND Lock Midnight Timer
+        // Successful Result: Set Analysis Result AND Lock Midnight Timer immediately
         setAnalysis(data);
         const nowIso = new Date().toISOString();
         setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
@@ -590,8 +598,8 @@ export default function ScanPage() {
             </div>
 
             <div className="w-full relative">
-              {/* Midnight Lock Screen Overlay (Only shows if no active analysis result on screen) */}
-              {isLockedToday && countdown && !analysis && (
+              {/* Midnight Lock Screen Overlay (Active if scanned today) */}
+              {isLockedToday && countdown && (
                 <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-8 flex flex-col items-center justify-center space-y-6 border-3 border-amber-300 border-dashed text-center">
                   <div className="w-20 h-20 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center border-2 border-amber-200">
                     <ShieldAlert className="w-10 h-10 stroke-[2]" />

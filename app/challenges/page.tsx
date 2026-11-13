@@ -269,7 +269,7 @@ export default function ChallengesPage() {
         }
 
         window.speechSynthesis.speak(utterance);
-      }, 250);
+      }, 100);
     }
   }, [isMuted]);
 

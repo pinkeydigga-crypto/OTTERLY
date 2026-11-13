@@ -32,7 +32,7 @@ export default function GlobalHaptics() {
       const gain = ctx.createGain();
 
       if (isError || type === 4) {
-        // 🚨 Error Sound (Sawtooth)
+        // 🚨 Error Sound (Sawtooth) - Sirf Scan, Signup, Login ke liye
         osc.type = "sawtooth";
         osc.frequency.setValueAtTime(150, now);
         osc.frequency.exponentialRampToValueAtTime(80, now + 0.6);
@@ -46,7 +46,7 @@ export default function GlobalHaptics() {
         gain.gain.setValueAtTime(0.18, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
       } else {
-        // 🔘 Button & Nav Sound (Sine - Deep/Punchy)
+        // 🔘 Button & Nav Sound (Sine - Deep/Punchy) - Sirf buttons par chalegi
         osc.type = "sine";
         osc.frequency.setValueAtTime(180, now);
         osc.frequency.exponentialRampToValueAtTime(90, now + 0.25);
@@ -64,16 +64,18 @@ export default function GlobalHaptics() {
   };
 
   useEffect(() => {
-    const isProfilePage = () =>
-      typeof window !== "undefined" && window.location.pathname.startsWith("/profile");
+    const isErrorAllowedPage = () => {
+      if (typeof window === "undefined") return false;
+      const path = window.location.pathname;
+      return path.startsWith("/scan") || path.startsWith("/signup") || path.startsWith("/login");
+    };
 
-    // 🔍 Universal Error Selector: Kisi bhi red/rose error banner, toast, text ya attribute ko pakdega
     const errorSelector =
       "[data-error], [class*='text-red'], [class*='text-rose'], [class*='bg-red'], [class*='bg-rose'], [class*='border-red'], [class*='border-rose'], [class*='error']";
 
-    // 1. MutationObserver for automatic error trigger
+    // 1. MutationObserver: Error sound sirf Scan, Signup, Login par hi trigger hogi
     const observer = new MutationObserver(() => {
-      if (isProfilePage()) {
+      if (!isErrorAllowedPage()) {
         lastErrorNodeRef.current = null;
         return;
       }
@@ -89,12 +91,16 @@ export default function GlobalHaptics() {
 
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-    // 2. Click Handler
+    // 2. Strict Click Handler: Sound sirf buttons aur interactive elements par hi bajegi!
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target) return;
 
-      const actualButton = target.closest("button, a, input[type='submit'], [role='button']");
+      const actualButton = target.closest("button, a, input[type='submit'], input[type='button'], [role='button'], [tabindex]");
+      
+      // Background ya normal text par click karne se sound nahi bajegi
+      if (!actualButton) return;
+
       const isNav = target.closest("nav, header, aside, .nav-item");
       const isBackOrHome = target.closest("a[href='/'], button[class*='back'], a[class*='back'], [data-back], a[href*='home']");
 
@@ -105,18 +111,18 @@ export default function GlobalHaptics() {
         )
       );
 
-      const hasErrorVisible = !isProfilePage() && Boolean(document.querySelector(errorSelector));
+      const hasErrorVisible = isErrorAllowedPage() && Boolean(document.querySelector(errorSelector));
 
-      const isAvatarOrSkill = !actualButton && target.closest(
+      const isAvatarOrSkill = target.closest(
         "[data-avatar], [data-skill], .avatar-option, .skill-option, .avatar-card, .skill-pill, .avatar-select, .skill-select"
       );
 
       if (isAvatarOrSkill) {
         playTone(3);
       } else if (hasErrorVisible && isMainAction && !isBackOrHome && !isNav) {
-        playTone(4, true); // Scan page ya kisi bhi page par error ke sath action lene pe error sound
+        playTone(4, true); // 🚨 Error sound (Sirf Scan, Signup, Login par)
       } else {
-        playTone(1);
+        playTone(1); // 🔘 Normal Button sound (Sirf buttons aur links par)
       }
     };
 
