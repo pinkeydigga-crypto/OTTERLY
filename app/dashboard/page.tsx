@@ -69,7 +69,6 @@ export default function DashboardPage() {
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const soundPlayedRef = useRef(false);
   const isFetchingRef = useRef(false);
 
   const triggerHaptic = () => {
@@ -80,10 +79,9 @@ export default function DashboardPage() {
     }
   };
 
-  // Smooth, warm 2-second celebration chime
+  // Smooth, warm 2-second celebration chime (Hamesha chalegi jab popup khulega)
   const playCelebrationSound = useCallback(async () => {
-    if (typeof window === "undefined" || soundPlayedRef.current) return;
-    soundPlayedRef.current = true;
+    if (typeof window === "undefined") return;
 
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
@@ -115,7 +113,7 @@ export default function DashboardPage() {
         osc.frequency.setValueAtTime(freq, startTime);
 
         gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(0.11, startTime + 0.06);
+        gain.gain.linearRampToValueAtTime(0.15, startTime + 0.06); // Slightly louder & punchier
         gain.gain.exponentialRampToValueAtTime(0.0008, startTime + noteDuration);
 
         osc.connect(gain);
@@ -299,42 +297,6 @@ export default function DashboardPage() {
       }
     };
   }, [fetchDashboardData]);
-
-  useEffect(() => {
-    if (!profile?.id || isOffline) return;
-
-    const channel = supabase
-      .channel(`dashboard_realtime_${profile.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "profiles",
-          filter: `id=eq.${profile.id}`
-        },
-        (payload) => {
-          if (payload.new) {
-            setProfile((prev) => (prev ? { ...prev, ...payload.new } : (payload.new as Profile)));
-            fetchDashboardData();
-          }
-        }
-      )
-      .subscribe();
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden && !isOffline) {
-        fetchDashboardData();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      supabase.removeChannel(channel);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [profile?.id, fetchDashboardData, isOffline]);
 
   if (loading) {
     return <LoadingScreen />;

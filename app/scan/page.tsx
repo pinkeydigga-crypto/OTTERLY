@@ -311,13 +311,23 @@ export default function ScanPage() {
 
       const data: AIAnalysisResult = await res.json();
 
-      if (res.status === 423 || data.lockActive) {
-        const nextMidnight = new Date();
-        nextMidnight.setHours(24, 0, 0, 0);
+      // Lock immediately on any server attempt (whether rate limit lock or success/error response)
+      const nowIso = new Date().toISOString();
+      if (activeUserId) {
+        await supabase
+          .from("profiles")
+          .update({ last_scanned_at: nowIso })
+          .eq("id", activeUserId);
+      }
+      setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
 
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 0, 0);
+      setIsLockedToday(true);
+      setNextAllowedTimeStr(nextMidnight.toISOString());
+
+      if (res.status === 423 || data.lockActive) {
         setErrorMessage(data.message || "Your scan limit is out. Come back tomorrow!");
-        setIsLockedToday(true);
-        setNextAllowedTimeStr(nextMidnight.toISOString());
         setSelectedImage(null);
         return;
       }
@@ -327,17 +337,24 @@ export default function ScanPage() {
       } else if (data.isDrawing === false) {
         setErrorMessage(data.message || "Please upload a valid artwork image.");
       } else {
-        // Successful Result: Set Analysis Result AND Lock Midnight Timer immediately
         setAnalysis(data);
-        const nowIso = new Date().toISOString();
-        setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
-        
-        const nextMidnight = new Date();
-        nextMidnight.setHours(24, 0, 0, 0);
-        setIsLockedToday(true);
-        setNextAllowedTimeStr(nextMidnight.toISOString());
       }
     } catch (err: unknown) {
+      // Lock even if network/connection error occurs so user can't bypass by disconnecting/refreshing
+      const nowIso = new Date().toISOString();
+      if (activeUserId) {
+        await supabase
+          .from("profiles")
+          .update({ last_scanned_at: nowIso })
+          .eq("id", activeUserId);
+      }
+      setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
+
+      const nextMidnight = new Date();
+      nextMidnight.setHours(24, 0, 0, 0);
+      setIsLockedToday(true);
+      setNextAllowedTimeStr(nextMidnight.toISOString());
+
       setErrorMessage("Unable to connect to Otto AI server. Please try again.");
     } finally {
       setIsAnalyzing(false);

@@ -12,15 +12,16 @@ const nunito = Nunito({
   adjustFontFallback: false,
 });
 
-const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
-const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
+const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
 const SITE_URL = "https://www.otterleo.in";
 
-// 🚀 Fixed viewport to support all mobile browsers smoothly without breaking layout
+// 🚀 Fixed viewport & forced light color-scheme to prevent dark mode background inversion on mobile phones
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  colorScheme: "light",
 };
 
 export const metadata: Metadata = {
@@ -127,14 +128,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <html lang="en" className={`${nunito.variable} h-full antialiased`}>
+    <html lang="en" className={`${nunito.variable} h-full antialiased`} style={{ colorScheme: 'light' }}>
       <head>
+        <meta name="color-scheme" content="light" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className={`${nunito.className} min-h-full flex flex-col font-sans overflow-x-hidden w-full relative`}>
+      <body className={`${nunito.className} min-h-full flex flex-col font-sans overflow-x-hidden w-full relative bg-[#F6FAFF] text-slate-900`}>
         <GlobalHaptics />
         {children}
         <OfflinePopup />

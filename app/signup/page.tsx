@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ArrowLeft, ChevronLeft, ChevronRight, User, Mail, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, User, Mail, Lock } from 'lucide-react';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME_MS = 60 * 1000;
@@ -36,8 +36,9 @@ const getLocalDateString = (date = new Date()) => {
 export default function SignupPage() {
   const router = useRouter();
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/onboard.png';
+  const introGifUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hloi.gif';
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
   const [skillLevel, setSkillLevel] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -63,8 +64,10 @@ export default function SignupPage() {
   };
 
   useEffect(() => {
-    let fullText = "Choose your avatar!";
+    let fullText = "Hi there! I'm Otto";
     if (step === 2) {
+      fullText = "Choose your avatar!";
+    } else if (step === 3) {
       if (skillLevel === 'beginner') {
         fullText = "That's great! We will help you build your sketching skills from scratch.";
       } else if (skillLevel === 'intermediate') {
@@ -74,7 +77,7 @@ export default function SignupPage() {
       } else {
         fullText = "What's your drawing level?";
       }
-    } else if (step === 3) {
+    } else if (step === 4) {
       fullText = "Almost done! Let's make your account.";
     }
 
@@ -145,12 +148,12 @@ export default function SignupPage() {
     triggerSoundAndHaptic();
     setErrorMessage('');
 
-    if (step === 2 && !skillLevel) {
+    if (step === 3 && !skillLevel) {
       setErrorMessage('Please select your drawing level to continue.');
       return;
     }
 
-    setStep((prev) => (prev < 3 ? ((prev + 1) as 1 | 2 | 3) : prev));
+    setStep((prev) => (prev < 4 ? ((prev + 1) as 1 | 2 | 3 | 4) : prev));
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -311,6 +314,26 @@ export default function SignupPage() {
       <div className="absolute top-1/2 -left-20 -translate-y-1/2 w-64 h-64 bg-indigo-100/60 rounded-full blur-2xl pointer-events-none" />
 
       <style jsx global>{`
+        .speech-bubble-tail-bottom {
+          position: absolute;
+          left: 50%;
+          bottom: -7px;
+          transform: translateX(-50%);
+          width: 0; height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 8px solid #60A5FA;
+        }
+        .speech-bubble-tail-bottom-inner {
+          position: absolute;
+          left: 50%;
+          bottom: -5px;
+          transform: translateX(-50%);
+          width: 0; height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 7px solid #F0F7FF;
+        }
         .speech-bubble-tail-left {
           position: absolute;
           left: -7px;
@@ -329,34 +352,85 @@ export default function SignupPage() {
           width: 0; height: 0;
           border-top: 4px solid transparent;
           border-bottom: 4px solid transparent;
-          border-right: 6px solid #F0F7FF;
+          border-right: 6px solid #60A5FA;
         }
       `}</style>
 
-      {/* TOP BACK TO HOME BUTTON */}
-      <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
-        <Link 
-          href="/" 
-          onClick={triggerSoundAndHaptic}
-          className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-full border-2 border-slate-200 shadow-sm transition-all active:scale-95 cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 text-[#2563EB]" />
-          <span>Back to Home</span>
-        </Link>
-      </div>
+      {/* TOP BACK TO HOME BUTTON - HIDDEN ON STEP 1 */}
+      {step !== 1 && (
+        <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
+          <Link 
+            href="/" 
+            onClick={triggerSoundAndHaptic}
+            className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-full border-2 border-slate-200 shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            <span>Back to Home</span>
+          </Link>
+        </div>
+      )}
 
-      <div className="relative max-w-md w-full pt-10">
+      <div className="relative max-w-md w-full pt-4">
         
-        <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
-          
-          {/* STEP INDICATORS */}
-          <div className="flex items-center justify-between pb-1">
-            {step > 1 ? (
+        {/* STEP 1: CLEAN GIF VIEW WITHOUT OUTER CARD CONTAINER */}
+        {step === 1 ? (
+          <div className="flex flex-col items-center justify-center space-y-6 py-6 z-10 relative">
+            {/* SPEECH BUBBLE WITH BLUE "I'm Otto" */}
+            <div className="relative px-6 py-3.5 rounded-2xl text-center text-base sm:text-lg font-black text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-md max-w-xs">
+              <span>
+                {typedText.includes("I'm Otto") ? (
+                  <>
+                    {typedText.split("I'm Otto")[0]}
+                    <span className="text-[#2563EB]">I'm Otto</span>
+                  </>
+                ) : (
+                  typedText
+                )}
+              </span>
+              {!isTypingComplete && (
+                <span className="animate-pulse text-[#2563EB]">|</span>
+              )}
+              <div className="speech-bubble-tail-bottom"></div>
+              <div className="speech-bubble-tail-bottom-inner"></div>
+            </div>
+
+            {/* LARGER GIF ANIMATION */}
+            <div className="w-full max-w-[280px] aspect-square flex items-center justify-center overflow-hidden">
+              <img
+                src={introGifUrl}
+                alt="Otto Animation"
+                className="w-full h-full object-contain pointer-events-none select-none"
+              />
+            </div>
+
+            {/* CONTINUE BUTTON - SHOWS ONLY AFTER TYPING COMPLETES */}
+            {isTypingComplete && (
               <button
                 type="button"
                 onClick={() => {
                   triggerSoundAndHaptic();
-                  setStep((prev) => (prev - 1) as 1 | 2 | 3);
+                  setStep(2);
+                }}
+                style={{
+                  backgroundColor: '#2563EB',
+                  boxShadow: '0px 6px 0px #1D4ED8',
+                }}
+                className="w-full py-4 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all animate-fadeIn"
+              >
+                CONTINUE
+              </button>
+            )}
+          </div>
+        ) : (
+          /* STEPS 2, 3, 4: WITH OUTER CARD CONTAINER */
+          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
+            
+            {/* STEP INDICATORS */}
+            <div className="flex items-center justify-between pb-1">
+              <button
+                type="button"
+                onClick={() => {
+                  triggerSoundAndHaptic();
+                  setStep((prev) => (prev - 1) as 1 | 2 | 3 | 4);
                   setErrorMessage('');
                 }}
                 className="inline-flex items-center gap-1 text-xs font-black text-[#2563EB] hover:underline cursor-pointer"
@@ -364,304 +438,302 @@ export default function SignupPage() {
                 <ChevronLeft className="w-4 h-4" />
                 <span>Back</span>
               </button>
-            ) : (
+
+              <div className="flex items-center justify-center gap-2 mx-auto">
+                <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+                <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 3 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+                <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 4 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+              </div>
+
               <div className="w-10" />
+            </div>
+
+            <div className="flex items-center gap-3 my-2 px-1">
+              <div className="w-24 h-20 sm:w-28 sm:h-24 drop-shadow-md shrink-0">
+                <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain scale-110" />
+              </div>
+
+              <div className="relative px-4 py-2.5 rounded-2xl text-sm sm:text-base font-black text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-sm flex-1">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-ping shrink-0"></span>
+                  <span className="text-[11px] font-black uppercase tracking-wider text-[#2563EB]">OTTO</span>
+                </div>
+                <span>{typedText}</span>
+                {!isTypingComplete && (
+                  <span className="animate-pulse text-[#2563EB]">|</span>
+                )}
+                <div className="speech-bubble-tail-left"></div>
+                <div className="speech-bubble-tail-left-inner"></div>
+              </div>
+            </div>
+
+            {errorMessage && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-semibold">
+                {errorMessage}
+              </div>
             )}
 
-            <div className="flex items-center justify-center gap-2 mx-auto">
-              <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
-              <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
-              <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 3 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
-            </div>
-
-            <div className="w-10" />
-          </div>
-
-          <div className="flex items-center gap-3 my-2 px-1">
-            <div className="w-24 h-20 sm:w-28 sm:h-24 drop-shadow-md shrink-0">
-              <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain scale-110" />
-            </div>
-
-            <div className="relative px-4 py-2.5 rounded-2xl text-sm sm:text-base font-black text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-sm flex-1">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-ping shrink-0"></span>
-                <span className="text-[11px] font-black uppercase tracking-wider text-[#2563EB]">OTTO</span>
-              </div>
-              <span>{typedText}</span>
-              {!isTypingComplete && (
-                <span className="animate-pulse text-[#2563EB]">|</span>
-              )}
-              <div className="speech-bubble-tail-left"></div>
-              <div className="speech-bubble-tail-left-inner"></div>
-            </div>
-          </div>
-
-          {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-semibold">
-              {errorMessage}
-            </div>
-          )}
-
-          {/* STEP 1: CHOOSE AVATAR */}
-          {step === 1 && (
-            <div className="space-y-4 pt-1">
-              <div className="grid grid-cols-4 gap-3.5 max-w-md mx-auto">
-                {AVATARS.map((avatar) => {
-                  const isSelected = selectedAvatar === avatar.url;
-                  return (
-                    <button
-                      key={avatar.id}
-                      type="button"
-                      onClick={() => {
-                        triggerSoundAndHaptic();
-                        setSelectedAvatar(avatar.url);
-                        setErrorMessage('');
-                      }}
-                      className={`relative aspect-square rounded-2xl p-1.5 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col items-center justify-center ${
-                        isSelected
-                          ? 'ring-4 ring-[#2563EB] scale-105 shadow-md bg-blue-50 border-2 border-[#2563EB]'
-                          : 'opacity-80 hover:opacity-100 border-2 border-slate-200 hover:scale-105'
-                      }`}
-                    >
-                      <img
-                        src={avatar.url}
-                        alt={avatar.name}
-                        className="w-full h-full object-contain scale-125 rounded-xl pointer-events-none"
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  triggerSoundAndHaptic();
-                  setErrorMessage('');
-                  setStep(2);
-                }}
-                style={{
-                  backgroundColor: '#2563EB',
-                  boxShadow: '0px 6px 0px #1D4ED8',
-                }}
-                className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
-              >
-                <span>NEXT</span>
-                <ChevronRight className="w-5 h-5 stroke-[3]" />
-              </button>
-            </div>
-          )}
-
-          {/* STEP 2: DRAWING SKILL LEVEL */}
-          {step === 2 && (
-            <form onSubmit={handleNextStep} className="space-y-3 pt-1">
-              <div className="pt-1">
-                <div className="space-y-2.5">
-                  {SKILL_LEVELS.map((lvl) => {
-                    const isSelected = skillLevel === lvl.id;
+            {/* STEP 2: CHOOSE AVATAR */}
+            {step === 2 && (
+              <div className="space-y-4 pt-1">
+                <div className="grid grid-cols-4 gap-3.5 max-w-md mx-auto">
+                  {AVATARS.map((avatar) => {
+                    const isSelected = selectedAvatar === avatar.url;
                     return (
                       <button
-                        key={lvl.id}
+                        key={avatar.id}
                         type="button"
                         onClick={() => {
                           triggerSoundAndHaptic();
-                          setSkillLevel(lvl.id);
+                          setSelectedAvatar(avatar.url);
                           setErrorMessage('');
                         }}
-                        className={`w-full p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-center justify-between relative overflow-hidden ${
+                        className={`relative aspect-square rounded-2xl p-1.5 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col items-center justify-center ${
                           isSelected
-                            ? 'border-[#2563EB] bg-[#F0F7FF] shadow-xs'
-                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                            ? 'ring-4 ring-[#2563EB] scale-105 shadow-md bg-blue-50 border-2 border-[#2563EB]'
+                            : 'opacity-80 hover:opacity-100 border-2 border-slate-200 hover:scale-105'
                         }`}
                       >
-                        {isSelected && (
-                          <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#2563EB]" />
-                        )}
-
-                        <div className={`pl-1 ${isSelected ? 'pl-3' : ''} min-w-0`}>
-                          <p className={`text-xs sm:text-sm font-black ${isSelected ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>
-                            {lvl.label}
-                          </p>
-                          <p className="text-[11px] font-medium text-slate-500">
-                            {lvl.desc}
-                          </p>
-                        </div>
-
-                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                          isSelected ? 'border-[#2563EB] bg-[#2563EB]' : 'border-slate-300'
-                        }`}>
-                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                        </div>
+                        <img
+                          src={avatar.url}
+                          alt={avatar.name}
+                          className="w-full h-full object-contain scale-125 rounded-xl pointer-events-none"
+                        />
                       </button>
                     );
                   })}
                 </div>
-              </div>
 
-              <button
-                type="submit"
-                style={{
-                  backgroundColor: '#2563EB',
-                  boxShadow: '0px 6px 0px #1D4ED8',
-                }}
-                className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
-              >
-                <span>NEXT</span>
-                <ChevronRight className="w-5 h-5 stroke-[3]" />
-              </button>
-            </form>
-          )}
-
-          {/* STEP 3: NAME, USERNAME, EMAIL & PASSWORD */}
-          {step === 3 && (
-            <form onSubmit={handleSignup} className="space-y-3 pt-1">
-              <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
-                  <div className="relative flex items-center">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={(e) => {
-                        handleChange(e);
-                        setErrorMessage('');
-                      }}
-                      placeholder="John Doe"
-                      className="w-full pl-9 pr-2.5 py-2 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Username</label>
-                  <div className="relative flex items-center">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
-                    <input
-                      type="text"
-                      name="username"
-                      value={formData.username}
-                      onChange={(e) => {
-                        handleChange(e);
-                        setErrorMessage('');
-                      }}
-                      placeholder="john12"
-                      className="w-full pl-9 pr-2.5 py-2 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
-                <div className="relative flex items-center">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-                  <input
-                    type="email"
-                    name="email"
-                    disabled={lockoutSeconds > 0 || loading}
-                    value={formData.email}
-                    onChange={(e) => {
-                      handleChange(e);
-                      setErrorMessage('');
-                    }}
-                    placeholder="youremail@gmail.com"
-                    className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Set Password</label>
-                <div className="relative flex items-center">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-                  <input
-                    type="password"
-                    name="password"
-                    disabled={lockoutSeconds > 0 || loading}
-                    value={formData.password}
-                    onChange={(e) => {
-                      handleChange(e);
-                      setErrorMessage('');
-                    }}
-                    placeholder="At least 8 characters"
-                    className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Confirm Password</label>
-                <div className="relative flex items-center">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    disabled={lockoutSeconds > 0 || loading}
-                    value={formData.confirmPassword}
-                    onChange={(e) => {
-                      handleChange(e);
-                      setErrorMessage('');
-                    }}
-                    placeholder="Re-enter password"
-                    className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="consent"
-                  disabled={lockoutSeconds > 0 || loading}
-                  checked={consent}
-                  onChange={(e) => {
+                <button
+                  type="button"
+                  onClick={() => {
                     triggerSoundAndHaptic();
-                    setConsent(e.target.checked);
                     setErrorMessage('');
+                    setStep(3);
                   }}
-                  className="mt-0.5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
-                />
-                <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
-                  I consent to the collection and processing of my personal data in accordance with our{' '}
-                  <Link href="/terms" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
-                    Terms & Conditions
-                  </Link>{' '}
-                  and{' '}
-                  <Link href="/privacy" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
-                    Privacy Policy
-                  </Link>.
-                </label>
+                  style={{
+                    backgroundColor: '#2563EB',
+                    boxShadow: '0px 6px 0px #1D4ED8',
+                  }}
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
+                >
+                  <span>NEXT</span>
+                  <ChevronRight className="w-5 h-5 stroke-[3]" />
+                </button>
               </div>
+            )}
 
-              <button
-                type="submit"
-                disabled={loading || lockoutSeconds > 0}
-                style={{
-                  backgroundColor: lockoutSeconds > 0 || loading ? '#94A3B8' : '#2563EB',
-                  boxShadow: lockoutSeconds > 0 || loading ? 'none' : '0px 6px 0px #1D4ED8',
-                }}
-                className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {lockoutSeconds > 0 
-                  ? `LOCKED (${lockoutSeconds}s)` 
-                  : loading 
-                  ? 'CREATING...' 
-                  : 'CREATE ACCOUNT'}
-              </button>
-            </form>
-          )}
+            {/* STEP 3: DRAWING SKILL LEVEL */}
+            {step === 3 && (
+              <form onSubmit={handleNextStep} className="space-y-3 pt-1">
+                <div className="pt-1">
+                  <div className="space-y-2.5">
+                    {SKILL_LEVELS.map((lvl) => {
+                      const isSelected = skillLevel === lvl.id;
+                      return (
+                        <button
+                          key={lvl.id}
+                          type="button"
+                          onClick={() => {
+                            triggerSoundAndHaptic();
+                            setSkillLevel(lvl.id);
+                            setErrorMessage('');
+                          }}
+                          className={`w-full p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-center justify-between relative overflow-hidden ${
+                            isSelected
+                              ? 'border-[#2563EB] bg-[#F0F7FF] shadow-xs'
+                              : 'border-slate-200 hover:border-slate-300 bg-white'
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#2563EB]" />
+                          )}
 
-          <div className="pt-1 text-center">
-            <p className="text-xs font-semibold text-[#0F172A]/60">
-              Already have an account?{' '}
-              <Link href="/login" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-black hover:underline">
-                Log In
-              </Link>
-            </p>
+                          <div className={`pl-1 ${isSelected ? 'pl-3' : ''} min-w-0`}>
+                            <p className={`text-xs sm:text-sm font-black ${isSelected ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>
+                              {lvl.label}
+                            </p>
+                            <p className="text-[11px] font-medium text-slate-500">
+                              {lvl.desc}
+                            </p>
+                          </div>
+
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            isSelected ? 'border-[#2563EB] bg-[#2563EB]' : 'border-slate-300'
+                          }`}>
+                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    backgroundColor: '#2563EB',
+                    boxShadow: '0px 6px 0px #1D4ED8',
+                  }}
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
+                >
+                  <span>NEXT</span>
+                  <ChevronRight className="w-5 h-5 stroke-[3]" />
+                </button>
+              </form>
+            )}
+
+            {/* STEP 4: NAME, USERNAME, EMAIL & PASSWORD */}
+            {step === 4 && (
+              <form onSubmit={handleSignup} className="space-y-3 pt-1">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
+                    <div className="relative flex items-center">
+                      <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={(e) => {
+                          handleChange(e);
+                          setErrorMessage('');
+                        }}
+                        placeholder="John Doe"
+                        className="w-full pl-9 pr-2.5 py-2 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Username</label>
+                    <div className="relative flex items-center">
+                      <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
+                      <input
+                        type="text"
+                        name="username"
+                        value={formData.username}
+                        onChange={(e) => {
+                          handleChange(e);
+                          setErrorMessage('');
+                        }}
+                        placeholder="john12"
+                        className="w-full pl-9 pr-2.5 py-2 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
+                  <div className="relative flex items-center">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="email"
+                      name="email"
+                      disabled={lockoutSeconds > 0 || loading}
+                      value={formData.email}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setErrorMessage('');
+                      }}
+                      placeholder="youremail@gmail.com"
+                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Set Password</label>
+                  <div className="relative flex items-center">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="password"
+                      name="password"
+                      disabled={lockoutSeconds > 0 || loading}
+                      value={formData.password}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setErrorMessage('');
+                      }}
+                      placeholder="At least 8 characters"
+                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Confirm Password</label>
+                  <div className="relative flex items-center">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      disabled={lockoutSeconds > 0 || loading}
+                      value={formData.confirmPassword}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setErrorMessage('');
+                      }}
+                      placeholder="Re-enter password"
+                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="consent"
+                    disabled={lockoutSeconds > 0 || loading}
+                    checked={consent}
+                    onChange={(e) => {
+                      triggerSoundAndHaptic();
+                      setConsent(e.target.checked);
+                      setErrorMessage('');
+                    }}
+                    className="mt-0.5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
+                  />
+                  <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
+                    I consent to the collection and processing of my personal data in accordance with our{' '}
+                    <Link href="/terms" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
+                      Terms & Conditions
+                    </Link>{' '}
+                    and{' '}
+                    <Link href="/privacy" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
+                      Privacy Policy
+                    </Link>.
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || lockoutSeconds > 0}
+                  style={{
+                    backgroundColor: lockoutSeconds > 0 || loading ? '#94A3B8' : '#2563EB',
+                    boxShadow: lockoutSeconds > 0 || loading ? 'none' : '0px 6px 0px #1D4ED8',
+                  }}
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {lockoutSeconds > 0 
+                    ? `LOCKED (${lockoutSeconds}s)` 
+                    : loading 
+                    ? 'CREATING...' 
+                    : 'CREATE ACCOUNT'}
+                </button>
+              </form>
+            )}
+
+            <div className="pt-1 text-center">
+              <p className="text-xs font-semibold text-[#0F172A]/60">
+                Already have an account?{' '}
+                <Link href="/login" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-black hover:underline">
+                  Log In
+                </Link>
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>

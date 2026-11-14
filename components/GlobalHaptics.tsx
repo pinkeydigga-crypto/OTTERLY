@@ -10,9 +10,9 @@ export default function GlobalHaptics() {
     if (typeof window === "undefined") return;
     try {
       if ("vibrate" in navigator) {
-        if (isError) navigator.vibrate(40);
-        else if (type === 1) navigator.vibrate(25);
-        else navigator.vibrate(10);
+        if (isError) navigator.vibrate(70); // 🚨 Stronger error vibration
+        else if (type === 1) navigator.vibrate(45); // 🔘 Stronger button vibration
+        else navigator.vibrate(20);
       }
 
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
@@ -32,25 +32,25 @@ export default function GlobalHaptics() {
       const gain = ctx.createGain();
 
       if (isError || type === 4) {
-        // 🚨 Error Sound (Sawtooth) - Sirf Scan, Signup, Login ke liye
+        // 🚨 Error Sound (Sawtooth) - Louder & Punchier
         osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.setValueAtTime(160, now);
         osc.frequency.exponentialRampToValueAtTime(80, now + 0.6);
-        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.setValueAtTime(0.45, now); // 🔊 Increased volume
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
       } else if (type === 3) {
-        // 🎨 Avatar & Skill Sound (Triangle)
+        // 🎨 Avatar & Skill Sound (Triangle) - Louder
         osc.type = "triangle";
         osc.frequency.setValueAtTime(650, now);
         osc.frequency.exponentialRampToValueAtTime(450, now + 0.3);
-        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.setValueAtTime(0.35, now); // 🔊 Increased volume
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
       } else {
-        // 🔘 Button & Nav Sound (Sine - Deep/Punchy) - Sirf buttons par chalegi
+        // 🔘 Button & Nav Sound (Sine - Deep/Punchy) - Louder & Clear
         osc.type = "sine";
-        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.setValueAtTime(190, now);
         osc.frequency.exponentialRampToValueAtTime(90, now + 0.25);
-        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.setValueAtTime(0.45, now); // 🔊 Increased volume (from 0.22 to 0.45)
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
       }
 
@@ -73,7 +73,6 @@ export default function GlobalHaptics() {
     const errorSelector =
       "[data-error], [class*='text-red'], [class*='text-rose'], [class*='bg-red'], [class*='bg-rose'], [class*='border-red'], [class*='border-rose'], [class*='error']";
 
-    // 1. MutationObserver: Error sound sirf Scan, Signup, Login par hi trigger hogi
     const observer = new MutationObserver(() => {
       if (!isErrorAllowedPage()) {
         lastErrorNodeRef.current = null;
@@ -91,14 +90,11 @@ export default function GlobalHaptics() {
 
     observer.observe(document.body, { childList: true, subtree: true, characterData: true });
 
-    // 2. Strict Click Handler: Sound sirf buttons aur interactive elements par hi bajegi!
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target) return;
 
       const actualButton = target.closest("button, a, input[type='submit'], input[type='button'], [role='button'], [tabindex]");
-      
-      // Background ya normal text par click karne se sound nahi bajegi
       if (!actualButton) return;
 
       const isNav = target.closest("nav, header, aside, .nav-item");
@@ -120,9 +116,9 @@ export default function GlobalHaptics() {
       if (isAvatarOrSkill) {
         playTone(3);
       } else if (hasErrorVisible && isMainAction && !isBackOrHome && !isNav) {
-        playTone(4, true); // 🚨 Error sound (Sirf Scan, Signup, Login par)
+        playTone(4, true);
       } else {
-        playTone(1); // 🔘 Normal Button sound (Sirf buttons aur links par)
+        playTone(1);
       }
     };
 
