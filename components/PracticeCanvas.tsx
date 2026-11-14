@@ -35,7 +35,10 @@ export default function PracticeCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const [isDrawing, setIsDrawing] = useState(false);
-  const [lineWidth, setLineWidth] = useState(3);
+  const [pencilSize, setPencilSize] = useState(3);
+  const [highlighterSize, setHighlighterSize] = useState(12);
+  const [eraserSize, setEraserSize] = useState(20);
+
   const [activeTool, setActiveTool] = useState<ToolType>("pencil");
   const [pencilColor, setPencilColor] = useState(PENCIL_COLORS[1].value);
   const [highlighterColor, setHighlighterColor] = useState(HIGHLIGHTER_COLORS[0].value);
@@ -46,6 +49,7 @@ export default function PracticeCanvas() {
   const currentPathRef = useRef<{ x: number; y: number }[]>([]);
   const startCoordRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const baseImageDataRef = useRef<ImageData | null>(null);
+  const isInitializedRef = useRef(false);
 
   const saveState = useCallback(() => {
     const canvas = canvasRef.current;
@@ -71,6 +75,14 @@ export default function PracticeCanvas() {
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
 
+    if (isInitializedRef.current && canvas.width > 0 && canvas.height > 0) {
+      const existingData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      ctx.putImageData(existingData, 0, 0);
+      return;
+    }
+
     canvas.width = rect.width;
     canvas.height = rect.height;
 
@@ -80,6 +92,7 @@ export default function PracticeCanvas() {
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     setHistory([imageData]);
     setHistoryIndex(0);
+    isInitializedRef.current = true;
   }, []);
 
   useEffect(() => {
@@ -87,6 +100,22 @@ export default function PracticeCanvas() {
     window.addEventListener("resize", initCanvas);
     return () => window.removeEventListener("resize", initCanvas);
   }, [initCanvas]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const preventScroll = (e: TouchEvent) => {
+      if (isDrawing) {
+        e.preventDefault();
+      }
+    };
+
+    canvas.addEventListener("touchmove", preventScroll, { passive: false });
+    return () => {
+      canvas.removeEventListener("touchmove", preventScroll);
+    };
+  }, [isDrawing]);
 
   const handleUndo = () => {
     if (historyIndex <= 0) return;
@@ -147,7 +176,7 @@ export default function PracticeCanvas() {
   const startDrawing = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
-    if ("touches" in e && e.cancelable) {
+    if (e.cancelable) {
       e.preventDefault();
     }
 
@@ -166,7 +195,7 @@ export default function PracticeCanvas() {
   const draw = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
-    if ("touches" in e && e.cancelable) {
+    if (e.cancelable) {
       e.preventDefault();
     }
 
@@ -192,19 +221,19 @@ export default function PracticeCanvas() {
 
       if (activeTool === "pencil") {
         ctx.strokeStyle = pencilColor;
-        ctx.lineWidth = lineWidth;
+        ctx.lineWidth = pencilSize;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.globalAlpha = 0.9;
       } else if (activeTool === "highlighter") {
         ctx.strokeStyle = highlighterColor;
-        ctx.lineWidth = lineWidth * 4.5;
+        ctx.lineWidth = highlighterSize;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.globalAlpha = 1.0;
       } else if (activeTool === "eraser") {
         ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = lineWidth * 5;
+        ctx.lineWidth = eraserSize;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.globalAlpha = 1.0;
@@ -218,7 +247,7 @@ export default function PracticeCanvas() {
       const currentY = coords.y;
 
       ctx.strokeStyle = pencilColor;
-      ctx.lineWidth = lineWidth;
+      ctx.lineWidth = pencilSize;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.beginPath();
@@ -324,9 +353,8 @@ export default function PracticeCanvas() {
       {/* Control Panel */}
       <div className="flex flex-col gap-2.5 w-full max-w-2xl p-3 bg-slate-50 rounded-2xl border border-slate-200">
         
-        {/* Main Toolbar with overflow-x-auto to prevent cutting */}
+        {/* Main Toolbar */}
         <div className="flex items-center justify-between gap-2 w-full overflow-x-auto pb-1">
-          
           <div className="flex items-center bg-slate-200/70 p-1 rounded-xl shrink-0 gap-1">
             <button
               type="button"
@@ -372,7 +400,6 @@ export default function PracticeCanvas() {
             </button>
           </div>
 
-          {/* Undo/Redo & Clear */}
           <div className="flex items-center gap-1 shrink-0 ml-auto">
             <button
               type="button"
@@ -400,7 +427,7 @@ export default function PracticeCanvas() {
           </div>
         </div>
 
-        {/* Sub-pill row for Shapes when shapes tool is selected */}
+        {/* Shapes Sub-menu */}
         {isShapeActive && (
           <div className="flex items-center gap-2 bg-indigo-50/80 border border-indigo-200 px-3 py-2 rounded-xl w-full overflow-x-auto">
             <span className="text-[11px] font-black text-indigo-700 shrink-0">Select Shape:</span>
@@ -430,6 +457,49 @@ export default function PracticeCanvas() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Size Slider Option for Pencil, Highlighter, and Eraser */}
+        {activeTool === "pencil" && (
+          <div className="flex items-center justify-between gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 w-full">
+            <span className="text-[11px] font-black text-slate-500 shrink-0">Pencil Size ({pencilSize}px):</span>
+            <input
+              type="range"
+              min="1"
+              max="20"
+              value={pencilSize}
+              onChange={(e) => setPencilSize(Number(e.target.value))}
+              className="w-full max-w-xs accent-blue-600 cursor-pointer"
+            />
+          </div>
+        )}
+
+        {activeTool === "highlighter" && (
+          <div className="flex items-center justify-between gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 w-full">
+            <span className="text-[11px] font-black text-slate-500 shrink-0">Highlighter Size ({highlighterSize}px):</span>
+            <input
+              type="range"
+              min="5"
+              max="40"
+              value={highlighterSize}
+              onChange={(e) => setHighlighterSize(Number(e.target.value))}
+              className="w-full max-w-xs accent-blue-600 cursor-pointer"
+            />
+          </div>
+        )}
+
+        {activeTool === "eraser" && (
+          <div className="flex items-center justify-between gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 w-full">
+            <span className="text-[11px] font-black text-slate-500 shrink-0">Eraser Size ({eraserSize}px):</span>
+            <input
+              type="range"
+              min="5"
+              max="50"
+              value={eraserSize}
+              onChange={(e) => setEraserSize(Number(e.target.value))}
+              className="w-full max-w-xs accent-rose-600 cursor-pointer"
+            />
           </div>
         )}
 

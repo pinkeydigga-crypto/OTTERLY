@@ -310,6 +310,10 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden font-sans">
       
+      {/* INSTANT GIF PRELOADER */}
+      <link rel="preload" href={introGifUrl} as="image" />
+      <img src={introGifUrl} alt="" className="hidden" aria-hidden="true" />
+
       <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-100/70 rounded-full blur-2xl pointer-events-none" />
       <div className="absolute top-1/2 -left-20 -translate-y-1/2 w-64 h-64 bg-indigo-100/60 rounded-full blur-2xl pointer-events-none" />
 

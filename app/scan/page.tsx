@@ -311,36 +311,27 @@ export default function ScanPage() {
 
       const data: AIAnalysisResult = await res.json();
 
-      // Lock immediately on any server attempt (whether rate limit lock or success/error response)
-      const nowIso = new Date().toISOString();
-      if (activeUserId) {
-        await supabase
-          .from("profiles")
-          .update({ last_scanned_at: nowIso })
-          .eq("id", activeUserId);
-      }
-      setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
-
-      const nextMidnight = new Date();
-      nextMidnight.setHours(24, 0, 0, 0);
-      setIsLockedToday(true);
-      setNextAllowedTimeStr(nextMidnight.toISOString());
-
       if (res.status === 423 || data.lockActive) {
         setErrorMessage(data.message || "Your scan limit is out. Come back tomorrow!");
-        setSelectedImage(null);
+        setIsLockedToday(true);
+        const nextMidnight = new Date();
+        nextMidnight.setHours(24, 0, 0, 0);
+        setNextAllowedTimeStr(nextMidnight.toISOString());
         return;
       }
 
       if (!res.ok) {
         setErrorMessage(data.message || "Otto AI is facing high demand. Please try again in a few minutes.");
-      } else if (data.isDrawing === false) {
-        setErrorMessage(data.message || "Please upload a valid artwork image.");
-      } else {
-        setAnalysis(data);
+        return;
       }
-    } catch (err: unknown) {
-      // Lock even if network/connection error occurs so user can't bypass by disconnecting/refreshing
+
+      if (data.isDrawing === false) {
+        // Invalid artwork: Do NOT lock, let user upload a valid drawing
+        setErrorMessage(data.message || "Please upload a valid artwork image.");
+        return;
+      }
+
+      // SUCCESSFUL RESULT: Lock only upon receiving a valid analysis result
       const nowIso = new Date().toISOString();
       if (activeUserId) {
         await supabase
@@ -355,6 +346,8 @@ export default function ScanPage() {
       setIsLockedToday(true);
       setNextAllowedTimeStr(nextMidnight.toISOString());
 
+      setAnalysis(data);
+    } catch (err: unknown) {
       setErrorMessage("Unable to connect to Otto AI server. Please try again.");
     } finally {
       setIsAnalyzing(false);
