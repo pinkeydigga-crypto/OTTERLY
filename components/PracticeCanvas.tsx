@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useCallback } from "react";
-import { RotateCcw, Pencil, Highlighter, Eraser, Undo2, Redo2 } from "lucide-react";
+import { RotateCcw, Pencil, Highlighter, Eraser, Undo2, Redo2, Shapes, Minus, Circle, Square, Spline, Triangle as TriangleIcon } from "lucide-react";
 
-type ToolType = "pencil" | "highlighter" | "eraser";
+type ToolType = "pencil" | "highlighter" | "eraser" | "shapes" | "line" | "curve" | "circle" | "square" | "triangle";
 
 const PENCIL_COLORS = [
   { name: "Black", value: "#0F172A" },
@@ -44,6 +44,7 @@ export default function PracticeCanvas() {
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
 
   const currentPathRef = useRef<{ x: number; y: number }[]>([]);
+  const startCoordRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const baseImageDataRef = useRef<ImageData | null>(null);
 
   const saveState = useCallback(() => {
@@ -157,6 +158,7 @@ export default function PracticeCanvas() {
 
     baseImageDataRef.current = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const coords = getCoordinates(e);
+    startCoordRef.current = coords;
     currentPathRef.current = [coords];
     setIsDrawing(true);
   };
@@ -175,42 +177,88 @@ export default function PracticeCanvas() {
     if (!ctx) return;
 
     const coords = getCoordinates(e);
-    currentPathRef.current.push(coords);
-
-    const points = currentPathRef.current;
-    if (points.length < 2) return;
-
     ctx.putImageData(baseImageDataRef.current, 0, 0);
 
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
+    if (activeTool === "pencil" || activeTool === "highlighter" || activeTool === "eraser") {
+      currentPathRef.current.push(coords);
+      const points = currentPathRef.current;
+      if (points.length < 2) return;
 
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y);
-    }
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
 
-    if (activeTool === "pencil") {
+      if (activeTool === "pencil") {
+        ctx.strokeStyle = pencilColor;
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.globalAlpha = 0.9;
+      } else if (activeTool === "highlighter") {
+        ctx.strokeStyle = highlighterColor;
+        ctx.lineWidth = lineWidth * 4.5;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.globalAlpha = 1.0;
+      } else if (activeTool === "eraser") {
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = lineWidth * 5;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.globalAlpha = 1.0;
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+    } else {
+      const startX = startCoordRef.current.x;
+      const startY = startCoordRef.current.y;
+      const currentX = coords.x;
+      const currentY = coords.y;
+
       ctx.strokeStyle = pencilColor;
       ctx.lineWidth = lineWidth;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.globalAlpha = 0.9;
-    } else if (activeTool === "highlighter") {
-      ctx.strokeStyle = highlighterColor;
-      ctx.lineWidth = lineWidth * 4.5;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.globalAlpha = 1.0;
-    } else if (activeTool === "eraser") {
-      ctx.strokeStyle = "#FFFFFF";
-      ctx.lineWidth = lineWidth * 5;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.globalAlpha = 1.0;
-    }
+      ctx.beginPath();
 
-    ctx.stroke();
-    ctx.globalAlpha = 1.0;
+      if (activeTool === "line") {
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(currentX, currentY);
+        ctx.stroke();
+      } else if (activeTool === "curve") {
+        const cpX = (startX + currentX) / 2 + (currentY - startY) / 2;
+        const cpY = (startY + currentY) / 2 - (currentX - startX) / 2;
+        ctx.moveTo(startX, startY);
+        ctx.quadraticCurveTo(cpX, cpY, currentX, currentY);
+        ctx.stroke();
+      } else if (activeTool === "circle") {
+        const radiusX = Math.abs(currentX - startX) / 2;
+        const radiusY = Math.abs(currentY - startY) / 2;
+        const centerX = startX + (currentX - startX) / 2;
+        const centerY = startY + (currentY - startY) / 2;
+        ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+        ctx.stroke();
+      } else if (activeTool === "square") {
+        const width = currentX - startX;
+        const height = currentY - startY;
+        ctx.strokeRect(startX, startY, width, height);
+      } else if (activeTool === "triangle") {
+        const topX = startX + (currentX - startX) / 2;
+        const topY = startY;
+        const bottomLeftX = startX;
+        const bottomLeftY = currentY;
+        const bottomRightX = currentX;
+        const bottomRightY = currentY;
+
+        ctx.moveTo(topX, topY);
+        ctx.lineTo(bottomLeftX, bottomLeftY);
+        ctx.lineTo(bottomRightX, bottomRightY);
+        ctx.closePath();
+        ctx.stroke();
+      }
+    }
   };
 
   const stopDrawing = () => {
@@ -232,6 +280,8 @@ export default function PracticeCanvas() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     saveState();
   };
+
+  const isShapeActive = activeTool === "shapes" || activeTool === "line" || activeTool === "curve" || activeTool === "circle" || activeTool === "square" || activeTool === "triangle";
 
   return (
     <div className="flex flex-col items-center gap-3 w-full max-w-full overflow-hidden">
@@ -256,7 +306,8 @@ export default function PracticeCanvas() {
           onTouchStart={startDrawing}
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
-          className={`w-full h-[380px] sm:h-[450px] bg-white rounded-[1.5rem] touch-none border border-slate-100 block ${
+          style={{ touchAction: "none" }}
+          className={`w-full h-[380px] sm:h-[450px] bg-white rounded-[1.5rem] border border-slate-100 block ${
             activeTool === "eraser" ? "cursor-cell" : "cursor-crosshair"
           }`}
         />
@@ -273,17 +324,15 @@ export default function PracticeCanvas() {
       {/* Control Panel */}
       <div className="flex flex-col gap-2.5 w-full max-w-2xl p-3 bg-slate-50 rounded-2xl border border-slate-200">
         
-        {/* Tool Switcher Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2.5 w-full">
+        {/* Main Toolbar with overflow-x-auto to prevent cutting */}
+        <div className="flex items-center justify-between gap-2 w-full overflow-x-auto pb-1">
           
           <div className="flex items-center bg-slate-200/70 p-1 rounded-xl shrink-0 gap-1">
             <button
               type="button"
               onClick={() => setActiveTool("pencil")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
-                activeTool === "pencil"
-                  ? "bg-white text-slate-800 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black transition cursor-pointer shrink-0 ${
+                activeTool === "pencil" ? "bg-white text-slate-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <Pencil className="w-3.5 h-3.5" /> Pencil
@@ -291,10 +340,8 @@ export default function PracticeCanvas() {
             <button
               type="button"
               onClick={() => setActiveTool("highlighter")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
-                activeTool === "highlighter"
-                  ? "bg-white text-blue-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black transition cursor-pointer shrink-0 ${
+                activeTool === "highlighter" ? "bg-white text-blue-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <Highlighter className="w-3.5 h-3.5" /> Highlighter
@@ -302,31 +349,31 @@ export default function PracticeCanvas() {
             <button
               type="button"
               onClick={() => setActiveTool("eraser")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
-                activeTool === "eraser"
-                  ? "bg-white text-rose-600 shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black transition cursor-pointer shrink-0 ${
+                activeTool === "eraser" ? "bg-white text-rose-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
               <Eraser className="w-3.5 h-3.5" /> Eraser
             </button>
-          </div>
-
-          {/* Size Slider */}
-          <div className="flex items-center gap-2 grow max-w-[150px] min-w-[100px]">
-            <span className="text-[11px] font-black text-slate-500 shrink-0">Size:</span>
-            <input
-              type="range"
-              min="1"
-              max="10"
-              value={lineWidth}
-              onChange={(e) => setLineWidth(Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer h-1.5 bg-slate-200 rounded-lg"
-            />
+            <button
+              type="button"
+              onClick={() => {
+                if (!isShapeActive) {
+                  setActiveTool("line");
+                } else {
+                  setActiveTool("shapes");
+                }
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-black transition cursor-pointer shrink-0 ${
+                isShapeActive ? "bg-white text-indigo-600 shadow-xs" : "text-slate-600 hover:text-slate-900"
+              }`}
+            >
+              <Shapes className="w-3.5 h-3.5" /> Shapes
+            </button>
           </div>
 
           {/* Undo/Redo & Clear */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0 ml-auto">
             <button
               type="button"
               onClick={handleUndo}
@@ -343,21 +390,53 @@ export default function PracticeCanvas() {
             >
               <Redo2 className="w-4 h-4" />
             </button>
+            <button
+              type="button"
+              onClick={clearCanvas}
+              className="flex items-center gap-1 text-xs font-black bg-white text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-slate-200 transition cursor-pointer shrink-0"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> Clear
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={clearCanvas}
-            className="flex items-center gap-1 text-xs font-black bg-white text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-slate-200 transition shrink-0 ml-auto cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" /> Clear
-          </button>
         </div>
 
-        {/* Dynamic Color Palette for Pencil (2 rows on mobile via grid-cols-5) */}
-        {activeTool === "pencil" && (
+        {/* Sub-pill row for Shapes when shapes tool is selected */}
+        {isShapeActive && (
+          <div className="flex items-center gap-2 bg-indigo-50/80 border border-indigo-200 px-3 py-2 rounded-xl w-full overflow-x-auto">
+            <span className="text-[11px] font-black text-indigo-700 shrink-0">Select Shape:</span>
+            <div className="flex items-center gap-1.5">
+              {[
+                { id: "line", label: "Line", icon: Minus },
+                { id: "curve", label: "Curve", icon: Spline },
+                { id: "circle", label: "Circle", icon: Circle },
+                { id: "square", label: "Square", icon: Square },
+                { id: "triangle", label: "Triangle", icon: TriangleIcon },
+              ].map((s) => {
+                const IconComponent = s.icon;
+                const isSelected = activeTool === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setActiveTool(s.id as ToolType)}
+                    className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-black transition cursor-pointer shrink-0 ${
+                      isSelected
+                        ? "bg-indigo-600 text-white shadow-xs"
+                        : "bg-white text-indigo-900 border border-indigo-100 hover:bg-indigo-100"
+                    }`}
+                  >
+                    <IconComponent className="w-3.5 h-3.5" /> {s.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic Color Palette for Pencil or Shapes */}
+        {(activeTool === "pencil" || isShapeActive) && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white px-3 py-2.5 rounded-xl border border-slate-200 w-full">
-            <span className="text-[11px] font-black text-slate-500 shrink-0">Pencil Color:</span>
+            <span className="text-[11px] font-black text-slate-500 shrink-0">Color / Stroke:</span>
             <div className="grid grid-cols-5 sm:flex sm:flex-wrap items-center gap-2">
               {PENCIL_COLORS.map((c) => (
                 <button
@@ -377,7 +456,7 @@ export default function PracticeCanvas() {
           </div>
         )}
 
-        {/* Dynamic Color Palette for Highlighter (2 rows on mobile via grid-cols-5) */}
+        {/* Dynamic Color Palette for Highlighter */}
         {activeTool === "highlighter" && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-white px-3 py-2.5 rounded-xl border border-slate-200 w-full">
             <span className="text-[11px] font-black text-slate-500 shrink-0">Highlighter Color:</span>

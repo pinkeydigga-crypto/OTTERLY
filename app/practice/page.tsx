@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import PracticeCanvas from "@/components/PracticeCanvas";
 import { 
-  Download, RotateCcw, ArrowLeft, LayoutDashboard,
+  Download, RotateCcw, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, PanelLeft,
   X, Palette, Grid, ShieldAlert, AlertCircle, Sparkles, MoreHorizontal
 } from "lucide-react";
@@ -461,17 +461,6 @@ export default function PracticePage() {
 
       <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-5xl mx-auto w-full space-y-6">
 
-        <div className="flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            onClick={triggerHaptic}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-white border-2 border-slate-100 text-slate-700 font-black text-xs sm:text-sm hover:bg-slate-50 transition-all shadow-xs"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[3]" />
-            <span>Back to Dashboard</span>
-          </Link>
-        </div>
-
         <div className="bg-white p-6 sm:p-8 rounded-[2.5rem] border-2 border-slate-100 shadow-xs">
           <div className="w-full flex flex-row items-center justify-between gap-4">
             <div className="text-left flex-1 space-y-1">
@@ -501,7 +490,7 @@ export default function PracticePage() {
           </div>
         )}
 
-        <div ref={containerRef} className="w-full bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-xs overflow-hidden p-2 sm:p-4 touch-pan-y">
+        <div ref={containerRef} className="w-full bg-white rounded-[2.5rem] border-2 border-slate-100 shadow-xs overflow-hidden p-2 sm:p-4">
           <PracticeCanvas />
         </div>
 
