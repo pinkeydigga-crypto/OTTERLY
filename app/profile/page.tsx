@@ -40,6 +40,7 @@ export default function ProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -56,6 +57,13 @@ export default function ProfilePage() {
       } catch {}
     }
   };
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown((prev) => prev - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -107,6 +115,8 @@ export default function ProfilePage() {
     e.preventDefault();
     triggerHaptic();
 
+    if (saving || cooldown > 0) return;
+
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user || user.id !== profile?.id) {
@@ -143,6 +153,7 @@ export default function ProfilePage() {
       }
 
       setMessage({ type: "success", text: "Profile updated successfully!" });
+      setCooldown(5); // 5 seconds silent throttling cooldown
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "Failed to update profile.";
       setMessage({ type: "error", text: errMsg });
@@ -343,8 +354,8 @@ export default function ProfilePage() {
 
           <button
             type="submit"
-            disabled={saving}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#2563EB] text-white font-black text-sm uppercase tracking-wider border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            disabled={saving || cooldown > 0}
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#2563EB] text-white font-black text-sm uppercase tracking-wider border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4" />
             <span>{saving ? "SAVING..." : "SAVE CHANGES"}</span>

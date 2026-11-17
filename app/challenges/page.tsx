@@ -59,6 +59,52 @@ interface LocalChallenge {
   steps: TutorialStep[];
 }
 
+const FLOWER_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Materials Ready",
+    instruction: "",
+    tips: ["Use a light HB pencil for sketching", "Keep a good eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Grab your pencil and paper!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Draw the Center Circle",
+    instruction: "Start by drawing a neat and clean circle in the middle of your page to form the center of the flower.",
+    tips: ["Keep your hand loose for a smooth circle", "Use a light pencil outline first"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Five Petals",
+    instruction: "Draw five evenly spaced rounded petals surrounding the center circle, connecting them neatly around the base.",
+    tips: ["Make sure the petals are balanced around the center", "Keep strokes light"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Add Stem and Leaves",
+    instruction: "Draw a straight double-line stem coming down from the flower base, and add two sharp pointed leaves at the bottom.",
+    tips: ["Keep the stem straight and steady", "Draw symmetrical leaves on both sides"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Shading and Final Details",
+    instruction: "Give smooth pencil shading inside the petals, center circle, stem, and leaves to make your flower look 3D and lively.",
+    tips: ["Blend shadows gently for a realistic finish", "Practice your shading on the canvas below"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Interactive Practice Canvas",
+    instruction: "Awesome progress! Now practice drawing your classic flower directly on the interactive canvas below.",
+    tips: ["Focus on smooth strokes", "Adjust brush size for finer details"],
+    imageUrl: ""
+  }
+];
+
 const EYE_STEPS: TutorialStep[] = [
   {
     step: 1,
@@ -146,6 +192,15 @@ const LIP_STEPS: TutorialStep[] = [
 
 const LOCAL_CHALLENGES: LocalChallenge[] = [
   {
+    id: "classic-flower-beginner",
+    title: "Challenge: Classic Flower Drawing",
+    description: "Learn how to draw a beautiful 5-petal classic flower step by step with easy shading.",
+    difficulty: "beginner",
+    xp: 40,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER4.jpeg",
+    steps: FLOWER_STEPS
+  },
+  {
     id: "eye-drawing-1min",
     title: "Challenge: The Realistic Eye",
     description: "Master iris details, pupil depth, eyelid folds, and realistic eyelashes step by step.",
@@ -179,13 +234,13 @@ export default function ChallengesPage() {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   const [activeView, setActiveView] = useState<'hub' | 'challenge-flow'>('hub');
-  const [activeChallengeId, setActiveChallengeId] = useState<string>("eye-drawing-1min");
+  const [activeChallengeId, setActiveChallengeId] = useState<string>("classic-flower-beginner");
   const [currentStep, setCurrentStep] = useState<number>(0);
 
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
   const [showClaimModal, setShowClaimModal] = useState<boolean>(false);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<"beginner" | "intermediate" | "advanced">("intermediate");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<"beginner" | "intermediate" | "advanced">("beginner");
   const [showLevelModal, setShowLevelModal] = useState<boolean>(false);
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
@@ -227,9 +282,9 @@ export default function ChallengesPage() {
         osc.type = "sine";
         osc.frequency.setValueAtTime(freq, t);
         gain.gain.setValueAtTime(0.1, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
         osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(t); osc.stop(t + 0.3);
+        osc.start(t); osc.stop(t + 0.1);
       });
     } catch {}
   };
