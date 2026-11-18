@@ -197,6 +197,52 @@ const EYE_STEPS: TutorialStep[] = [
   }
 ];
 
+const NOSE_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw a nose!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Basic Outline and Nostril Curves",
+    instruction: "Draw light guide lines for the nose shape and smooth curves for the bottom nostrils.",
+    tips: ["Keep your pencil strokes very light", "Keep both curves balanced"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/nose1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Define Bridge and Nostril Openings",
+    instruction: "Darken the inner nostril holes for depth and refine the lines along the nose bridge.",
+    tips: ["Keep the lines smooth", "Make the nostril openings neat"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/nose2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Soft Shading and Texture",
+    instruction: "Add soft pencil shading along the sides and top of the nose to create realistic skin texture.",
+    tips: ["Blend shading smoothly", "Keep your hand relaxed"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/NOSE3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: High Contrast and Highlights",
+    instruction: "Deepen the shadows around the tip and edges, leaving a clean white highlight spot for a 3D look.",
+    tips: ["High contrast creates realism", "Get ready to practice on canvas next"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/NOSE4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome! Now practice drawing your realistic nose on the digital canvas below.",
+    tips: ["Use the brush tool smoothly", "Have fun drawing"],
+    imageUrl: ""
+  }
+];
+
 const LIP_STEPS: TutorialStep[] = [
   {
     step: 1,
@@ -265,6 +311,15 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     steps: EYE_STEPS
   },
   {
+    id: "nose-drawing-challenge",
+    title: "Challenge: The Realistic Nose",
+    description: "Master nose bridge structure, nostril curves, skin texture shading, and 3D highlights step by step.",
+    difficulty: "intermediate",
+    xp: 70,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/NOSE4.jpeg",
+    steps: NOSE_STEPS
+  },
+  {
     id: "lip-drawing-challenge",
     title: "Challenge: The Realistic Lip",
     description: "Learn lip contours, vertical crease texturing, soft volume shading, and glossy highlights.",
@@ -331,7 +386,6 @@ export default function ChallengesPage() {
 
       const now = ctx.currentTime;
 
-      // 3-second sweet, warm ascending chime & sparkle celebration melody
       const melody = [
         { freq: 523.25, time: 0.0, duration: 0.45, vol: 0.14 },   // C5
         { freq: 659.25, time: 0.14, duration: 0.45, vol: 0.14 },  // E5
