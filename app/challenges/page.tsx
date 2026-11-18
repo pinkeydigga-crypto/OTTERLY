@@ -62,45 +62,91 @@ interface LocalChallenge {
 const FLOWER_STEPS: TutorialStep[] = [
   {
     step: 1,
-    title: "Step 1: Get Your Materials Ready",
+    title: "Step 1: Get Your Pencil Ready",
     instruction: "",
-    tips: ["Use a light HB pencil for sketching", "Keep a good eraser handy"],
+    tips: ["Use a light pencil for drawing", "Keep an eraser ready"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
     typewriterText: "Grab your pencil and paper!"
   },
   {
     step: 2,
-    title: "Step 2: Draw the Center Circle",
-    instruction: "Start by drawing a neat and clean circle in the middle of your page to form the center of the flower.",
-    tips: ["Keep your hand loose for a smooth circle", "Use a light pencil outline first"],
+    title: "Step 2: Draw a Circle in the Middle",
+    instruction: "Draw a clean and small circle right in the center of your page for the flower center.",
+    tips: ["Draw a light circle first", "Make it round and neat"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER1.jpeg"
   },
   {
     step: 3,
-    title: "Step 3: Add Five Petals",
-    instruction: "Draw five evenly spaced rounded petals surrounding the center circle, connecting them neatly around the base.",
-    tips: ["Make sure the petals are balanced around the center", "Keep strokes light"],
+    title: "Step 3: Draw Five Petals",
+    instruction: "Draw five curved petals around the center circle, touching each other nicely.",
+    tips: ["Keep all petals similar in size", "Do not press too hard"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER2.jpeg"
   },
   {
     step: 4,
-    title: "Step 4: Add Stem and Leaves",
-    instruction: "Draw a straight double-line stem coming down from the flower base, and add two sharp pointed leaves at the bottom.",
-    tips: ["Keep the stem straight and steady", "Draw symmetrical leaves on both sides"],
+    title: "Step 4: Draw Stem and Leaves",
+    instruction: "Draw a straight line going down from the flower, and add two leaf shapes on the sides.",
+    tips: ["Keep the stem straight", "Make two clean leaves"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER3.jpeg"
   },
   {
     step: 5,
-    title: "Step 5: Shading and Final Details",
-    instruction: "Give smooth pencil shading inside the petals, center circle, stem, and leaves to make your flower look 3D and lively.",
-    tips: ["Blend shadows gently for a realistic finish", "Practice your shading on the canvas below"],
+    title: "Step 5: Add Shading",
+    instruction: "Shade softly inside the petals and leaves with your pencil to make it look real.",
+    tips: ["Blend pencil lines gently", "Make borders darker"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER4.jpeg"
   },
   {
     step: 6,
-    title: "Step 6: Interactive Practice Canvas",
-    instruction: "Awesome progress! Now practice drawing your classic flower directly on the interactive canvas below.",
-    tips: ["Focus on smooth strokes", "Adjust brush size for finer details"],
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Great job! Now practice drawing your flower on the digital canvas below.",
+    tips: ["Take your time", "Have fun drawing"],
+    imageUrl: ""
+  }
+];
+
+const FISH_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for drawing", "Keep an eraser ready"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Grab your pencil and paper!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Shape a Sleeping Oval",
+    instruction: "Draw a light sleeping oval shape with a pointed tip on the right side.",
+    tips: ["Keep your hand loose", "Draw light lines first"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/fish%201.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Top Fin and Tail",
+    instruction: "Make a smooth curve on top for the upper fin, and join two curved shapes on the right for the tail.",
+    tips: ["Keep curves smooth", "Match both tail parts"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/fish%202.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Add Eye, Smile and Side Fin",
+    instruction: "Draw a round eye with a tiny white dot, a cute smile, a leaf-shaped side fin, and thin lines inside the fins.",
+    tips: ["Leave the white dot empty in the eye", "Draw light lines inside fins"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/fish3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Add Shading and Bubbles",
+    instruction: "Shade softly along the top back and fins, then draw two round bubbles near the face.",
+    tips: ["Keep pencil shading soft", "Make neat round bubbles"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/fish4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome! Now practice drawing your cute fish on the digital canvas below.",
+    tips: ["Use brush tool smoothly", "Have fun drawing"],
     imageUrl: ""
   }
 ];
@@ -108,45 +154,45 @@ const FLOWER_STEPS: TutorialStep[] = [
 const EYE_STEPS: TutorialStep[] = [
   {
     step: 1,
-    title: "Step 1: Get Your Materials Ready",
+    title: "Step 1: Get Your Pencil Ready",
     instruction: "",
-    tips: ["Use a light HB pencil for sketching", "Keep a good eraser handy"],
+    tips: ["Use a light pencil", "Keep an eraser handy"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
-    typewriterText: "Grab your pencil and paper!"
+    typewriterText: "Get ready to draw an eye!"
   },
   {
     step: 2,
-    title: "Step 2: Basic Eye Outline and Crease",
-    instruction: "Draw an almond shape outline for the eye. Add the tear duct curve on the left, and a gentle lid fold above.",
-    tips: ["Keep your strokes very light and smooth", "Focus on clean symmetrical curves"],
+    title: "Step 2: Draw Eye Outline",
+    instruction: "Draw an almond shape for the eye with a small curve at the corner.",
+    tips: ["Keep lines light and soft", "Make matching curves"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye1.jpeg"
   },
   {
     step: 3,
-    title: "Step 3: Iris, Pupil and Highlight Circle",
-    instruction: "Draw a large circular iris with a dark pupil inside. Keep a crisp white circle reserved for the bright reflection highlight.",
-    tips: ["Shade radial lines outward from the pupil", "Do not draw over the highlight circle"],
+    title: "Step 3: Draw Pupil and Light Dot",
+    instruction: "Draw a big circle inside for the iris and a dark pupil. Leave a tiny white circle blank for light reflection.",
+    tips: ["Do not shade the white light dot", "Make smooth circle shapes"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye2.jpeg"
   },
   {
     step: 4,
-    title: "Step 4: Upper Eyelashes and Eyelid Depth",
-    instruction: "Add long, curved eyelashes along the top lash line. Shade softly along the upper eyelid fold to create natural depth.",
-    tips: ["Sweep lashes outwards in natural curves", "Thicken the top eyelash border slightly"],
+    title: "Step 4: Add Eyelashes",
+    instruction: "Draw dark and curved eyelashes on the top eyelid line.",
+    tips: ["Make lashes point outwards", "Keep strokes sharp"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye3.jpeg"
   },
   {
     step: 5,
-    title: "Step 5: Lower Lashes and Final Details",
-    instruction: "Add shorter bottom eyelashes. Softly shade the tear duct area and rim to complete a realistic 3D look.",
-    tips: ["Keep bottom lashes sparse and lighter", "Blend edge shadows for a soft realistic touch"],
+    title: "Step 5: Final Shading",
+    instruction: "Shade around the eye edges softly to give it a real 3D depth look.",
+    tips: ["Blend shades smoothly", "Keep highlights clean"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye4.jpeg"
   },
   {
     step: 6,
-    title: "Step 6: Interactive Practice Canvas",
-    instruction: "Awesome progress! Now practice drawing your realistic eye directly on the interactive canvas below.",
-    tips: ["Focus on smooth strokes", "Adjust brush size for finer details"],
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Wonderful! Practice drawing the realistic eye on the canvas below.",
+    tips: ["Take your time on details", "Have fun"],
     imageUrl: ""
   }
 ];
@@ -154,38 +200,38 @@ const EYE_STEPS: TutorialStep[] = [
 const LIP_STEPS: TutorialStep[] = [
   {
     step: 1,
-    title: "Step 1: Ready Your Tools",
+    title: "Step 1: Get Your Pencil Ready",
     instruction: "",
-    tips: ["Keep your pencil sharp", "Use a blending stump for soft transitions"],
+    tips: ["Keep your pencil sharp", "Use a soft eraser"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
     typewriterText: "Get ready to shade lips!"
   },
   {
     step: 2,
-    title: "Step 2: Outline and Cupids Bow",
-    instruction: "Sketch the outer lip boundary, center line, and V-shaped Cupid's bow gently.",
-    tips: ["Keep lines soft to blend easily later", "Ensure lip proportions are balanced"],
+    title: "Step 2: Draw Lip Outlines",
+    instruction: "Sketch the top lip with a V-shape in the center and bottom lip curve gently.",
+    tips: ["Keep lines very light", "Check balance on both sides"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips1.jpeg"
   },
   {
     step: 3,
-    title: "Step 3: Base Shading and Volume",
-    instruction: "Apply soft base graphite shading across both lips, to establish a round, 3D structure.",
-    tips: ["Darken near the center lip fold", "Blend using tissue or a stump"],
+    title: "Step 3: Add Base Shading",
+    instruction: "Apply soft pencil shading across both lips to make them look full and round.",
+    tips: ["Darken the center line", "Keep outer edges soft"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips2.jpeg"
   },
   {
     step: 4,
-    title: "Step 4: Vertical Texturing",
-    instruction: "Add light curved vertical creases following the lip contours, to simulate natural skin texture.",
-    tips: ["Curve the lines slightly instead of straight lines", "Maintain a gentle touch"],
+    title: "Step 4: Add Texture Lines",
+    instruction: "Draw small light curved lines on the lips to show natural skin lines.",
+    tips: ["Curve lines gently", "Do not press too hard"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips3.jpeg"
   },
   {
     step: 5,
-    title: "Step 5: High Contrast and Gloss Highlight",
-    instruction: "Darken corners and center opening. Use a precise eraser to pull crisp white highlights on the lower lip.",
-    tips: ["High contrast creates a glossy sheen", "Now test your skills on the canvas"],
+    title: "Step 5: Add Shine and Highlights",
+    instruction: "Make lip corners dark and use your eraser to make a bright shine spot on the bottom lip.",
+    tips: ["High contrast gives a glossy look", "Test your skills on canvas next"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips%204.jpeg"
   }
 ];
@@ -196,9 +242,18 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     title: "Challenge: Classic Flower Drawing",
     description: "Learn how to draw a beautiful 5-petal classic flower step by step with easy shading.",
     difficulty: "beginner",
-    xp: 40,
+    xp: 50,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER4.jpeg",
     steps: FLOWER_STEPS
+  },
+  {
+    id: "cute-fish-beginner",
+    title: "Challenge: Cute Fish Drawing",
+    description: "Learn how to draw an adorable cartoon fish step by step with fins, bubbles, and soft shading.",
+    difficulty: "beginner",
+    xp: 30,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/fish4.jpeg",
+    steps: FISH_STEPS
   },
   {
     id: "eye-drawing-1min",
@@ -245,6 +300,7 @@ export default function ChallengesPage() {
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
   const ottoMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
+  const claimMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Cheerful%20Otter%20Mascot%20with%20Star%20Icon.png";
 
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -268,23 +324,54 @@ export default function ChallengesPage() {
       }
       const ctx = audioCtxRef.current;
 
-      if ((ctx.state as string) === "closed") return;
       if (ctx.state === "suspended") {
         await ctx.resume().catch(() => {});
       }
       if ((ctx.state as string) === "closed") return;
 
-      const t = ctx.currentTime;
-      [261.63, 329.63, 392.00, 523.25].forEach((freq) => {
+      const now = ctx.currentTime;
+
+      // 3-second sweet, warm ascending chime & sparkle celebration melody
+      const melody = [
+        { freq: 523.25, time: 0.0, duration: 0.45, vol: 0.14 },   // C5
+        { freq: 659.25, time: 0.14, duration: 0.45, vol: 0.14 },  // E5
+        { freq: 783.99, time: 0.28, duration: 0.5, vol: 0.14 },   // G5
+        { freq: 1046.50, time: 0.44, duration: 0.9, vol: 0.16 },  // C6
+        { freq: 987.77, time: 0.72, duration: 0.4, vol: 0.11 },   // B5
+        { freq: 1046.50, time: 0.92, duration: 1.4, vol: 0.16 },  // C6 (warm hold)
+        { freq: 1318.51, time: 1.15, duration: 1.5, vol: 0.12 },  // E6 (sweet sparkle)
+        { freq: 1567.98, time: 1.4, duration: 1.6, vol: 0.10 },   // G6 (gentle shimmer tail to 3s)
+      ];
+
+      melody.forEach((note) => {
         if ((ctx.state as string) === "closed") return;
         const osc = ctx.createOscillator();
+        const overtone = ctx.createOscillator();
         const gain = ctx.createGain();
+
         osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, t);
-        gain.gain.setValueAtTime(0.1, t);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(t); osc.stop(t + 0.1);
+        osc.frequency.setValueAtTime(note.freq, now + note.time);
+
+        overtone.type = "triangle";
+        overtone.frequency.setValueAtTime(note.freq * 2, now + note.time);
+
+        const overtoneGain = ctx.createGain();
+        overtoneGain.gain.setValueAtTime(0.02, now + note.time);
+        overtoneGain.gain.exponentialRampToValueAtTime(0.0001, now + note.time + note.duration);
+
+        gain.gain.setValueAtTime(0.001, now + note.time);
+        gain.gain.linearRampToValueAtTime(note.vol, now + note.time + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + note.time + note.duration);
+
+        osc.connect(gain);
+        overtone.connect(overtoneGain);
+        overtoneGain.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(now + note.time);
+        overtone.start(now + note.time);
+        osc.stop(now + note.time + note.duration + 0.05);
+        overtone.stop(now + note.time + note.duration + 0.05);
       });
     } catch {}
   };
@@ -298,8 +385,8 @@ export default function ChallengesPage() {
       if (window.speechSynthesis.paused) {
         window.speechSynthesis.resume();
       }
-      
-      setTimeout(() => {
+
+      const executeSpeech = () => {
         let formattedText = `${title}. ${instruction || ""}`;
         formattedText = formattedText
           .replace(/,/g, ", ")
@@ -324,7 +411,18 @@ export default function ChallengesPage() {
         }
 
         window.speechSynthesis.speak(utterance);
-      }, 100);
+      };
+
+      const voicesCheck = window.speechSynthesis.getVoices();
+      if (voicesCheck.length > 0) {
+        setTimeout(executeSpeech, 50);
+      } else {
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.onvoiceschanged = null;
+          executeSpeech();
+        };
+        setTimeout(executeSpeech, 300);
+      }
     }
   }, [isMuted]);
 
@@ -357,6 +455,9 @@ export default function ChallengesPage() {
   }, []);
 
   useEffect(() => {
+    const claimImg = new window.Image();
+    claimImg.src = claimMascotUrl;
+
     LOCAL_CHALLENGES.forEach((challenge) => {
       challenge.steps.forEach((st) => {
         if (st.imageUrl) {
@@ -675,25 +776,25 @@ export default function ChallengesPage() {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0 relative">
       
       {showClaimModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 max-w-sm w-full text-center space-y-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 relative">
+        <div className="fixed inset-0 z-[99999] bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 max-w-sm w-full text-center space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200 relative">
             <button
               onClick={() => setShowClaimModal(false)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1"
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="pt-2">
-              <div className="w-20 h-20 bg-amber-400/20 rounded-3xl flex items-center justify-center mx-auto relative">
-                <div className="w-16 h-16 bg-amber-400 rounded-2xl flex items-center justify-center text-white shadow-md shadow-amber-400/50">
-                  <Star className="w-10 h-10 fill-white text-white" />
-                </div>
+            <div className="pt-1 flex flex-col items-center justify-center">
+              <div className="w-32 h-32 relative flex items-center justify-center mx-auto">
+                <img
+                  src={claimMascotUrl}
+                  alt="Otto Celebration Mascot"
+                  className="w-full h-full object-contain drop-shadow-md"
+                />
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight mt-2">
                 + {currentChallenge.xp} XP
               </h2>
             </div>
