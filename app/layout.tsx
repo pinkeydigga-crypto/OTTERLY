@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import OfflinePopup from "@/components/offlinepopup";
 import GlobalHaptics from "@/components/GlobalHaptics";
+import MinimalBgMusicPlayer from "@/components/MinimalBgMusicPlayer";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -138,6 +139,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${nunito.className} min-h-full flex flex-col font-sans overflow-x-hidden w-full relative bg-[#F6FAFF] text-slate-900`}>
         <GlobalHaptics />
+        <MinimalBgMusicPlayer />
         {children}
         <OfflinePopup />
         <Analytics />

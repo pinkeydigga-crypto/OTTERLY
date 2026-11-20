@@ -56,7 +56,6 @@ export default function DashboardPage() {
   const isOffline = useOfflineGuard();
 
   const welcomeMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
-  const scanMascotGifUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/WhatsAppVideo2026-09-22at14.44.02online-video-cutter.com-ezgif.com-video-to-gif-converter__1__transparent.gif";
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
   const [loading, setLoading] = useState(true);
@@ -404,7 +403,7 @@ export default function DashboardPage() {
     {
       path: "/leaderboard",
       label: "Leaderboard",
-      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon.png",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
       sizeClass: "w-[30px] h-[30px]"
     },
     {
@@ -738,11 +737,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="w-24 h-24 sm:w-36 sm:h-36 bg-white/10 rounded-3xl flex items-center justify-center border-2 border-white/20 shrink-0 z-10 overflow-hidden">
-            <img
-              src={scanMascotGifUrl}
-              alt="Scan Mascot"
-              className="w-full h-full object-contain"
-            />
+            <Scan className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
           </div>
         </div>
 

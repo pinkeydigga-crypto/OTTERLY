@@ -298,7 +298,7 @@ export default function LeaderboardPage() {
     {
       path: "/leaderboard",
       label: "Leaderboard",
-      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon.png",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
       sizeClass: "w-[30px] h-[30px]"
     },
     {

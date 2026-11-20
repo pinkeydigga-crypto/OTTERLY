@@ -14,6 +14,12 @@ import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import PracticeCanvas from "@/components/PracticeCanvas";
 import LoadingScreen from "@/components/LoadingScreen";
 
+declare global {
+  interface Window {
+    __OTTERLEO_CHALLENGE_FLOW_ACTIVE__?: boolean;
+  }
+}
+
 function TypewriterText({ text, speed = 50 }: { text: string; speed?: number }) {
   const [displayedText, setDisplayedText] = useState("");
 
@@ -191,6 +197,176 @@ const FISH_STEPS: TutorialStep[] = [
   }
 ];
 
+const CAR_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for the car body", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw a car!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Draw the Car Body Outline",
+    instruction: "Sketch a smooth side profile with a curved roof, hood, and straight bottom line.",
+    tips: ["Keep the bottom line straight", "Make the roof curve smooth"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/car1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Wheels and Windows",
+    instruction: "Draw two round wheels with inner circles at the bottom, and add two window shapes inside the roof.",
+    tips: ["Keep both wheels nearly equal in size", "Leave space between the two windows"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/car2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Add Lights, Bumpers and Door Handle",
+    instruction: "Draw the front headlight, back tail light, front and back bumpers, door handle, and base line.",
+    tips: ["Keep small details neat and clean", "Align lights and bumpers evenly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/car3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Add Window Shine, Shading and Shadow",
+    instruction: "Add small shine lines on the windows, shade the tires and body lightly, and draw a ground shadow below.",
+    tips: ["Keep window highlights clean", "Blend the ground shadow softly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/car4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Great job! Now practice drawing your car on the digital canvas below.",
+    tips: ["Start with the outer car shape", "Have fun drawing"],
+    imageUrl: ""
+  }
+];
+
+const LEAF_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for the leaf shape", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw a leaf!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Draw Leaf Outline, Stem and Center Vein",
+    instruction: "Sketch a slanted oval leaf shape with a pointed tip, add the stem at the bottom, and draw a line down the center.",
+    tips: ["Keep lines light first", "Make the center line go up to the tip"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LEAF1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Side Veins and Edge Details",
+    instruction: "Draw curved side veins branching from the center line and add small jagged touches along the outer edge.",
+    tips: ["Curve veins gently toward the tip", "Keep edge notches small and neat"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LEAF2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Add Soft Leaf Shading",
+    instruction: "Shade softly across the leaf and along the stem to bring out the veins and natural texture.",
+    tips: ["Keep pencil shading light and smooth", "Let the veins stand out cleanly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LEAF3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Practice on Digital Canvas",
+    instruction: "Great job! Now practice drawing your leaf on the digital canvas below.",
+    tips: ["Start with the outline and center vein", "Have fun drawing"],
+    imageUrl: ""
+  }
+];
+
+const BUTTERFLY_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for symmetrical wings", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw a butterfly!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch Guide Lines and Wing Shapes",
+    instruction: "Draw a light vertical center line and sketch matching upper and lower wing guides on both sides.",
+    tips: ["Keep left and right wings balanced", "Draw guide lines lightly first"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/butterfly1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Draw the Body and Smooth Wing Outlines",
+    instruction: "Draw an oval body in the center and round out the upper and lower wing edges cleanly.",
+    tips: ["Keep the body centered", "Make wing curves smooth on both sides"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/butterfly2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Add Head and Curved Antennae",
+    instruction: "Draw a small circle at the top of the body for the head and add two curved antennae.",
+    tips: ["Keep both antennae balanced", "Clean up extra guide lines gently"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/butterfly3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Practice on Digital Canvas",
+    instruction: "Awesome job! Now practice drawing your butterfly on the digital canvas below.",
+    tips: ["Start with the center line and wing shapes", "Have fun drawing"],
+    imageUrl: ""
+  }
+];
+
+const ANIME_BOY_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for face proportions", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw an anime boy!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch Head Outline and Guide Lines",
+    instruction: "Draw a vertical center line, a horizontal eye guide line, and a pointed anime jawline shape.",
+    tips: ["Keep guide lines light", "Make the chin angle smooth"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Ears and Neck Lines",
+    instruction: "Draw ears along the eye-line zone on both sides and add two curved neck lines below the jaw.",
+    tips: ["Keep both ears balanced", "Connect the neck smoothly to the chin"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Draw Spiky Hair, Eyes and Facial Guides",
+    instruction: "Sketch spiky hair strands around the head, eyebrows, anime eye shapes, and light nose and mouth marks.",
+    tips: ["Vary the hair spikes naturally", "Align both eyes along the horizontal line"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Refine Eyes, Hair Strands and Details",
+    instruction: "Draw the irises, pupils, and eye shine highlights, and refine the spiky hair and collar lines cleanly.",
+    tips: ["Leave bright shine spots in the eyes", "Clean up extra guide lines gently"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome job! Now practice drawing your anime boy on the digital canvas below.",
+    tips: ["Start with the center guide and jaw", "Have fun drawing"],
+    imageUrl: ""
+  }
+];
+
 const EYE_STEPS: TutorialStep[] = [
   {
     step: 1,
@@ -233,6 +409,52 @@ const EYE_STEPS: TutorialStep[] = [
     title: "Step 6: Practice on Digital Canvas",
     instruction: "Wonderful! Practice drawing the realistic eye on the canvas below.",
     tips: ["Take your time on details", "Have fun"],
+    imageUrl: ""
+  }
+];
+
+const HEADPHONES_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for clean curves", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw cool headphones!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch Headband Arc and Earcups",
+    instruction: "Draw a smooth curved arch at the top for the headband and sketch two matching oval-rounded earcups on the sides.",
+    tips: ["Keep both earcups balanced in size", "Draw light guide strokes first"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Band Thickness, Sliders and Cushions",
+    instruction: "Give the headband thickness, add the connector brackets on each side, and draw the inner cushion lines on both earcups.",
+    tips: ["Keep the headband curve even", "Align left and right brackets cleanly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Refine Cushion Edges and Details",
+    instruction: "Add the inner padded band along the headband and refine the outer cushion curves on the earcups.",
+    tips: ["Keep lines smooth and neat", "Check symmetry on both sides"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Add Soft Shading and Highlights",
+    instruction: "Shade softly along the earcups, band edges, and brackets while keeping light highlights for a sleek 3D look.",
+    tips: ["Blend shading smoothly", "Keep highlight bands clean"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice drawing cool headphones on the digital canvas below.",
+    tips: ["Start with the arch and earcups", "Have fun shading"],
     imageUrl: ""
   }
 ];
@@ -319,45 +541,6 @@ const LIP_STEPS: TutorialStep[] = [
     instruction: "Make lip corners dark and use your eraser to make a bright shine spot on the bottom lip.",
     tips: ["High contrast gives a glossy look", "Test your skills on canvas next"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips%204.jpeg"
-  }
-];
-
-const APPLE_STEPS: TutorialStep[] = [
-  {
-    step: 1,
-    title: "Step 1: Get Your Pencil Ready",
-    instruction: "",
-    tips: ["Use a light pencil for the outline", "Keep an eraser handy"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
-    typewriterText: "Get ready to shade an apple!"
-  },
-  {
-    step: 2,
-    title: "Step 2: Sketch the Apple Outline",
-    instruction: "Draw a light, balanced apple shape with the top dip and a slightly narrower base.",
-    tips: ["Keep pencil strokes light", "Keep both sides even"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/apple1.jpeg"
-  },
-  {
-    step: 3,
-    title: "Step 3: Add Stem and Soft Base Shading",
-    instruction: "Draw the stem in the top dip and add light base shading across the apple and ground.",
-    tips: ["Keep shading light and even", "Leave the top-left highlight soft"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/apple2.jpeg"
-  },
-  {
-    step: 4,
-    title: "Step 4: Deepen Shading and Cast Shadow",
-    instruction: "Darken the stem, side contours, and ground shadow to give the apple 3D depth.",
-    tips: ["Build dark tones gradually", "Blend shadows smoothly"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/apple3.jpeg"
-  },
-  {
-    step: 5,
-    title: "Step 5: Practice on Digital Canvas",
-    instruction: "Great job! Now practice shading the apple on the digital canvas below.",
-    tips: ["Start with a light outline", "Layer shading step by step"],
-    imageUrl: ""
   }
 ];
 
@@ -500,16 +683,7 @@ const HAND_STEPS: TutorialStep[] = [
 ];
 
 const LOCAL_CHALLENGES: LocalChallenge[] = [
-  {
-    id: "shaded-cube-beginner",
-    title: "Challenge: Shaded Cube",
-    description: "Learn 3D cube shapes, clean edges, side shading, and ground shadow step by step.",
-    difficulty: "beginner",
-    xp: 30,
-    stepsCount: 3,
-    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cube3.jpeg",
-    steps: CUBE_STEPS
-  },
+  // --- BEGINNER ---
   {
     id: "classic-flower-beginner",
     title: "Challenge: Classic Flower Drawing",
@@ -531,6 +705,58 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     steps: FISH_STEPS
   },
   {
+    id: "car-drawing-beginner",
+    title: "Challenge: Car Drawing",
+    description: "Draw the car body, add wheels and windows, include lights and bumpers, and finish with shading step by step.",
+    difficulty: "beginner",
+    xp: 45,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/car4.jpeg",
+    steps: CAR_STEPS
+  },
+  {
+    id: "shaded-cube-beginner",
+    title: "Challenge: Shaded Cube",
+    description: "Learn 3D cube shapes, clean edges, side shading, and ground shadow step by step.",
+    difficulty: "beginner",
+    xp: 30,
+    stepsCount: 3,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cube3.jpeg",
+    steps: CUBE_STEPS
+  },
+  {
+    id: "leaf-drawing-beginner",
+    title: "Challenge: Leaf Drawing",
+    description: "Draw the leaf shape and center vein, add side veins, and finish with soft shading step by step.",
+    difficulty: "beginner",
+    xp: 40,
+    stepsCount: 3,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LEAF3.jpeg",
+    steps: LEAF_STEPS
+  },
+  {
+    id: "butterfly-drawing-beginner",
+    title: "Challenge: Butterfly Drawing",
+    description: "Sketch wing guides, draw the body and wing outlines, and add the head and antennae step by step.",
+    difficulty: "beginner",
+    xp: 45,
+    stepsCount: 3,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/butterfly3.jpeg",
+    steps: BUTTERFLY_STEPS
+  },
+
+  // --- INTERMEDIATE ---
+  {
+    id: "anime-boy-intermediate",
+    title: "Challenge: Anime Boy",
+    description: "Sketch head guides and jawline, add ears and neck, draw spiky hair and eyes, and finish with clean anime details step by step.",
+    difficulty: "intermediate",
+    xp: 85,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale4.jpeg",
+    steps: ANIME_BOY_STEPS
+  },
+  {
     id: "eye-drawing-1min",
     title: "Challenge: The Realistic Eye",
     description: "Master iris details, pupil depth, eyelid folds, and realistic eyelashes step by step.",
@@ -539,6 +765,16 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye4.jpeg",
     steps: EYE_STEPS
+  },
+  {
+    id: "cool-headphones-intermediate",
+    title: "Challenge: Cool Headphones",
+    description: "Sketch the headband and earcups, add cushions and brackets, and finish with soft 3D shading step by step.",
+    difficulty: "intermediate",
+    xp: 75,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones4.jpeg",
+    steps: HEADPHONES_STEPS
   },
   {
     id: "nose-drawing-challenge",
@@ -560,16 +796,8 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips%204.jpeg",
     steps: LIP_STEPS
   },
-  {
-    id: "apple-shading-intermediate",
-    title: "Challenge: Apple Shading",
-    description: "Draw the apple outline, add the stem with base shading, and finish with deeper shadows step by step.",
-    difficulty: "intermediate",
-    xp: 75,
-    stepsCount: 3,
-    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/apple3.jpeg",
-    steps: APPLE_STEPS
-  },
+
+  // --- ADVANCED ---
   {
     id: "loomis-head-challenge",
     title: "Challenge: The Loomis Head",
@@ -615,7 +843,7 @@ export default function ChallengesPage() {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   const [activeView, setActiveView] = useState<'hub' | 'challenge-flow'>('hub');
-  const [activeChallengeId, setActiveChallengeId] = useState<string>("shaded-cube-beginner");
+  const [activeChallengeId, setActiveChallengeId] = useState<string>("classic-flower-beginner");
   const [currentStep, setCurrentStep] = useState<number>(0);
 
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -626,11 +854,128 @@ export default function ChallengesPage() {
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
   const ottoMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
-  const claimMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Cheerful%20Otter%20Mascot%20with%20Star%20Icon.png";
+  const claimMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Cheerful%20Otter%20Mascot%20with%20Star%20Icon%20(1)%20(1).png";
 
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const bgMusicIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const bgMusicStepRef = useRef<number>(0);
+
+  useEffect(() => {
+    const isChallengeActive = activeView === "challenge-flow";
+    window.__OTTERLEO_CHALLENGE_FLOW_ACTIVE__ = isChallengeActive;
+    window.dispatchEvent(
+      new CustomEvent("challengeFlowChange", {
+        detail: { active: isChallengeActive },
+      })
+    );
+
+    return () => {
+      window.__OTTERLEO_CHALLENGE_FLOW_ACTIVE__ = false;
+      window.dispatchEvent(
+        new CustomEvent("challengeFlowChange", {
+          detail: { active: false },
+        })
+      );
+    };
+  }, [activeView]);
+
+  const ensureAudioContext = useCallback(async () => {
+    if (typeof window === "undefined") return null;
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return null;
+
+    if (!audioCtxRef.current || (audioCtxRef.current.state as string) === "closed") {
+      audioCtxRef.current = new AudioCtx();
+    }
+    const ctx = audioCtxRef.current;
+
+    if ((ctx.state as string) === "closed") return null;
+    if (ctx.state === "suspended") {
+      await ctx.resume().catch(() => {});
+    }
+    if ((ctx.state as string) === "closed") return null;
+    return ctx;
+  }, []);
+
+  const stopSweetBgMusic = useCallback(() => {
+    if (bgMusicIntervalRef.current) {
+      clearInterval(bgMusicIntervalRef.current);
+      bgMusicIntervalRef.current = null;
+    }
+  }, []);
+
+  // Light, minimal & upbeat groove (neither creepy/slow nor heavy/noisy)
+  const startSweetBgMusic = useCallback(async () => {
+    if (isMuted || activeView !== "challenge-flow") {
+      stopSweetBgMusic();
+      return;
+    }
+
+    const ctx = await ensureAudioContext();
+    if (!ctx) return;
+
+    if (bgMusicIntervalRef.current) return;
+
+    const grooveSteps = [
+      { freq: 523.25, pulse: 783.99 }, // C5 + G5
+      { freq: 659.25, pulse: 523.25 }, // E5 + C5
+      { freq: 783.99, pulse: 659.25 }, // G5 + E5
+      { freq: 880.00, pulse: 587.33 }, // A5 + D5
+      { freq: 783.99, pulse: 987.77 }, // G5 + B5
+      { freq: 659.25, pulse: 783.99 }, // E5 + G5
+      { freq: 587.33, pulse: 880.00 }, // D5 + A5
+      { freq: 659.25, pulse: 523.25 }, // E5 + C5
+    ];
+
+    const playMinimalBeat = () => {
+      if (isMuted || activeView !== "challenge-flow") return;
+      const currentCtx = audioCtxRef.current;
+      if (!currentCtx || (currentCtx.state as string) !== "running") return;
+
+      try {
+        const now = currentCtx.currentTime;
+        const stepIdx = bgMusicStepRef.current;
+        const { freq, pulse } = grooveSteps[stepIdx % grooveSteps.length];
+        bgMusicStepRef.current += 1;
+
+        // Main bright marimba-like pluck
+        const mainOsc = currentCtx.createOscillator();
+        const mainGain = currentCtx.createGain();
+        mainOsc.type = "triangle";
+        mainOsc.frequency.setValueAtTime(freq, now);
+
+        mainGain.gain.setValueAtTime(0.0001, now);
+        mainGain.gain.linearRampToValueAtTime(0.028, now + 0.02);
+        mainGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
+
+        mainOsc.connect(mainGain);
+        mainGain.connect(currentCtx.destination);
+        mainOsc.start(now);
+        mainOsc.stop(now + 0.36);
+
+        // Off-beat light energetic tap
+        const tapOsc = currentCtx.createOscillator();
+        const tapGain = currentCtx.createGain();
+        tapOsc.type = "sine";
+        tapOsc.frequency.setValueAtTime(pulse, now + 0.24);
+
+        tapGain.gain.setValueAtTime(0.0001, now + 0.24);
+        tapGain.gain.linearRampToValueAtTime(0.016, now + 0.255);
+        tapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.44);
+
+        tapOsc.connect(tapGain);
+        tapGain.connect(currentCtx.destination);
+        tapOsc.start(now + 0.24);
+        tapOsc.stop(now + 0.46);
+      } catch {}
+    };
+
+    playMinimalBeat();
+    bgMusicIntervalRef.current = setInterval(playMinimalBeat, 480);
+  }, [activeView, ensureAudioContext, isMuted, stopSweetBgMusic]);
 
   const triggerHaptic = () => {
+    ensureAudioContext();
     if (typeof window !== "undefined" && "vibrate" in navigator) {
       try {
         navigator.vibrate(15);
@@ -642,18 +987,8 @@ export default function ChallengesPage() {
     if (typeof window === "undefined") return;
 
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-
-      if (!audioCtxRef.current || (audioCtxRef.current.state as string) === "closed") {
-        audioCtxRef.current = new AudioCtx();
-      }
-      const ctx = audioCtxRef.current;
-
-      if (ctx.state === "suspended") {
-        await ctx.resume().catch(() => {});
-      }
-      if ((ctx.state as string) === "closed") return;
+      const ctx = await ensureAudioContext();
+      if (!ctx) return;
 
       const now = ctx.currentTime;
 
@@ -701,53 +1036,52 @@ export default function ChallengesPage() {
     } catch {}
   };
 
-  const speakStepText = useCallback((title: string, instruction: string) => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
+  // Voice ONLY on Step 1 typewriter step
+  const speakStep1Typewriter = useCallback((typewriterText: string) => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
-      if (isMuted) return;
+    window.speechSynthesis.cancel();
+    if (isMuted || !typewriterText) return;
 
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+
+    const executeSpeech = () => {
+      const formattedText = typewriterText
+        .replace(/,/g, ", ")
+        .replace(/\./g, "... ");
+
+      const utterance = new SpeechSynthesisUtterance(formattedText);
+      utterance.rate = 0.94;
+      utterance.pitch = 0.95;
+      utterance.volume = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const maleVoice = voices.find(v =>
+        (v.name.includes('Google UK English Male') ||
+         v.name.includes('Google US English Male') ||
+         v.name.includes('David') ||
+         v.name.includes('George') ||
+         v.name.includes('Male')) && v.lang.includes('en')
+      ) || voices.find(v => v.lang.includes('en'));
+
+      if (maleVoice) {
+        utterance.voice = maleVoice;
       }
 
-      const executeSpeech = () => {
-        let formattedText = `${title}. ${instruction || ""}`;
-        formattedText = formattedText
-          .replace(/,/g, ", ")
-          .replace(/\./g, "... ");
+      window.speechSynthesis.speak(utterance);
+    };
 
-        const utterance = new SpeechSynthesisUtterance(formattedText);
-        utterance.rate = 0.90;
-        utterance.pitch = 0.90;
-        utterance.volume = 1.0;
-
-        const voices = window.speechSynthesis.getVoices();
-        const maleVoice = voices.find(v =>
-          (v.name.includes('Google UK English Male') ||
-           v.name.includes('Google US English Male') ||
-           v.name.includes('David') ||
-           v.name.includes('George') ||
-           v.name.includes('Male')) && v.lang.includes('en')
-        ) || voices.find(v => v.lang.includes('en'));
-
-        if (maleVoice) {
-          utterance.voice = maleVoice;
-        }
-
-        window.speechSynthesis.speak(utterance);
+    const voicesCheck = window.speechSynthesis.getVoices();
+    if (voicesCheck.length > 0) {
+      setTimeout(executeSpeech, 50);
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.onvoiceschanged = null;
+        executeSpeech();
       };
-
-      const voicesCheck = window.speechSynthesis.getVoices();
-      if (voicesCheck.length > 0) {
-        setTimeout(executeSpeech, 50);
-      } else {
-        window.speechSynthesis.onvoiceschanged = () => {
-          window.speechSynthesis.onvoiceschanged = null;
-          executeSpeech();
-        };
-        setTimeout(executeSpeech, 300);
-      }
+      setTimeout(executeSpeech, 300);
     }
   }, [isMuted]);
 
@@ -756,14 +1090,16 @@ export default function ChallengesPage() {
     setIsMuted(prev => {
       const nextMute = !prev;
       if (nextMute) {
+        stopSweetBgMusic();
         if (typeof window !== "undefined" && "speechSynthesis" in window) {
           window.speechSynthesis.cancel();
         }
       } else {
+        startSweetBgMusic();
         const challenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
         const stepObj = challenge.steps[currentStep];
-        if (stepObj) {
-          speakStepText(stepObj.title, stepObj.instruction || stepObj.typewriterText || "");
+        if (currentStep === 0 && stepObj?.typewriterText) {
+          speakStep1Typewriter(stepObj.typewriterText);
         }
       }
       return nextMute;
@@ -772,12 +1108,38 @@ export default function ChallengesPage() {
 
   useEffect(() => {
     setMounted(true);
+
+    const unlockOnFirstInteraction = () => {
+      ensureAudioContext().then((ctx) => {
+        if (ctx && activeView === "challenge-flow" && !isMuted) {
+          startSweetBgMusic();
+        }
+      });
+    };
+
+    window.addEventListener("pointerdown", unlockOnFirstInteraction, { once: true });
+    window.addEventListener("keydown", unlockOnFirstInteraction, { once: true });
+
     return () => {
+      window.removeEventListener("pointerdown", unlockOnFirstInteraction);
+      window.removeEventListener("keydown", unlockOnFirstInteraction);
+      stopSweetBgMusic();
       if (audioCtxRef.current && (audioCtxRef.current.state as string) !== "closed") {
         audioCtxRef.current.close().catch(() => {});
       }
     };
-  }, []);
+  }, [activeView, ensureAudioContext, isMuted, startSweetBgMusic, stopSweetBgMusic]);
+
+  useEffect(() => {
+    if (activeView === "challenge-flow" && !isMuted) {
+      startSweetBgMusic();
+    } else {
+      stopSweetBgMusic();
+    }
+    return () => {
+      stopSweetBgMusic();
+    };
+  }, [activeView, isMuted, startSweetBgMusic, stopSweetBgMusic]);
 
   useEffect(() => {
     const claimImg = new window.Image();
@@ -796,8 +1158,10 @@ export default function ChallengesPage() {
     if (activeView === 'challenge-flow') {
       const challenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
       const stepObj = challenge.steps[currentStep];
-      if (stepObj) {
-        speakStepText(stepObj.title, stepObj.instruction || stepObj.typewriterText || "");
+      if (currentStep === 0 && stepObj?.typewriterText) {
+        speakStep1Typewriter(stepObj.typewriterText);
+      } else if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
       }
     }
     return () => {
@@ -805,7 +1169,7 @@ export default function ChallengesPage() {
         window.speechSynthesis.cancel();
       }
     };
-  }, [activeView, activeChallengeId, currentStep, speakStepText]);
+  }, [activeView, activeChallengeId, currentStep, speakStep1Typewriter]);
 
   const handleSelectLevel = (level: "beginner" | "intermediate" | "advanced") => {
     triggerHaptic();
@@ -891,6 +1255,7 @@ export default function ChallengesPage() {
 
   const handleReviewChallenge = async () => {
     triggerHaptic();
+    stopSweetBgMusic();
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
@@ -913,6 +1278,7 @@ export default function ChallengesPage() {
 
   const handleOpenClaimModal = () => {
     triggerHaptic();
+    stopSweetBgMusic();
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
@@ -1069,7 +1435,7 @@ export default function ChallengesPage() {
     {
       path: "/leaderboard",
       label: "Leaderboard",
-      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon.png",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
       sizeClass: "w-[30px] h-[30px]"
     },
     {
@@ -1399,6 +1765,7 @@ export default function ChallengesPage() {
                         <button
                           onClick={() => {
                             triggerHaptic();
+                            ensureAudioContext();
                             setActiveChallengeId(challenge.id);
                             setActiveView('challenge-flow');
                             setCurrentStep(0);
@@ -1428,6 +1795,7 @@ export default function ChallengesPage() {
               <button
                 onClick={() => {
                   triggerHaptic();
+                  stopSweetBgMusic();
                   if (typeof window !== "undefined" && "speechSynthesis" in window) {
                     window.speechSynthesis.cancel();
                   }
@@ -1532,7 +1900,7 @@ export default function ChallengesPage() {
                     ? "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100"
                     : "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
                 }`}
-                title={isMuted ? "Unmute Voice" : "Mute Voice"}
+                title={isMuted ? "Unmute Voice & Music" : "Mute Voice & Music"}
               >
                 {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
               </button>
