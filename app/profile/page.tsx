@@ -68,9 +68,11 @@ export default function ProfilePage() {
   const fetchProfile = useCallback(async () => {
     try {
       const {
-        data: { user },
+        data: { session },
         error: authError,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
+
+      const user = session?.user;
 
       if (authError || !user) {
         if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
@@ -117,7 +119,8 @@ export default function ProfilePage() {
 
     if (saving || cooldown > 0) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
 
     if (!user || user.id !== profile?.id) {
       setMessage({ type: "error", text: "Unauthorized action detected!" });
@@ -127,11 +130,13 @@ export default function ProfilePage() {
     setSaving(true);
     setMessage(null);
 
+    const trimmedName = name.trim();
+
     try {
       const { error } = await supabase
         .from("profiles")
         .update({
-          name: name.trim(),
+          name: trimmedName,
           avatar_url: selectedAvatar,
           skill_level: skillLevel,
         })
@@ -140,7 +145,7 @@ export default function ProfilePage() {
       if (error) throw error;
 
       setProfile((prev) =>
-        prev ? { ...prev, name: name.trim(), avatar_url: selectedAvatar, skill_level: skillLevel } : null
+        prev ? { ...prev, name: trimmedName, avatar_url: selectedAvatar, skill_level: skillLevel } : null
       );
 
       const localUserData = localStorage.getItem("user");
@@ -148,12 +153,12 @@ export default function ProfilePage() {
         const parsed = JSON.parse(localUserData);
         localStorage.setItem(
           "user",
-          JSON.stringify({ ...parsed, name: name.trim(), avatar: selectedAvatar, skill_level: skillLevel })
+          JSON.stringify({ ...parsed, name: trimmedName, avatar: selectedAvatar, skill_level: skillLevel })
         );
       }
 
       setMessage({ type: "success", text: "Profile updated successfully!" });
-      setCooldown(5); // 5 seconds silent throttling cooldown
+      setCooldown(5);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "Failed to update profile.";
       setMessage({ type: "error", text: errMsg });
@@ -167,22 +172,23 @@ export default function ProfilePage() {
     setDeleting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      if (!user) {
+      if (!session?.access_token || !session?.user) {
         throw new Error("Session expired. Please login again.");
       }
 
-      const { error: rpcError } = await supabase.rpc('delete_user_account');
-
-      const apiRes = await fetch('/api/delete-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
+      const apiRes = await fetch("/api/delete-user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
-      if (!apiRes.ok && rpcError) {
-        throw new Error("Failed to delete account from system.");
+      if (!apiRes.ok) {
+        const errData = await apiRes.json().catch(() => ({}));
+        throw new Error(errData?.error || `Delete request failed (${apiRes.status})`);
       }
 
       await supabase.auth.signOut();
@@ -234,6 +240,7 @@ export default function ProfilePage() {
           </div>
 
           <button
+            type="button"
             onClick={handleLogout}
             className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200 font-black text-xs hover:bg-slate-200 transition-all cursor-pointer"
           >
