@@ -322,6 +322,45 @@ const LIP_STEPS: TutorialStep[] = [
   }
 ];
 
+const APPLE_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for the outline", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to shade an apple!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch the Apple Outline",
+    instruction: "Draw a light, balanced apple shape with the top dip and a slightly narrower base.",
+    tips: ["Keep pencil strokes light", "Keep both sides even"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/apple1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Stem and Soft Base Shading",
+    instruction: "Draw the stem in the top dip and add light base shading across the apple and ground.",
+    tips: ["Keep shading light and even", "Leave the top-left highlight soft"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/apple2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Deepen Shading and Cast Shadow",
+    instruction: "Darken the stem, side contours, and ground shadow to give the apple 3D depth.",
+    tips: ["Build dark tones gradually", "Blend shadows smoothly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/apple3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Practice on Digital Canvas",
+    instruction: "Great job! Now practice shading the apple on the digital canvas below.",
+    tips: ["Start with a light outline", "Layer shading step by step"],
+    imageUrl: ""
+  }
+];
+
 const LOOMIS_STEPS: TutorialStep[] = [
   {
     step: 1,
@@ -520,6 +559,16 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips%204.jpeg",
     steps: LIP_STEPS
+  },
+  {
+    id: "apple-shading-intermediate",
+    title: "Challenge: Apple Shading",
+    description: "Draw the apple outline, add the stem with base shading, and finish with deeper shadows step by step.",
+    difficulty: "intermediate",
+    xp: 75,
+    stepsCount: 3,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/apple3.jpeg",
+    steps: APPLE_STEPS
   },
   {
     id: "loomis-head-challenge",
@@ -730,7 +779,6 @@ export default function ChallengesPage() {
     };
   }, []);
 
-  // Preload only claim mascot and Step 1 image of each challenge
   useEffect(() => {
     const claimImg = new window.Image();
     claimImg.src = claimMascotUrl;
@@ -765,7 +813,6 @@ export default function ChallengesPage() {
     setShowLevelModal(false);
   };
 
-  // Fetch only skill_level + completed challenges needed for level filtering & XP increment
   const fetchPageData = useCallback(async () => {
     if (typeof window !== "undefined") {
       const cachedXp = localStorage.getItem("user_xp_cache");
