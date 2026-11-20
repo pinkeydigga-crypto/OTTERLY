@@ -13,13 +13,6 @@ import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
 import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 
-interface ProfileUser {
-  id: string;
-  full_name: string;
-  avatar_url: string;
-  xp_points: number;
-}
-
 interface NavItem {
   name: string;
   path: string;
@@ -32,7 +25,6 @@ export default function PracticePage() {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
-  const [currentUser, setCurrentUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -58,7 +50,7 @@ export default function PracticePage() {
     }
   }, [cooldown]);
 
-  const fetchUserData = useCallback(async () => {
+  const checkAuthStatus = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -80,25 +72,7 @@ export default function PracticePage() {
       }
 
       setIsVerified(true);
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (profile) {
-        const p = profile as any;
-        const xp = Number(p.xp_points ?? p.xp ?? 0);
-
-        setCurrentUser({
-          id: p.id,
-          full_name: p.full_name || p.name || p.username || "Artist",
-          avatar_url: p.avatar_url || p.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-          xp_points: xp,
-        });
-      }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error checking auth status:", err);
       if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
         setIsVerified(false);
@@ -109,8 +83,8 @@ export default function PracticePage() {
   }, [isOffline]);
 
   useEffect(() => {
-    fetchUserData();
-  }, [fetchUserData]);
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const handleSaveDrawing = async () => {
     triggerHaptic();
@@ -189,7 +163,7 @@ export default function PracticePage() {
         setIsSaving(false);
       }, "image/png");
 
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to save drawing:", error);
       alert("Drawing save karne me error aaya.");
       setIsSaving(false);
@@ -359,7 +333,7 @@ export default function PracticePage() {
                 </button>
               </div>
 
-              <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)]">
+              <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-140px)]">
                 {desktopNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = Boolean(item.active);
@@ -385,22 +359,6 @@ export default function PracticePage() {
                 })}
               </nav>
             </div>
-
-            {currentUser && (
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-                <Image
-                  src={currentUser.avatar_url}
-                  alt={currentUser.full_name}
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded-xl object-cover bg-blue-100"
-                />
-                <div className="overflow-hidden">
-                  <p className="text-sm font-black text-[#0F172A] truncate">{currentUser.full_name}</p>
-                  <p className="text-xs font-bold text-blue-600">Level {Math.floor(currentUser.xp_points / 100) + 1}</p>
-                </div>
-              </div>
-            )}
           </aside>
         </div>
       )}
@@ -441,22 +399,6 @@ export default function PracticePage() {
             })}
           </nav>
         </div>
-
-        {currentUser && (
-          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-            <Image
-              src={currentUser.avatar_url}
-              alt={currentUser.full_name}
-              width={40}
-              height={40}
-              className="w-10 h-10 rounded-xl object-cover bg-blue-100"
-            />
-            <div className="overflow-hidden">
-              <p className="text-sm font-black text-[#0F172A] truncate">{currentUser.full_name}</p>
-              <p className="text-xs font-bold text-blue-600">Level {Math.floor(currentUser.xp_points / 100) + 1}</p>
-            </div>
-          </div>
-        )}
       </aside>
 
       <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-5xl mx-auto w-full space-y-6">
@@ -477,7 +419,6 @@ export default function PracticePage() {
                 src={mascotImageUrl}
                 alt="Mascot"
                 className="w-full h-auto object-contain drop-shadow-md"
-                crossOrigin="anonymous"
               />
             </div>
           </div>
@@ -547,7 +488,6 @@ export default function PracticePage() {
                             alt={item.label}
                             className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
                             src={item.iconUrl}
-                            crossOrigin="anonymous"
                           />
                         )}
                       </div>

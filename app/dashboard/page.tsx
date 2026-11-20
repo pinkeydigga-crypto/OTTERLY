@@ -79,7 +79,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Smooth, warm 2-second celebration chime (Hamesha chalegi jab popup khulega)
   const playCelebrationSound = useCallback(async () => {
     if (typeof window === "undefined") return;
 
@@ -99,7 +98,7 @@ export default function DashboardPage() {
       if ((ctx.state as string) === "closed") return;
 
       const now = ctx.currentTime;
-      const notes = [523.25, 659.25, 783.99, 987.77, 1174.66]; // C5, E5, G5, B5, D6
+      const notes = [523.25, 659.25, 783.99, 987.77, 1174.66];
 
       notes.forEach((freq, idx) => {
         if ((ctx.state as string) === "closed") return;
@@ -113,7 +112,7 @@ export default function DashboardPage() {
         osc.frequency.setValueAtTime(freq, startTime);
 
         gain.gain.setValueAtTime(0, startTime);
-        gain.gain.linearRampToValueAtTime(0.15, startTime + 0.06); // Slightly louder & punchier
+        gain.gain.linearRampToValueAtTime(0.15, startTime + 0.06);
         gain.gain.exponentialRampToValueAtTime(0.0008, startTime + noteDuration);
 
         osc.connect(gain);
@@ -271,7 +270,7 @@ export default function DashboardPage() {
       const exactRank = (higherXpCount || 0) + sameXpTieCount + 1;
       setUserRank(`#${exactRank}`);
 
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Dashboard processing error:", err);
     } finally {
       setLoading(false);
@@ -283,20 +282,27 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
+  // Direct state + cache update without extra full dashboard fetch
   useEffect(() => {
-    const handleXpUpdated = (e: CustomEvent<number>) => {
-      setProfile((prev) => (prev ? { ...prev, xp: e.detail } : prev));
-      fetchDashboardData();
+    const handleXpUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<number>;
+      if (typeof customEvent.detail === "number") {
+        const nextXp = Number(customEvent.detail);
+        setProfile((prev) => (prev ? { ...prev, xp: nextXp } : prev));
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user_xp_cache", nextXp.toString());
+        }
+      }
     };
 
-    window.addEventListener("xpUpdated", handleXpUpdated as EventListener);
+    window.addEventListener("xpUpdated", handleXpUpdated);
     return () => {
-      window.removeEventListener("xpUpdated", handleXpUpdated as EventListener);
+      window.removeEventListener("xpUpdated", handleXpUpdated);
       if (audioCtxRef.current && (audioCtxRef.current.state as string) !== "closed") {
         audioCtxRef.current.close().catch(() => {});
       }
     };
-  }, [fetchDashboardData]);
+  }, []);
 
   if (loading) {
     return <LoadingScreen />;
@@ -306,7 +312,7 @@ export default function DashboardPage() {
   const userStreak = Number(profile?.streak) || 0;
   const rawUserName = profile?.name || profile?.username || "Artist";
   const sanitizedName = sanitizeString(rawUserName);
-  
+
   const formattedUserName = `${sanitizedName.charAt(0).toUpperCase()}${sanitizedName.slice(1)}!`;
 
   const slidesData = [
@@ -413,13 +419,12 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-24 md:pb-0 font-sans overflow-x-hidden relative">
-      
+
       {showStreakPopup && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] max-w-sm w-full overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 border border-slate-100">
             <div className="relative bg-[#0D47A1] pt-6 pb-4 px-6 flex items-center justify-between overflow-hidden shadow-inner">
-              
-              {/* ⭐ Exactly 8 Original 5-Pointed Stars */}
+
               <Star className="absolute top-2.5 left-4 w-4 h-4 text-amber-200 fill-amber-200 opacity-90 pointer-events-none animate-pulse" />
               <Star className="absolute bottom-2 left-[18%] w-3.5 h-3.5 text-yellow-300 fill-yellow-300 opacity-80 pointer-events-none" />
               <Star className="absolute top-3 left-[34%] w-3 h-3 text-orange-300 fill-orange-300 opacity-85 pointer-events-none" />
@@ -486,7 +491,7 @@ export default function DashboardPage() {
           >
             <PanelLeft className="w-5 h-5" />
           </button>
-          
+
           <Image
             src={logoUrl}
             alt="Otterleo Logo"
@@ -641,7 +646,7 @@ export default function DashboardPage() {
             {currentSlideData.buttonText && currentSlideData.buttonPath ? (
               <div className="pt-2">
                 <Link
-                  href={currentSlideData.buttonPath!}
+                  href={currentSlideData.buttonPath}
                   onClick={triggerHaptic}
                   className="inline-flex items-center gap-1.5 bg-[#2563EB] hover:bg-blue-700 active:scale-95 text-white px-4 py-2 rounded-full font-bold text-xs sm:text-sm shadow-md transition-all"
                 >
@@ -737,7 +742,6 @@ export default function DashboardPage() {
               src={scanMascotGifUrl}
               alt="Scan Mascot"
               className="w-full h-full object-contain"
-              crossOrigin="anonymous"
             />
           </div>
         </div>
@@ -798,7 +802,6 @@ export default function DashboardPage() {
                             alt={item.label}
                             className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
                             src={item.iconUrl}
-                            crossOrigin="anonymous"
                           />
                         )}
                       </div>

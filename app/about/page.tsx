@@ -118,7 +118,7 @@ export default function AboutPage() {
             "name": "Who is Harjass Digga and Harjas Digga?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Harjass Digga (also known as Harjas Digga) is the visionary founder of Otterleo, a premier drawing learning website dedicated to helping artists master sketching for beginners, easy sketches to draw, and advanced grid techniques."
+              "text": "Harjass Digga (also known as Harjas Digga) he is 15 year old visionary founder of Otterleo, a premier drawing learning website dedicated to helping artists master sketching for beginners, easy sketches to draw, and advanced grid techniques."
             }
           },
           {

@@ -3,7 +3,6 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, Share2, X, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
@@ -23,8 +22,9 @@ interface ProfileUser {
   created_at?: string;
 }
 
+const PAGE_SIZE = 50;
+
 export default function LeaderboardPage() {
-  const router = useRouter();
   const isOffline = useOfflineGuard();
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
@@ -33,6 +33,8 @@ export default function LeaderboardPage() {
   const [leaderboardData, setLeaderboardData] = useState<ProfileUser[]>([]);
   const [currentUser, setCurrentUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
@@ -46,6 +48,57 @@ export default function LeaderboardPage() {
         navigator.vibrate(15);
       } catch {}
     }
+  };
+
+  const mapProfileRow = (p: any, rank: number): ProfileUser => {
+    const userStreak = p.streak ?? 0;
+    const totalXP = Number(p.xp ?? 0);
+
+    return {
+      id: p.id,
+      full_name: p.name || p.username || "Artist",
+      avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
+      streak: Number(userStreak),
+      xp_points: totalXP,
+      created_at: p.created_at,
+      rank,
+    };
+  };
+
+  const sortProfiles = (items: ProfileUser[]) => {
+    return [...items].sort((a, b) => {
+      const xpDiff = b.xp_points - a.xp_points;
+      if (xpDiff !== 0) return xpDiff;
+
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return timeA - timeB;
+    });
+  };
+
+  const computeActualRank = async (
+    authUserId: string,
+    myXp: number,
+    myCreatedAt?: string
+  ): Promise<number> => {
+    const { count: higherXpCount } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .gt("xp", myXp);
+
+    let tieBreakerCount = 0;
+    if (myCreatedAt) {
+      const { count: equalXpEarlierCount } = await supabase
+        .from("profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("xp", myXp)
+        .lt("created_at", myCreatedAt)
+        .neq("id", authUserId);
+
+      tieBreakerCount = equalXpEarlierCount ?? 0;
+    }
+
+    return (higherXpCount ?? 0) + tieBreakerCount + 1;
   };
 
   const fetchLeaderboardAndUser = useCallback(async (isBackgroundRefresh = false) => {
@@ -75,7 +128,10 @@ export default function LeaderboardPage() {
 
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, name, username, avatar_url, streak, xp, created_at");
+        .select("id, name, username, avatar_url, streak, xp, created_at")
+        .order("xp", { ascending: false })
+        .order("created_at", { ascending: true })
+        .limit(PAGE_SIZE);
 
       if (error) {
         console.error("Leaderboard fetch error details:", error.message || error);
@@ -84,39 +140,18 @@ export default function LeaderboardPage() {
         return;
       }
 
-      let mappedProfiles: ProfileUser[] = (profiles || []).map((p: any) => {
-        const userStreak = p.streak ?? 0;
-        const totalXP = Number(p.xp ?? 0);
-
-        return {
-          id: p.id,
-          full_name: p.name || p.username || "Artist",
-          avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-          streak: Number(userStreak),
-          xp_points: totalXP,
-          created_at: p.created_at,
-        };
-      });
-
-      mappedProfiles.sort((a, b) => {
-        const xpDiff = b.xp_points - a.xp_points;
-        if (xpDiff !== 0) return xpDiff;
-
-        const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        return timeA - timeB;
-      });
-
-      const rankedProfiles = mappedProfiles.map((item, index) => ({
+      const rawMapped = (profiles || []).map((p: any) => mapProfileRow(p, 0));
+      const sortedTop = sortProfiles(rawMapped).map((item, index) => ({
         ...item,
         rank: index + 1,
       }));
 
-      setLeaderboardData(rankedProfiles);
+      setLeaderboardData(sortedTop);
+      setHasMore((profiles || []).length === PAGE_SIZE);
 
-      const userInList = rankedProfiles.find((u) => u.id === user.id);
-      if (userInList) {
-        setCurrentUser(userInList);
+      const userInTop50 = sortedTop.find((u) => u.id === user.id);
+      if (userInTop50) {
+        setCurrentUser(userInTop50);
       } else {
         const { data: userProfile } = await supabase
           .from("profiles")
@@ -126,20 +161,16 @@ export default function LeaderboardPage() {
 
         if (userProfile) {
           const p = userProfile as any;
-          const myStreak = p.streak ?? 0;
           const myXP = Number(p.xp ?? 0);
+          const actualRank = await computeActualRank(user.id, myXP, p.created_at);
+
           setCurrentUser({
-            id: p.id,
-            rank: 0,
+            ...mapProfileRow(p, actualRank),
             full_name: p.name || p.username || "You",
-            avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-            streak: Number(myStreak),
-            xp_points: myXP,
-            created_at: p.created_at
           });
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Unexpected error fetching leaderboard:", err);
       if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
         setIsVerified(false);
@@ -148,6 +179,52 @@ export default function LeaderboardPage() {
       setLoading(false);
     }
   }, [isOffline]);
+
+  const handleLoadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    triggerHaptic();
+    setLoadingMore(true);
+
+    try {
+      const startIndex = leaderboardData.length;
+      const endIndex = startIndex + PAGE_SIZE - 1;
+
+      const { data: nextProfiles, error } = await supabase
+        .from("profiles")
+        .select("id, name, username, avatar_url, streak, xp, created_at")
+        .order("xp", { ascending: false })
+        .order("created_at", { ascending: true })
+        .range(startIndex, endIndex);
+
+      if (error) {
+        console.error("Load more fetch error:", error.message || error);
+        return;
+      }
+
+      const nextRows = nextProfiles || [];
+      if (nextRows.length < PAGE_SIZE) {
+        setHasMore(false);
+      }
+
+      setLeaderboardData((prev) => {
+        const existingIds = new Set(prev.map((item) => item.id));
+        const uniqueNewRows = nextRows.filter((row: any) => !existingIds.has(row.id));
+        const combined = [
+          ...prev,
+          ...uniqueNewRows.map((p: any) => mapProfileRow(p, 0)),
+        ];
+
+        return sortProfiles(combined).map((item, idx) => ({
+          ...item,
+          rank: idx + 1,
+        }));
+      });
+    } catch (err: unknown) {
+      console.error("Unexpected load more error:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   useEffect(() => {
     fetchLeaderboardAndUser();
@@ -175,6 +252,10 @@ export default function LeaderboardPage() {
   const rank1 = leaderboardData.length > 0 ? leaderboardData[0] : null;
   const rank2 = leaderboardData.length > 1 ? leaderboardData[1] : null;
   const rank3 = leaderboardData.length > 2 ? leaderboardData[2] : null;
+
+  const isCurrentUserInLoadedList = currentUser
+    ? leaderboardData.some((u) => u.id === currentUser.id)
+    : false;
 
   const desktopNavItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -478,7 +559,6 @@ export default function LeaderboardPage() {
               src={mascotImageUrl}
               alt="Mascot"
               className="w-full h-auto object-contain drop-shadow-md block -mb-0.5"
-              crossOrigin="anonymous"
             />
           </div>
 
@@ -504,7 +584,6 @@ export default function LeaderboardPage() {
                     src={rank2.avatar_url}
                     alt={rank2.full_name}
                     className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover mb-1.5 shadow-2xl"
-                    crossOrigin="anonymous"
                   />
                   <h3 className="font-extrabold text-slate-800 text-[11px] sm:text-xs truncate max-w-[90px] sm:max-w-[120px] text-center mb-1">
                     {rank2.full_name}
@@ -530,7 +609,6 @@ export default function LeaderboardPage() {
                     src={rank1.avatar_url}
                     alt={rank1.full_name}
                     className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl object-cover mb-1.5 shadow-2xl"
-                    crossOrigin="anonymous"
                   />
                   <h3 className="font-black text-slate-900 text-xs sm:text-sm truncate max-w-[100px] sm:max-w-[130px] text-center mb-1">
                     {rank1.full_name}
@@ -556,7 +634,6 @@ export default function LeaderboardPage() {
                     src={rank3.avatar_url}
                     alt={rank3.full_name}
                     className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover mb-1.5 shadow-2xl"
-                    crossOrigin="anonymous"
                   />
                   <h3 className="font-extrabold text-slate-800 text-[11px] sm:text-xs truncate max-w-[90px] sm:max-w-[120px] text-center mb-1">
                     {rank3.full_name}
@@ -614,7 +691,6 @@ export default function LeaderboardPage() {
                           src={user.avatar_url}
                           alt={user.full_name}
                           className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
-                          crossOrigin="anonymous"
                         />
                         <span className={`font-black text-xs sm:text-sm truncate ${isSelf ? "text-[#2563eb]" : "text-slate-800"}`}>
                           {user.full_name} {isSelf && <span className="text-[10px] font-bold">(You)</span>}
@@ -633,6 +709,50 @@ export default function LeaderboardPage() {
                   </div>
                 );
               })}
+
+              {hasMore && (
+                <div className="pt-3 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="px-5 py-2.5 rounded-2xl bg-[#2563EB] hover:bg-blue-600 disabled:bg-slate-300 text-white font-black text-xs sm:text-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all cursor-pointer"
+                  >
+                    {loadingMore ? "Loading..." : "... See All Rankings"}
+                  </button>
+                </div>
+              )}
+
+              {currentUser && !isCurrentUserInLoadedList && (
+                <div className="pt-2">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/80 border-2 border-blue-200 shadow-2xs transition-all">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-xs font-black w-8 shrink-0 text-center text-[#2563eb]">
+                        #{currentUser.rank}
+                      </span>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={currentUser.avatar_url}
+                          alt={currentUser.full_name}
+                          className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
+                        />
+                        <span className="font-black text-xs sm:text-sm truncate text-[#2563eb]">
+                          {currentUser.full_name} <span className="text-[10px] font-bold">(You)</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                      <span className="font-black text-xs sm:text-sm text-[#2563eb]">
+                        {currentUser.xp_points} XP
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs font-black text-orange-500 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">
+                        {currentUser.streak} <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-orange-500 stroke-none" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -664,7 +784,6 @@ export default function LeaderboardPage() {
                             alt={item.label}
                             className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
                             src={item.iconUrl}
-                            crossOrigin="anonymous"
                           />
                         )}
                       </div>
@@ -723,7 +842,6 @@ export default function LeaderboardPage() {
                     src={logoUrl}
                     alt="Otterleo"
                     className="h-10 sm:h-11 w-auto object-contain"
-                    crossOrigin="anonymous"
                   />
                 </div>
               </div>
@@ -772,7 +890,7 @@ export default function LeaderboardPage() {
                 </div>
 
                 <p className="text-xs font-bold text-[#64748b] mt-2 tracking-tight">
-                  You're in the top {currentUser?.rank || "2"}!
+                  You&apos;re in the top {currentUser?.rank || "2"}!
                 </p>
               </div>
 
@@ -806,7 +924,6 @@ export default function LeaderboardPage() {
                     src={currentUser?.avatar_url}
                     alt={currentUser?.full_name}
                     className="w-6 h-6 rounded-full object-cover border border-blue-300 shadow-2xs"
-                    crossOrigin="anonymous"
                   />
                   <span className="text-xs font-bold text-[#1e3a8a] tracking-tight">
                     @{currentUser?.full_name?.toLowerCase().replace(/\s+/g, '') || "user"}

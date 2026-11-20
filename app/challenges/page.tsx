@@ -414,6 +414,52 @@ const HAIR_STEPS: TutorialStep[] = [
   }
 ];
 
+const HAND_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for hand proportions", "Keep an eraser ready"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready for realistic hand shading!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch Hand Proportions and Finger Angles",
+    instruction: "Lightly map out the wrist, palm, thumb, and curved fingers with clean proportions before adding detail.",
+    tips: ["Keep initial lines light and loose", "Check finger lengths and angles carefully"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hand1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Refine Contours and Knuckle Lines",
+    instruction: "Define the outer edges, finger joints, knuckles, and nails cleanly while keeping inner forms clear.",
+    tips: ["Follow natural curves around knuckles", "Keep nails clean and proportionate"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hand2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Build Mid-Tone Shading and Skin Form",
+    instruction: "Apply soft layered shading along the underside of fingers, palm creases, and curved edges to build volume.",
+    tips: ["Shade along the direction of the form", "Leave lighter highlights on top surfaces"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hand3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Deepen Shadows and Ground Shadow",
+    instruction: "Darken deep crevices between fingers and under the hand, then blend the cast shadow smoothly on the surface.",
+    tips: ["Build strong contrast for realism", "Blend shadows evenly without harsh edges"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hand4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice realistic hand shading on the digital canvas below.",
+    tips: ["Start with light outline strokes", "Layer shading gradually"],
+    imageUrl: ""
+  }
+];
+
 const LOCAL_CHALLENGES: LocalChallenge[] = [
   {
     id: "shaded-cube-beginner",
@@ -487,13 +533,23 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
   },
   {
     id: "realistic-hair-challenge",
-    title: "Challenge: Realistic Hair Texture",
+    title: "Challenge: Realistic Hair Shading",
     description: "Master flowing hair clumps, silky shine highlights, deep root shadows, and natural flyaway strands step by step.",
     difficulty: "advanced",
     xp: 120,
     stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hair4.jpeg",
     steps: HAIR_STEPS
+  },
+  {
+    id: "realistic-hand-shading-challenge",
+    title: "Challenge: Realistic Hand Shading",
+    description: "Master hand proportions, knuckle contours, soft skin shading, and cast shadows step by step.",
+    difficulty: "advanced",
+    xp: 120,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hand4.jpeg",
+    steps: HAND_STEPS
   }
 ];
 
@@ -501,7 +557,6 @@ export default function ChallengesPage() {
   const isOffline = useOfflineGuard();
 
   const [userXp, setUserXp] = useState<number>(0);
-  const [userProfile, setUserProfile] = useState<{ name: string; avatar_url: string } | null>(null);
   const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -554,14 +609,14 @@ export default function ChallengesPage() {
       const now = ctx.currentTime;
 
       const melody = [
-        { freq: 523.25, time: 0.0, duration: 0.45, vol: 0.14 },   // C5
-        { freq: 659.25, time: 0.14, duration: 0.45, vol: 0.14 },  // E5
-        { freq: 783.99, time: 0.28, duration: 0.5, vol: 0.14 },   // G5
-        { freq: 1046.50, time: 0.44, duration: 0.9, vol: 0.16 },  // C6
-        { freq: 987.77, time: 0.72, duration: 0.4, vol: 0.11 },   // B5
-        { freq: 1046.50, time: 0.92, duration: 1.4, vol: 0.16 },  // C6 (warm hold)
-        { freq: 1318.51, time: 1.15, duration: 1.5, vol: 0.12 },  // E6 (sweet sparkle)
-        { freq: 1567.98, time: 1.4, duration: 1.6, vol: 0.10 },   // G6 (gentle shimmer tail to 3s)
+        { freq: 523.25, time: 0.0, duration: 0.45, vol: 0.14 },
+        { freq: 659.25, time: 0.14, duration: 0.45, vol: 0.14 },
+        { freq: 783.99, time: 0.28, duration: 0.5, vol: 0.14 },
+        { freq: 1046.50, time: 0.44, duration: 0.9, vol: 0.16 },
+        { freq: 987.77, time: 0.72, duration: 0.4, vol: 0.11 },
+        { freq: 1046.50, time: 0.92, duration: 1.4, vol: 0.16 },
+        { freq: 1318.51, time: 1.15, duration: 1.5, vol: 0.12 },
+        { freq: 1567.98, time: 1.4, duration: 1.6, vol: 0.10 },
       ];
 
       melody.forEach((note) => {
@@ -600,7 +655,7 @@ export default function ChallengesPage() {
   const speakStepText = useCallback((title: string, instruction: string) => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
-      
+
       if (isMuted) return;
 
       if (window.speechSynthesis.paused) {
@@ -619,11 +674,11 @@ export default function ChallengesPage() {
         utterance.volume = 1.0;
 
         const voices = window.speechSynthesis.getVoices();
-        const maleVoice = voices.find(v => 
-          (v.name.includes('Google UK English Male') || 
-           v.name.includes('Google US English Male') || 
-           v.name.includes('David') || 
-           v.name.includes('George') || 
+        const maleVoice = voices.find(v =>
+          (v.name.includes('Google UK English Male') ||
+           v.name.includes('Google US English Male') ||
+           v.name.includes('David') ||
+           v.name.includes('George') ||
            v.name.includes('Male')) && v.lang.includes('en')
         ) || voices.find(v => v.lang.includes('en'));
 
@@ -675,19 +730,19 @@ export default function ChallengesPage() {
     };
   }, []);
 
+  // Preload only claim mascot and Step 1 image of each challenge
   useEffect(() => {
     const claimImg = new window.Image();
     claimImg.src = claimMascotUrl;
 
     LOCAL_CHALLENGES.forEach((challenge) => {
-      challenge.steps.forEach((st) => {
-        if (st.imageUrl) {
-          const img = new window.Image();
-          img.src = st.imageUrl;
-        }
-      });
+      const stepOne = challenge.steps.find((st) => st.step === 1);
+      if (stepOne?.imageUrl) {
+        const img = new window.Image();
+        img.src = stepOne.imageUrl;
+      }
     });
-  }, []);
+  }, [claimMascotUrl]);
 
   useEffect(() => {
     if (activeView === 'challenge-flow') {
@@ -710,6 +765,7 @@ export default function ChallengesPage() {
     setShowLevelModal(false);
   };
 
+  // Fetch only skill_level + completed challenges needed for level filtering & XP increment
   const fetchPageData = useCallback(async () => {
     if (typeof window !== "undefined") {
       const cachedXp = localStorage.getItem("user_xp_cache");
@@ -742,34 +798,15 @@ export default function ChallengesPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("name, username, avatar_url, xp, skill_level")
+        .select("skill_level")
         .eq("id", user.id)
         .maybeSingle();
 
-      if (profile) {
-        if (profile.xp !== null && profile.xp !== undefined) {
-          const dbXp = profile.xp;
-          setUserXp(dbXp);
-          if (typeof window !== "undefined") {
-            localStorage.setItem("user_xp_cache", dbXp.toString());
-          }
+      if (profile?.skill_level) {
+        const fetchedLevel = String(profile.skill_level).toLowerCase() as "beginner" | "intermediate" | "advanced";
+        if (["beginner", "intermediate", "advanced"].includes(fetchedLevel)) {
+          setSelectedDifficulty(fetchedLevel);
         }
-        setUserProfile({
-          name: (profile.name || profile.username || "Artist").replace(/<[^>]*>?/gm, "").trim(),
-          avatar_url: profile.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`
-        });
-
-        if (profile.skill_level) {
-          const fetchedLevel = profile.skill_level.toLowerCase() as "beginner" | "intermediate" | "advanced";
-          if (["beginner", "intermediate", "advanced"].includes(fetchedLevel)) {
-            setSelectedDifficulty(fetchedLevel);
-          }
-        }
-      } else {
-        setUserProfile({
-          name: user.email?.split("@")[0] || "Artist",
-          avatar_url: `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`
-        });
       }
 
       const { data: completed } = await supabase
@@ -780,7 +817,7 @@ export default function ChallengesPage() {
       if (completed) {
         setCompletedChallenges(completed.map((c) => c.challenge_id));
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error loading data:", err);
     } finally {
       clearTimeout(safetyTimeout);
@@ -820,7 +857,7 @@ export default function ChallengesPage() {
           window.dispatchEvent(new CustomEvent('streakUpdated', { detail: updatedStreak }));
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error updating streak on review:", err);
     } finally {
       setActiveView('hub');
@@ -871,7 +908,9 @@ export default function ChallengesPage() {
         return;
       }
 
-      const updatedXp = Number(newTotalXp);
+      const updatedXp = Number.isFinite(Number(newTotalXp))
+        ? Number(newTotalXp)
+        : previousXp + challenge.xp;
 
       const updatedStreak = await updateActivityStreak(user.id);
       if (updatedStreak !== null) {
@@ -887,10 +926,11 @@ export default function ChallengesPage() {
 
       setShowClaimModal(false);
       setActiveView('hub');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setUserXp(previousXp);
       console.error("Error completing challenge:", err);
-      alert("Error saving challenge completion: " + (err.message || "Unknown error"));
+      const message = err instanceof Error ? err.message : "Unknown error";
+      alert("Error saving challenge completion: " + message);
     } finally {
       setClaimingId(null);
     }
@@ -995,7 +1035,7 @@ export default function ChallengesPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0 relative">
-      
+
       {showClaimModal && (
         <div className="fixed inset-0 z-[99999] bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 max-w-sm w-full text-center space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200 relative">
@@ -1041,7 +1081,7 @@ export default function ChallengesPage() {
       {showLevelModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 max-w-md w-full space-y-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            
+
             <p className="text-[11px] font-black uppercase tracking-wider text-blue-600">
               QUESTION 1 OF 1
             </p>
@@ -1066,7 +1106,7 @@ export default function ChallengesPage() {
 
             <div className="space-y-2.5 pt-1">
               <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">YOUR LEVEL</p>
-              
+
               <div className="flex flex-wrap gap-2.5">
                 {[
                   { level: "beginner", label: "Beginner" },
@@ -1075,7 +1115,7 @@ export default function ChallengesPage() {
                 ].map((item) => (
                   <button
                     key={item.level}
-                    onClick={() => handleSelectLevel(item.level as any)}
+                    onClick={() => handleSelectLevel(item.level as "beginner" | "intermediate" | "advanced")}
                     className="px-5 py-3 rounded-full border border-slate-200 bg-white hover:bg-blue-600 hover:text-white hover:border-blue-600 text-slate-700 font-bold text-sm transition-all shadow-2xs hover:shadow-md active:scale-95 cursor-pointer"
                   >
                     {item.label}
@@ -1100,7 +1140,7 @@ export default function ChallengesPage() {
           >
             <PanelLeft className="w-5 h-5" />
           </button>
-          
+
           <Image
             src={logoUrl}
             alt="Otterleo Logo"
@@ -1119,7 +1159,7 @@ export default function ChallengesPage() {
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={() => setIsMobileSidebarOpen(false)}
           />
-          
+
           <aside className="relative w-72 bg-white h-full p-6 flex flex-col justify-between shadow-2xl z-10">
             <div className="space-y-6">
               <div className="flex items-center justify-between">
@@ -1140,7 +1180,7 @@ export default function ChallengesPage() {
                 </button>
               </div>
 
-              <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-200px)]">
+              <nav className="space-y-1.5 overflow-y-auto max-h-[calc(100vh-140px)]">
                 {desktopNavItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -1163,20 +1203,6 @@ export default function ChallengesPage() {
                   );
                 })}
               </nav>
-            </div>
-
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-              <Image
-                src={userProfile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
-                alt="User Avatar"
-                width={40}
-                height={40}
-                className="w-10 h-10 rounded-xl object-cover bg-blue-100"
-              />
-              <div className="overflow-hidden">
-                <p className="text-sm font-black text-[#0F172A] truncate">{userProfile?.name || "Artist"}</p>
-                <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
-              </div>
             </div>
           </aside>
         </div>
@@ -1217,24 +1243,10 @@ export default function ChallengesPage() {
             })}
           </nav>
         </div>
-
-        <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3">
-          <Image
-            src={userProfile?.avatar_url || "https://api.dicebear.com/7.x/bottts/svg?seed=BlueBot"}
-            alt="User Avatar"
-            width={40}
-            height={40}
-            className="w-10 h-10 rounded-xl object-cover bg-blue-100"
-          />
-          <div className="overflow-hidden">
-            <p className="text-sm font-black text-[#0F172A] truncate">{userProfile?.name || "Artist"}</p>
-            <p className="text-xs font-bold text-blue-600">Level {Math.floor(userXp / 100) + 1}</p>
-          </div>
-        </div>
       </aside>
 
       <main className="flex-1 p-4 sm:p-6 max-w-2xl mx-auto w-full space-y-4 overflow-y-auto">
-        
+
         <div className="hidden md:flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -1401,7 +1413,7 @@ export default function ChallengesPage() {
               </div>
             ) : activeStepList[currentStep].typewriterText ? (
               <div key={currentStep} className="w-full flex flex-col sm:flex-row-reverse items-center justify-center gap-3 sm:gap-5 py-2 px-1">
-                
+
                 <div className="w-48 h-48 sm:w-56 sm:h-56 shrink-0 flex items-center justify-center relative">
                   {activeStepList[currentStep].imageUrl && (
                     <img
@@ -1469,8 +1481,8 @@ export default function ChallengesPage() {
               <button
                 onClick={toggleMute}
                 className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
-                  isMuted 
-                    ? "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100" 
+                  isMuted
+                    ? "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100"
                     : "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
                 }`}
                 title={isMuted ? "Unmute Voice" : "Mute Voice"}
@@ -1542,7 +1554,6 @@ export default function ChallengesPage() {
                             alt={item.label}
                             className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
                             src={item.iconUrl}
-                            crossOrigin="anonymous"
                           />
                         )}
                       </div>

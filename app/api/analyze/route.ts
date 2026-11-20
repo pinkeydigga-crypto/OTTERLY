@@ -5,6 +5,7 @@ export const maxDuration = 60;
 
 const apiKey = process.env.GEMINI_API_KEY || "";
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
 const MODELS_TO_TRY = [
   "gemini-3.8-flash",
@@ -81,17 +82,40 @@ export async function POST(req: Request) {
       process.env.SUPABASE_URL ||
       "";
 
-    const supabaseKey =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      process.env.SUPABASE_ANON_KEY ||
-      "";
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
     const body = await req.json().catch(() => null);
-    const rawUserId = body?.userId ? String(body.userId).trim() : null;
     const todayStr = getTodayLocalDate();
 
-    if (!rawUserId || !isValidUUID(rawUserId)) {
+    let supabase = null;
+    if (supabaseUrl && supabaseServiceKey) {
+      try {
+        supabase = createClient(supabaseUrl, supabaseServiceKey, {
+          auth: { persistSession: false },
+        });
+      } catch {
+        // Safe fallback without leaking internal details
+      }
+    }
+
+    // Prefer verified user from Bearer token if provided; fallback to body.userId for simple flow compatibility
+    let verifiedUserId: string | null = null;
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+
+    if (authHeader && authHeader.toLowerCase().startsWith("bearer ") && supabase) {
+      const token = authHeader.slice(7).trim();
+      if (token) {
+        const { data: authUserData } = await supabase.auth.getUser(token);
+        if (authUserData?.user?.id) {
+          verifiedUserId = authUserData.user.id;
+        }
+      }
+    }
+
+    const fallbackBodyUserId = body?.userId ? String(body.userId).trim() : null;
+    const activeUserId = verifiedUserId || (fallbackBodyUserId && isValidUUID(fallbackBodyUserId) ? fallbackBodyUserId : null);
+
+    if (!activeUserId || !isValidUUID(activeUserId)) {
       return NextResponse.json(
         {
           isDrawing: false,
@@ -102,23 +126,11 @@ export async function POST(req: Request) {
       );
     }
 
-    let supabase = null;
-    if (supabaseUrl && supabaseKey) {
-      try {
-        supabase = createClient(supabaseUrl, supabaseKey, {
-          auth: { persistSession: false },
-        });
-      } catch (err: any) {
-        console.error("Supabase init error:", err?.message);
-      }
-    }
-
-    // 1. Strict Midnight Check from Database
     if (supabase) {
       const { data: profileData, error: dbQueryError } = await supabase
         .from("profiles")
         .select("last_scanned_at")
-        .eq("id", rawUserId)
+        .eq("id", activeUserId)
         .maybeSingle();
 
       if (!dbQueryError && profileData && profileData.last_scanned_at) {
@@ -157,20 +169,13 @@ export async function POST(req: Request) {
     }
 
     const imageStr = body.image;
-    if (imageStr.length > 7 * 1024 * 1024) {
-      return NextResponse.json(
-        { isDrawing: false, message: "Image size too large. Maximum allowed limit is 5MB. (#104)", errorCode: "#104" },
-        { status: 400 }
-      );
-    }
-
     let mimeType = "image/jpeg";
     let base64Data = imageStr;
 
     if (imageStr.includes(";base64,")) {
       const parts = imageStr.split(";base64,");
       mimeType = parts[0].replace("data:", "").toLowerCase().trim();
-      base64Data = parts[1];
+      base64Data = parts[1] || "";
     }
 
     if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
@@ -180,7 +185,23 @@ export async function POST(req: Request) {
       );
     }
 
+    // Strict size check on decoded binary + base64 length
+    const approxBase64Bytes = Math.floor((base64Data.length * 3) / 4);
+    if (approxBase64Bytes > MAX_IMAGE_BYTES) {
+      return NextResponse.json(
+        { isDrawing: false, message: "Image size too large. Maximum allowed limit is 5MB. (#104)", errorCode: "#104" },
+        { status: 400 }
+      );
+    }
+
     const buffer = Buffer.from(base64Data, "base64");
+    if (buffer.length === 0 || buffer.length > MAX_IMAGE_BYTES) {
+      return NextResponse.json(
+        { isDrawing: false, message: "Image size too large. Maximum allowed limit is 5MB. (#104)", errorCode: "#104" },
+        { status: 400 }
+      );
+    }
+
     if (!isValidImageHeader(buffer)) {
       return NextResponse.json(
         { isDrawing: false, message: "Corrupted or invalid image file. (#105)", errorCode: "#105" },
@@ -228,7 +249,7 @@ export async function POST(req: Request) {
       }
     `;
 
-    let jsonResult: any = null;
+    let jsonResult: Record<string, unknown> | null = null;
 
     modelLoop: for (const modelName of MODELS_TO_TRY) {
       for (let attempt = 1; attempt <= 2; attempt++) {
@@ -270,7 +291,7 @@ export async function POST(req: Request) {
           } else {
             if (attempt === 1) await sleep(500);
           }
-        } catch (err: any) {
+        } catch {
           if (attempt === 1) await sleep(500);
         }
       }
@@ -288,13 +309,12 @@ export async function POST(req: Request) {
       jsonResult.isDrawing === "true" ||
       String(jsonResult.isDrawing).toLowerCase() === "true";
 
-    // ONLY Lock if drawing evaluation is successful!
     if (isDrawingValid && supabase) {
       const nowTimestampz = new Date().toISOString();
       await supabase
         .from("profiles")
         .update({ last_scanned_at: nowTimestampz })
-        .eq("id", rawUserId);
+        .eq("id", activeUserId);
     }
 
     if (!jsonResult.message) {
@@ -303,7 +323,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(jsonResult, { status: 200 });
 
-  } catch (error: any) {
+  } catch {
     return NextResponse.json(
       { isDrawing: false, message: "Something went wrong. Please try again. (#500)", errorCode: "#500" },
       { status: 500 }
