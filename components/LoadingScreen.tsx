@@ -1,20 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { RefreshCw } from "lucide-react";
 
 export default function LoadingScreen() {
   const [showRefresh, setShowRefresh] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const logoUrl =
-    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/output-onlinepngtools%20(6).png";
-
-  // Preload image instantly in background when component renders
-  useEffect(() => {
-    const img = new window.Image();
-    img.src = logoUrl;
-  }, [logoUrl]);
+    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -26,19 +20,24 @@ export default function LoadingScreen() {
 
   return (
     <div className="min-h-screen w-full bg-[#F6FAFF] flex flex-col justify-center items-center gap-3 z-50 fixed inset-0">
-      <div className="w-24 h-24 sm:w-28 sm:h-28 relative">
-        <Image
-          src={logoUrl}
-          alt="Otterleo Logo"
-          width={112}
-          height={112}
-          priority={true}
-          fetchPriority="high"
-          loading="eager"
-          decoding="sync"
-          sizes="(max-width: 640px) 96px, 112px"
-          className="w-full h-full object-contain drop-shadow-md rounded-2xl"
-        />
+      <div className="w-24 h-24 sm:w-28 sm:h-28 relative flex items-center justify-center">
+        {!imgError ? (
+          <img
+            src={logoUrl}
+            alt="Otterleo Logo"
+            width={112}
+            height={112}
+            fetchPriority="high"
+            loading="eager"
+            decoding="sync"
+            onError={() => setImgError(true)}
+            className="w-full h-full object-contain drop-shadow-md rounded-2xl select-none"
+          />
+        ) : (
+          <div className="w-20 h-20 rounded-3xl bg-[#2563EB] text-white flex items-center justify-center text-4xl font-black shadow-md">
+            O
+          </div>
+        )}
       </div>
 
       <h1 className="text-2xl font-black text-[#0F172A] tracking-tight">

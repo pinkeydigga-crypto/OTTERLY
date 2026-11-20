@@ -55,9 +55,49 @@ interface LocalChallenge {
   description: string;
   difficulty: "beginner" | "intermediate" | "advanced";
   xp: number;
+  stepsCount: number;
   previewImage: string;
   steps: TutorialStep[];
 }
+
+const CUBE_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil first", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw a shaded cube!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Draw a Square Base",
+    instruction: "Draw a clean square in the center of your page to start the front face of the cube.",
+    tips: ["Keep all four sides nearly equal", "Draw light and neat lines"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cube1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add 3D Cube Edges",
+    instruction: "Draw slanted lines going back from the top and right corners, then connect them to form the top and side faces.",
+    tips: ["Keep the slanted lines parallel", "Make corners meet cleanly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cube2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Shade the Side and Cast Shadow",
+    instruction: "Shade the right side face softly and draw a dark shadow on the ground beside the cube for a 3D look.",
+    tips: ["Keep the top face lightest", "Blend the side shading smoothly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cube3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice drawing your shaded cube on the digital canvas below.",
+    tips: ["Start with a clean square", "Have fun shading"],
+    imageUrl: ""
+  }
+];
 
 const FLOWER_STEPS: TutorialStep[] = [
   {
@@ -282,13 +322,116 @@ const LIP_STEPS: TutorialStep[] = [
   }
 ];
 
+const LOOMIS_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for construction lines", "Keep an eraser ready"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw a Loomis head!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Draw the Sphere and Cross Guidelines",
+    instruction: "Draw a clean circle for the cranium and add a vertical center line with a horizontal brow line across it.",
+    tips: ["Keep guidelines light", "Make the cross lines straight"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/loomis1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Build the Jawline and Nose Angle",
+    instruction: "Extend the front profile for the nose and chin, then connect a clean jawline angle up toward the back of the head.",
+    tips: ["Keep proportions balanced", "Check the chin and nose alignment"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/loomis2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Place the Ear and Neck Structure",
+    instruction: "Draw an oval ear guide behind the jaw line along the brow-to-nose zone, and add light neck lines below.",
+    tips: ["Keep the ear angled naturally", "Connect the neck smoothly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/loomis3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Refine Facial Features and Clean Up",
+    instruction: "Sketch the eyebrow, eye, lips, and detailed ear inside your guide lines, then softly clean up extra marks.",
+    tips: ["Refine shapes step by step", "Keep main outlines clear"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/loomis4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice the Loomis head construction on the digital canvas below.",
+    tips: ["Start with light guide strokes", "Have fun practicing"],
+    imageUrl: ""
+  }
+];
+
+const HAIR_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a sharp pencil for fine hair strokes", "Keep a kneaded or soft eraser ready"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw realistic hair!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch the Hair Outline and Parting",
+    instruction: "Draw light flowing curves from the center parting to shape the overall hair volume around the head.",
+    tips: ["Keep your lines loose and flowing", "Focus on big hair sections first"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hair1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Hair Flow and Strand Lines",
+    instruction: "Draw long curved strokes following the wave direction from the roots to the tips to build natural movement.",
+    tips: ["Follow the wave curve smoothly", "Keep the roots slightly darker"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hair2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Layer Mid-Tones and Depth",
+    instruction: "Shade between the hair clumps with medium-dark strokes while leaving bright white bands untouched for shine.",
+    tips: ["Do not shade over the shine bands", "Build depth layer by layer"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hair3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Deepen Shadows and Add Flyaway Strands",
+    instruction: "Darken the roots and under-layers for strong contrast, then add thin loose flyaway hairs around the edges.",
+    tips: ["High contrast creates silky realism", "Add light flyaway strands for a natural finish"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hair4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Great job! Now practice drawing realistic hair flow and highlights on the digital canvas below.",
+    tips: ["Use smooth curved strokes", "Have fun creating texture"],
+    imageUrl: ""
+  }
+];
+
 const LOCAL_CHALLENGES: LocalChallenge[] = [
+  {
+    id: "shaded-cube-beginner",
+    title: "Challenge: Shaded Cube",
+    description: "Learn 3D cube shapes, clean edges, side shading, and ground shadow step by step.",
+    difficulty: "beginner",
+    xp: 30,
+    stepsCount: 3,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cube3.jpeg",
+    steps: CUBE_STEPS
+  },
   {
     id: "classic-flower-beginner",
     title: "Challenge: Classic Flower Drawing",
     description: "Learn how to draw a beautiful 5-petal classic flower step by step with easy shading.",
     difficulty: "beginner",
     xp: 50,
+    stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER4.jpeg",
     steps: FLOWER_STEPS
   },
@@ -298,6 +441,7 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     description: "Learn how to draw an adorable cartoon fish step by step with fins, bubbles, and soft shading.",
     difficulty: "beginner",
     xp: 30,
+    stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/fish4.jpeg",
     steps: FISH_STEPS
   },
@@ -307,6 +451,7 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     description: "Master iris details, pupil depth, eyelid folds, and realistic eyelashes step by step.",
     difficulty: "intermediate",
     xp: 60,
+    stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye4.jpeg",
     steps: EYE_STEPS
   },
@@ -316,6 +461,7 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     description: "Master nose bridge structure, nostril curves, skin texture shading, and 3D highlights step by step.",
     difficulty: "intermediate",
     xp: 70,
+    stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/NOSE4.jpeg",
     steps: NOSE_STEPS
   },
@@ -325,8 +471,29 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     description: "Learn lip contours, vertical crease texturing, soft volume shading, and glossy highlights.",
     difficulty: "intermediate",
     xp: 80,
+    stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips%204.jpeg",
     steps: LIP_STEPS
+  },
+  {
+    id: "loomis-head-challenge",
+    title: "Challenge: The Loomis Head",
+    description: "Learn head proportions, sphere and jawline construction, ear placement, and facial features step by step.",
+    difficulty: "advanced",
+    xp: 100,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/loomis4.jpeg",
+    steps: LOOMIS_STEPS
+  },
+  {
+    id: "realistic-hair-challenge",
+    title: "Challenge: Realistic Hair Texture",
+    description: "Master flowing hair clumps, silky shine highlights, deep root shadows, and natural flyaway strands step by step.",
+    difficulty: "advanced",
+    xp: 120,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hair4.jpeg",
+    steps: HAIR_STEPS
   }
 ];
 
@@ -344,7 +511,7 @@ export default function ChallengesPage() {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
 
   const [activeView, setActiveView] = useState<'hub' | 'challenge-flow'>('hub');
-  const [activeChallengeId, setActiveChallengeId] = useState<string>("classic-flower-beginner");
+  const [activeChallengeId, setActiveChallengeId] = useState<string>("shaded-cube-beginner");
   const [currentStep, setCurrentStep] = useState<number>(0);
 
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -1155,14 +1322,18 @@ export default function ChallengesPage() {
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-3 text-xs font-black">
-                          <span className="flex items-center gap-1 text-amber-500 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-lg">
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-black">
+                          <span className="flex items-center gap-1 text-amber-500 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full">
                             <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                             +{challenge.xp} XP
                           </span>
 
-                          <span className="px-2.5 py-1 rounded-lg text-[11px] uppercase border bg-slate-50 text-slate-600 border-slate-200">
+                          <span className="px-2.5 py-1 rounded-full text-[11px] uppercase border bg-slate-50 text-slate-600 border-slate-200">
                             {challenge.difficulty}
+                          </span>
+
+                          <span className="px-2.5 py-1 rounded-full text-[11px] uppercase border bg-blue-50 text-blue-700 border-blue-200/70">
+                            {challenge.stepsCount} STEPS
                           </span>
                         </div>
 
