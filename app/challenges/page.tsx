@@ -321,6 +321,52 @@ const BUTTERFLY_STEPS: TutorialStep[] = [
   }
 ];
 
+const TIE_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for clean straight lines", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw a tie!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Draw the Tie Knot and Tapered Body",
+    instruction: "Draw a small trapezoid knot near the top, then connect a long tapered tie body ending in a pointed tip at the bottom.",
+    tips: ["Keep left and right edges symmetrical", "Draw light straight lines first"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/tie1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Collar Flaps Around the Knot",
+    instruction: "Draw two angled collar shapes extending outward and downward on both sides of the top knot.",
+    tips: ["Match the angle of both collar sides", "Keep corners crisp and neat"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/tie2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Draw Diagonal Stripe Bands",
+    instruction: "Draw evenly spaced slanted stripe lines across the tie body from top-left to bottom-right.",
+    tips: ["Keep the stripes parallel", "Space them evenly down the tie"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/tie3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Add Shading and Contrast",
+    instruction: "Shade alternating stripes and add soft shading along the collar and knot for a clean 3D look.",
+    tips: ["Keep alternating stripes lighter for contrast", "Blend pencil strokes smoothly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/tie4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Great job! Now practice drawing your tie on the digital canvas below.",
+    tips: ["Start with the knot and tapered body", "Have fun shading"],
+    imageUrl: ""
+  }
+];
+
 const ANIME_BOY_STEPS: TutorialStep[] = [
   {
     step: 1,
@@ -363,6 +409,52 @@ const ANIME_BOY_STEPS: TutorialStep[] = [
     title: "Step 6: Practice on Digital Canvas",
     instruction: "Awesome job! Now practice drawing your anime boy on the digital canvas below.",
     tips: ["Start with the center guide and jaw", "Have fun drawing"],
+    imageUrl: ""
+  }
+];
+
+const ANIME_GIRL_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for face proportions", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw an anime girl!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch Head Shape, Guidelines and Neck",
+    instruction: "Draw a vertical center line, a horizontal eye guide line, a soft anime face outline, and neck curves.",
+    tips: ["Keep guide lines light", "Keep the chin soft and balanced"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animegirl1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Hair Flow, Bangs and Ears",
+    instruction: "Sketch flowing long hair around the head, front bangs framing the forehead, and small ears near the eye line.",
+    tips: ["Keep left and right hair flow balanced", "Draw bangs with gentle curves"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animegirl2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Refine Bang Strands and Hair Layers",
+    instruction: "Separate the front bangs into clean strands and add flowing inner hair curves along the sides and shoulders.",
+    tips: ["Keep strand tips pointed lightly", "Follow the natural curve of the hair"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animegirl3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Draw Big Anime Eyes, Eyebrows, Nose and Mouth",
+    instruction: "Add expressive anime eyes with shine highlights, thin eyebrows, a tiny nose mark, and a soft mouth, then erase extra guides.",
+    tips: ["Leave bright shine spots inside both eyes", "Keep facial features centered cleanly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animegirl4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice drawing your anime girl on the digital canvas below.",
+    tips: ["Start with the cross guide and face outline", "Have fun drawing"],
     imageUrl: ""
   }
 ];
@@ -682,6 +774,52 @@ const HAND_STEPS: TutorialStep[] = [
   }
 ];
 
+const GLASS_BOTTLE_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for clean glass contours", "Keep an eraser ready for crisp highlights"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready for glass bottle shading!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Draw the Bottle Outline and Neck Threads",
+    instruction: "Sketch a clean symmetrical bottle outline with a threaded neck, rounded shoulders, straight sides, and base curve.",
+    tips: ["Keep left and right curves balanced", "Draw light construction lines before darkening edges"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/bottle1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Light Glass Reflections and Base Depth",
+    instruction: "Sketch vertical reflection bands along the body, inner glass thickness lines, and light base curvature.",
+    tips: ["Leave bright vertical strips untouched for glass shine", "Keep pencil strokes light and even"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/bottle2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Build Mid-Tone Shading Inside the Bottle",
+    instruction: "Layer soft shading inside the neck, along the inner body walls, and around the bottom glass rim.",
+    tips: ["Shade gradually in smooth layers", "Preserve crisp white highlight edges"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/bottlee3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Deepen Contrast and Ground Cast Shadow",
+    instruction: "Darken the neck shadows, inner reflections, and thick glass rim, then blend a soft shadow on the ground.",
+    tips: ["Strong contrast makes glass look transparent and glossy", "Keep highlight strips sharp and clean"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/botttlee4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice glass bottle shading on the digital canvas below.",
+    tips: ["Start with balanced bottle proportions", "Layer mid-tones and highlights carefully"],
+    imageUrl: ""
+  }
+];
+
 const LOCAL_CHALLENGES: LocalChallenge[] = [
   // --- BEGINNER ---
   {
@@ -744,18 +882,18 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/butterfly3.jpeg",
     steps: BUTTERFLY_STEPS
   },
+  {
+    id: "tie-drawing-beginner",
+    title: "Challenge: Tie Drawing",
+    description: "Draw the knot and tapered tie body, add collar flaps and stripes, and finish with shading step by step.",
+    difficulty: "beginner",
+    xp: 35,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/tie4.jpeg",
+    steps: TIE_STEPS
+  },
 
   // --- INTERMEDIATE ---
-  {
-    id: "anime-boy-intermediate",
-    title: "Challenge: Anime Boy",
-    description: "Sketch head guides and jawline, add ears and neck, draw spiky hair and eyes, and finish with clean anime details step by step.",
-    difficulty: "intermediate",
-    xp: 85,
-    stepsCount: 4,
-    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale4.jpeg",
-    steps: ANIME_BOY_STEPS
-  },
   {
     id: "eye-drawing-1min",
     title: "Challenge: The Realistic Eye",
@@ -796,6 +934,26 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips%204.jpeg",
     steps: LIP_STEPS
   },
+  {
+    id: "anime-girl-intermediate",
+    title: "Challenge: Anime Girl",
+    description: "Sketch face guides and neck, add flowing hair and bangs, refine hair layers, and finish with big anime eyes and expression step by step.",
+    difficulty: "intermediate",
+    xp: 85,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animegirl4.jpeg",
+    steps: ANIME_GIRL_STEPS
+  },
+  {
+    id: "anime-boy-intermediate",
+    title: "Challenge: Anime Boy",
+    description: "Sketch head guides and jawline, add ears and neck, draw spiky hair and eyes, and finish with clean anime details step by step.",
+    difficulty: "intermediate",
+    xp: 85,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale4.jpeg",
+    steps: ANIME_BOY_STEPS
+  },
 
   // --- ADVANCED ---
   {
@@ -827,6 +985,16 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hand4.jpeg",
     steps: HAND_STEPS
+  },
+  {
+    id: "glass-bottle-shading-advanced",
+    title: "Challenge: Glass Bottle Shading",
+    description: "Master bottle proportions, glass reflections, layered mid-tone shading, and crisp highlights step by step.",
+    difficulty: "advanced",
+    xp: 130,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/botttlee4.jpeg",
+    steps: GLASS_BOTTLE_STEPS
   }
 ];
 
@@ -854,6 +1022,7 @@ export default function ChallengesPage() {
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
   const ottoMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
+  const challengesBannerUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/challangesotto.jpeg";
   const claimMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Cheerful%20Otter%20Mascot%20with%20Star%20Icon%20(1)%20(1).png";
 
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -904,7 +1073,6 @@ export default function ChallengesPage() {
     }
   }, []);
 
-  // Light, minimal & upbeat groove (neither creepy/slow nor heavy/noisy)
   const startSweetBgMusic = useCallback(async () => {
     if (isMuted || activeView !== "challenge-flow") {
       stopSweetBgMusic();
@@ -917,14 +1085,14 @@ export default function ChallengesPage() {
     if (bgMusicIntervalRef.current) return;
 
     const grooveSteps = [
-      { freq: 523.25, pulse: 783.99 }, // C5 + G5
-      { freq: 659.25, pulse: 523.25 }, // E5 + C5
-      { freq: 783.99, pulse: 659.25 }, // G5 + E5
-      { freq: 880.00, pulse: 587.33 }, // A5 + D5
-      { freq: 783.99, pulse: 987.77 }, // G5 + B5
-      { freq: 659.25, pulse: 783.99 }, // E5 + G5
-      { freq: 587.33, pulse: 880.00 }, // D5 + A5
-      { freq: 659.25, pulse: 523.25 }, // E5 + C5
+      { freq: 523.25, pulse: 783.99 },
+      { freq: 659.25, pulse: 523.25 },
+      { freq: 783.99, pulse: 659.25 },
+      { freq: 880.00, pulse: 587.33 },
+      { freq: 783.99, pulse: 987.77 },
+      { freq: 659.25, pulse: 783.99 },
+      { freq: 587.33, pulse: 880.00 },
+      { freq: 659.25, pulse: 523.25 },
     ];
 
     const playMinimalBeat = () => {
@@ -938,7 +1106,6 @@ export default function ChallengesPage() {
         const { freq, pulse } = grooveSteps[stepIdx % grooveSteps.length];
         bgMusicStepRef.current += 1;
 
-        // Main bright marimba-like pluck
         const mainOsc = currentCtx.createOscillator();
         const mainGain = currentCtx.createGain();
         mainOsc.type = "triangle";
@@ -953,7 +1120,6 @@ export default function ChallengesPage() {
         mainOsc.start(now);
         mainOsc.stop(now + 0.36);
 
-        // Off-beat light energetic tap
         const tapOsc = currentCtx.createOscillator();
         const tapGain = currentCtx.createGain();
         tapOsc.type = "sine";
@@ -1036,7 +1202,6 @@ export default function ChallengesPage() {
     } catch {}
   };
 
-  // Voice ONLY on Step 1 typewriter step
   const speakStep1Typewriter = useCallback((typewriterText: string) => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
@@ -1673,47 +1838,39 @@ export default function ChallengesPage() {
 
         {activeView === 'hub' ? (
           <>
-            <div className="bg-white p-5 rounded-[2rem] border border-slate-200/80 shadow-2xs flex items-center justify-between relative overflow-hidden">
-              <div className="space-y-1 pr-3">
-                <h1 className="text-2xl font-black text-[#0F172A]">Challenges</h1>
-                <p className="text-xs font-bold text-slate-500 max-w-xs leading-relaxed">
-                  Complete step-by-step challenges, earn XP, and level up your drawing skills!
-                </p>
-              </div>
-              <Image
-                src={ottoMascotUrl}
-                alt="Mascot"
-                width={128}
-                height={128}
-                style={{ width: 'auto', height: 'auto' }}
-                className="w-24 sm:w-28 h-auto object-contain shrink-0"
+            <div className="bg-white p-3 sm:p-4 rounded-[2rem] border border-slate-200/80 shadow-2xs flex items-center justify-center relative overflow-hidden">
+              <img
+                src={challengesBannerUrl}
+                alt="Challenges with Otto"
+                className="w-full h-28 sm:h-36 object-contain -rotate-1 hover:rotate-0 transition-transform duration-300 select-none"
               />
             </div>
 
-            <div className="flex items-center justify-between bg-white p-2.5 rounded-2xl border border-slate-200/80">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-400 pl-2">Selected Level:</span>
-                {selectedDifficulty && (
-                  <span className="px-3 py-1 rounded-full text-xs font-black capitalize bg-slate-900 text-white shadow-xs">
-                    {selectedDifficulty}
-                  </span>
-                )}
+            {/* Dark Change Level pill */}
+            <div className="flex items-stretch justify-between bg-white rounded-full border border-slate-200/90 shadow-2xs overflow-hidden">
+              <div className="flex flex-col justify-center pl-5 pr-4 py-2">
+                <span className="text-[11px] font-bold text-slate-500 leading-tight">
+                  Selected Level:
+                </span>
+                <span className="text-sm sm:text-base font-black text-slate-900 capitalize leading-tight">
+                  {selectedDifficulty}
+                </span>
               </div>
 
               <button
                 onClick={() => setShowLevelModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 bg-[#071126] hover:bg-[#0D1B3A] active:scale-[0.99] text-white font-black text-xs sm:text-sm transition cursor-pointer shrink-0"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
+                <RefreshCw className="w-4 h-4 text-white" />
                 <span>Change Level</span>
               </button>
             </div>
 
             <div className="space-y-4">
               {filteredChallenges.length === 0 ? (
-                <div className="bg-white rounded-[2rem] p-8 border border-slate-200 text-center space-y-2">
+                <div className="bg-[#E8F1FF] rounded-[2rem] p-8 border border-blue-100 text-center space-y-2">
                   <p className="text-sm font-black text-slate-700">No challenges available for this level yet.</p>
-                  <p className="text-xs font-bold text-slate-400">Try changing your level to explore more challenges!</p>
+                  <p className="text-xs font-bold text-slate-500">Try changing your level to explore more challenges!</p>
                 </div>
               ) : (
                 filteredChallenges.map((challenge) => {
@@ -1721,17 +1878,20 @@ export default function ChallengesPage() {
                   return (
                     <div
                       key={challenge.id}
-                      className="bg-white rounded-[2rem] p-5 border border-slate-200/80 shadow-2xs space-y-4"
+                      className="relative overflow-hidden bg-[#E8F1FF] rounded-[2rem] p-5 border border-blue-100 shadow-2xs space-y-4"
                     >
+                      {/* Single slim white shine beam every 3 seconds */}
+                      <div className="pointer-events-none absolute inset-y-0 left-0 w-24 sm:w-28 bg-gradient-to-r from-transparent via-white/65 to-transparent animate-card-shine z-30" />
+
                       {isDone && (
-                        <div className="flex justify-end w-full">
+                        <div className="flex justify-end w-full relative z-20">
                           <span className="text-[11px] font-black bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-xl flex items-center gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" /> Completed
                           </span>
                         </div>
                       )}
 
-                      <div className="w-full h-36 sm:h-44 flex items-center justify-center relative">
+                      <div className="w-full h-36 sm:h-44 flex items-center justify-center relative z-20">
                         <img
                           src={challenge.previewImage}
                           alt={challenge.title}
@@ -1739,10 +1899,10 @@ export default function ChallengesPage() {
                         />
                       </div>
 
-                      <div className="space-y-3">
+                      <div className="space-y-3 relative z-20">
                         <div>
                           <h2 className="font-black text-slate-900 text-lg">{challenge.title}</h2>
-                          <p className="text-xs font-bold text-slate-500 mt-1">
+                          <p className="text-xs font-bold text-slate-600 mt-1">
                             {challenge.description}
                           </p>
                         </div>
@@ -1753,7 +1913,7 @@ export default function ChallengesPage() {
                             +{challenge.xp} XP
                           </span>
 
-                          <span className="px-2.5 py-1 rounded-full text-[11px] uppercase border bg-slate-50 text-slate-600 border-slate-200">
+                          <span className="px-2.5 py-1 rounded-full text-[11px] uppercase border bg-white/85 text-slate-600 border-slate-200">
                             {challenge.difficulty}
                           </span>
 

@@ -52,3 +52,24 @@
 .animate-scan {
   animation: scanAnimation 2.2s ease-in-out infinite;
 }
+
+@keyframes otterleoCardShine {
+  0% {
+    transform: translateX(-220%) skewX(-22deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.72;
+  }
+  70% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(480%) skewX(-22deg);
+    opacity: 0;
+  }
+}
+
+.animate-card-shine {
+  animation: otterleoCardShine 3s ease-in-out infinite;
+}

@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import OfflinePopup from "@/components/offlinepopup";
 import GlobalHaptics from "@/components/GlobalHaptics";
-import MinimalBgMusicPlayer from "@/components/MinimalBgMusicPlayer";
+
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -13,7 +13,7 @@ const nunito = Nunito({
   adjustFontFallback: false,
 });
 
-const FAVICON_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
+const FAVICON_PATH = "/favicon.png";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
 const SITE_URL = "https://www.otterleo.in";
 
@@ -48,14 +48,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: FAVICON_URL, sizes: '48x48', type: 'image/png' },
-      { url: FAVICON_URL, sizes: '96x96', type: 'image/png' },
-      { url: FAVICON_URL, sizes: '192x192', type: 'image/png' },
-      { url: FAVICON_URL, sizes: '512x512', type: 'image/png' },
+      { url: FAVICON_PATH, sizes: '48x48', type: 'image/png' },
+      { url: FAVICON_PATH, sizes: '96x96', type: 'image/png' },
+      { url: FAVICON_PATH, sizes: '192x192', type: 'image/png' },
+      { url: FAVICON_PATH, sizes: '512x512', type: 'image/png' },
     ],
-    shortcut: [FAVICON_URL],
+    shortcut: [FAVICON_PATH],
     apple: [
-      { url: FAVICON_URL, sizes: '180x180', type: 'image/png' }
+      { url: FAVICON_PATH, sizes: '180x180', type: 'image/png' }
     ],
   },
   openGraph: {
@@ -121,9 +121,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         "url": SITE_URL,
         "logo": {
           "@type": "ImageObject",
-          "url": FAVICON_URL
+          "url": `${SITE_URL}${FAVICON_PATH}`
         },
-        "image": FAVICON_URL
+        "image": `${SITE_URL}${FAVICON_PATH}`
       }
     ]
   };
@@ -139,7 +139,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${nunito.className} min-h-full flex flex-col font-sans overflow-x-hidden w-full relative bg-[#F6FAFF] text-slate-900`}>
         <GlobalHaptics />
-        <MinimalBgMusicPlayer />
+       
         {children}
         <OfflinePopup />
         <Analytics />

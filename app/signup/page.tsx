@@ -237,7 +237,7 @@ const getLocalDateString = (date = new Date()) => {
 export default function SignupPage() {
   const router = useRouter();
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/onboard.png';
-  const introGifUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hloi.gif';
+  const introGifUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hloi%20(1).gif';
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
