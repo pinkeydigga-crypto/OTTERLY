@@ -250,7 +250,6 @@ export default function SignupPage() {
   const [typedText, setTypedText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
-  // Global reliable sound and haptic trigger
   const triggerSoundAndHaptic = () => {
     if (typeof window !== "undefined") {
       try {
@@ -450,7 +449,7 @@ export default function SignupPage() {
 
       const todayStr = getLocalDateString();
 
-      const { error: profileError } = await supabase
+      const { data: savedProfile, error: profileError } = await supabase
         .from('profiles')
         .upsert([
           {
@@ -464,9 +463,18 @@ export default function SignupPage() {
             streak: 1,
             last_login: todayStr,
           }
-        ], { onConflict: 'id' });
+        ], { onConflict: 'id' })
+        .select('id')
+        .maybeSingle();
 
-      if (profileError) console.error("Profile creation error:", profileError);
+      if (profileError || !savedProfile?.id) {
+        console.error("Profile creation error:", profileError);
+        throw new Error(
+          profileError?.message
+            ? `Profile could not be created in Supabase: ${profileError.message}`
+            : "Profile row was not created in Supabase. Please check your profile permissions and try again."
+        );
+      }
 
       const { error: consentError } = await supabase
         .from('user_consents')
@@ -478,7 +486,10 @@ export default function SignupPage() {
           }
         ]);
 
-      if (consentError) console.error("Consent recording error:", consentError);
+      if (consentError) {
+        console.error("Consent recording error:", consentError);
+        throw new Error(`Consent could not be saved: ${consentError.message}`);
+      }
 
       localStorage.removeItem('signup_attempts');
       localStorage.removeItem('signup_lockout_until');
@@ -500,7 +511,7 @@ export default function SignupPage() {
     } catch (err: any) {
       console.error("Signup Internal Error:", err);
       const remaining = MAX_ATTEMPTS - newAttempts;
-      
+
       if (err?.status === 429 || err?.message?.toLowerCase().includes("rate limit")) {
         triggerLockout();
       } else {
@@ -515,8 +526,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden font-sans">
-      
-      {/* INSTANT GIF PRELOADER */}
+
       <link rel="preload" href={introGifUrl} as="image" />
       <img src={introGifUrl} alt="" className="hidden" aria-hidden="true" />
 
@@ -566,11 +576,10 @@ export default function SignupPage() {
         }
       `}</style>
 
-      {/* TOP BACK TO HOME BUTTON - HIDDEN ON STEP 1 */}
       {step !== 1 && (
         <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             onClick={triggerSoundAndHaptic}
             className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-full border-2 border-slate-200 shadow-sm transition-all active:scale-95 cursor-pointer"
           >
@@ -580,11 +589,9 @@ export default function SignupPage() {
       )}
 
       <div className="relative max-w-md w-full pt-4">
-        
-        {/* STEP 1: CLEAN GIF VIEW WITHOUT OUTER CARD CONTAINER */}
+
         {step === 1 ? (
           <div className="flex flex-col items-center justify-center space-y-6 py-6 z-10 relative">
-            {/* SPEECH BUBBLE WITH BLUE "I'm Otto" */}
             <div className="relative px-6 py-3.5 rounded-2xl text-center text-base sm:text-lg font-black text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-md max-w-xs">
               <span>
                 {typedText.includes("I'm Otto") ? (
@@ -603,7 +610,6 @@ export default function SignupPage() {
               <div className="speech-bubble-tail-bottom-inner"></div>
             </div>
 
-            {/* LARGER GIF ANIMATION */}
             <div className="w-full max-w-[280px] aspect-square flex items-center justify-center overflow-hidden">
               <img
                 src={introGifUrl}
@@ -612,7 +618,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* CONTINUE BUTTON - SHOWS ONLY AFTER TYPING COMPLETES */}
             {isTypingComplete && (
               <button
                 type="button"
@@ -631,10 +636,8 @@ export default function SignupPage() {
             )}
           </div>
         ) : (
-          /* STEPS 2, 3, 4: WITH OUTER CARD CONTAINER */
           <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
-            
-            {/* STEP INDICATORS */}
+
             <div className="flex items-center justify-between pb-1">
               <button
                 type="button"
@@ -683,7 +686,6 @@ export default function SignupPage() {
               </div>
             )}
 
-            {/* STEP 2: CHOOSE AVATAR */}
             {step === 2 && (
               <div className="space-y-4 pt-1">
                 <div className="grid grid-cols-4 gap-3.5 max-w-md mx-auto">
@@ -733,7 +735,6 @@ export default function SignupPage() {
               </div>
             )}
 
-            {/* STEP 3: DRAWING SKILL LEVEL */}
             {step === 3 && (
               <form onSubmit={handleNextStep} className="space-y-3 pt-1">
                 <div className="pt-1">
@@ -793,7 +794,6 @@ export default function SignupPage() {
               </form>
             )}
 
-            {/* STEP 4: NAME, USERNAME, EMAIL & PASSWORD */}
             {step === 4 && (
               <form onSubmit={handleSignup} className="space-y-3 pt-1">
                 <div className="grid grid-cols-2 gap-2.5">
@@ -925,10 +925,10 @@ export default function SignupPage() {
                   }}
                   className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {lockoutSeconds > 0 
-                    ? `LOCKED (${lockoutSeconds}s)` 
-                    : loading 
-                    ? 'CREATING...' 
+                  {lockoutSeconds > 0
+                    ? `LOCKED (${lockoutSeconds}s)`
+                    : loading
+                    ? 'CREATING...'
                     : 'CREATE ACCOUNT'}
                 </button>
               </form>

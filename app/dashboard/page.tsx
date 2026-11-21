@@ -165,67 +165,53 @@ export default function DashboardPage() {
         console.error("Dashboard profile fetch exception:", profError.message);
       }
 
-      let activeProfile: Profile;
-      const todayStr = getLocalDateString();
-
-      if (profileData) {
-        const lastLoginRaw = profileData.last_login;
-        const lastLoginStr = lastLoginRaw ? lastLoginRaw.split("T")[0] : null;
-
-        const createdAtStr = profileData.created_at ? profileData.created_at.split("T")[0] : null;
-        const isCreatedToday = createdAtStr === todayStr;
-
-        if (lastLoginStr !== todayStr) {
-          if (isCreatedToday || !lastLoginStr) {
-            const { data: updatedProfile } = await supabase
-              .from("profiles")
-              .update({
-                streak: profileData.streak || 1,
-                last_login: todayStr
-              })
-              .eq("id", user.id)
-              .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
-              .maybeSingle();
-
-            activeProfile = updatedProfile || { ...profileData, streak: profileData.streak || 1, last_login: todayStr };
-          } else {
-            const newStreak = (Number(profileData.streak) || 1) + 1;
-
-            const { data: updatedProfile } = await supabase
-              .from("profiles")
-              .update({
-                streak: newStreak,
-                last_login: todayStr
-              })
-              .eq("id", user.id)
-              .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
-              .maybeSingle();
-
-            activeProfile = updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr };
-          }
-        } else {
-          activeProfile = profileData;
+      if (!profileData) {
+        if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("isLoggedIn");
+          localStorage.removeItem("user_xp_cache");
+          router.replace("/signup");
         }
-      } else {
-        const newProfilePayload = {
-          id: user.id,
-          name: sanitizeString(user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist"),
-          username: sanitizeString(user.email?.split("@")[0] || "artist"),
-          email: user.email || "",
-          avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
-          xp: 0,
-          streak: 1,
-          last_login: todayStr,
-          created_at: new Date().toISOString()
-        };
+        return;
+      }
 
-        const { data: insertedProfile } = await supabase
-          .from("profiles")
-          .upsert(newProfilePayload)
-          .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
-          .single();
+      let activeProfile: Profile = profileData;
+      const todayStr = getLocalDateString();
+      const lastLoginRaw = profileData.last_login;
+      const lastLoginStr = lastLoginRaw ? lastLoginRaw.split("T")[0] : null;
+      const createdAtLocalStr = profileData.created_at
+        ? getLocalDateString(new Date(profileData.created_at))
+        : null;
+      const isCreatedToday = createdAtLocalStr === todayStr;
 
-        activeProfile = insertedProfile || newProfilePayload;
+      if (lastLoginStr !== todayStr) {
+        if (isCreatedToday || !lastLoginStr) {
+          const { data: updatedProfile } = await supabase
+            .from("profiles")
+            .update({
+              streak: profileData.streak || 1,
+              last_login: todayStr
+            })
+            .eq("id", user.id)
+            .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
+            .maybeSingle();
+
+          activeProfile = updatedProfile || { ...profileData, streak: profileData.streak || 1, last_login: todayStr };
+        } else {
+          const newStreak = (Number(profileData.streak) || 1) + 1;
+
+          const { data: updatedProfile } = await supabase
+            .from("profiles")
+            .update({
+              streak: newStreak,
+              last_login: todayStr
+            })
+            .eq("id", user.id)
+            .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
+            .maybeSingle();
+
+          activeProfile = updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr };
+        }
       }
 
       setProfile(activeProfile);
@@ -281,7 +267,6 @@ export default function DashboardPage() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  // Direct state + cache update without extra full dashboard fetch
   useEffect(() => {
     const handleXpUpdated = (e: Event) => {
       const customEvent = e as CustomEvent<number>;
