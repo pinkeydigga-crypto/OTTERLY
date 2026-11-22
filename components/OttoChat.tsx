@@ -11,7 +11,13 @@ interface ChatMessage {
   content: string;
 }
 
+interface OttoApiResponse {
+  reply: string;
+  limitReached?: boolean;
+}
+
 const STORAGE_KEY = "otto_single_thread_v1";
+const DAY_LIMIT_LOCK_MS = 5 * 60 * 1000; // 5 minutes
 const OTTO_HEADER_MASCOT_URL =
   "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/onboard%20(1).png";
 const OTTO_CENTER_MASCOT_URL =
@@ -24,16 +30,26 @@ const ENGLISH_STARTERS = [
   "I'm a beginner—where should I start?",
 ];
 
+function formatRemainingTime(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
 export default function OttoChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [archivedMessages, setArchivedMessages] = useState<ChatMessage[]>([]);
   const [showLoadPreviousBtn, setShowLoadPreviousBtn] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [lockUntil, setLockUntil] = useState<number | null>(null);
+  const [remainingMs, setRemainingMs] = useState(0);
   const [hydrated, setHydrated] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
 
-  // On mount / reopen: keep top hero fresh, hold saved chats behind "Load previous chats" button
+  const isSendLocked = lockUntil !== null && remainingMs > 0;
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -48,7 +64,6 @@ export default function OttoChat() {
     setHydrated(true);
   }, []);
 
-  // Persist current active session so page refreshes keep it, while fresh reopen starts with button
   useEffect(() => {
     if (!hydrated) return;
     try {
@@ -57,6 +72,27 @@ export default function OttoChat() {
       }
     } catch {}
   }, [messages, hydrated]);
+
+  useEffect(() => {
+    if (!lockUntil) {
+      setRemainingMs(0);
+      return;
+    }
+
+    const updateTimer = () => {
+      const diff = lockUntil - Date.now();
+      if (diff <= 0) {
+        setLockUntil(null);
+        setRemainingMs(0);
+      } else {
+        setRemainingMs(diff);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [lockUntil]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -69,7 +105,7 @@ export default function OttoChat() {
     setShowLoadPreviousBtn(false);
   };
 
-  const requestOttoReply = async (conversation: ChatMessage[]): Promise<string> => {
+  const requestOttoReply = async (conversation: ChatMessage[]): Promise<OttoApiResponse> => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -89,14 +125,16 @@ export default function OttoChat() {
     });
 
     const data = await res.json();
-    return data?.reply || "Give it another try in a moment.";
+    return {
+      reply: data?.reply || "Give it another try in a moment.",
+      limitReached: Boolean(data?.limitReached),
+    };
   };
 
   const sendMessage = async (presetText?: string) => {
     const cleanText = (presetText ?? input).trim();
-    if (!cleanText || sending) return;
+    if (!cleanText || sending || isSendLocked) return;
 
-    // If user sends a message without clicking "Load previous chats", wipe old saved chats
     if (showLoadPreviousBtn) {
       setArchivedMessages([]);
       setShowLoadPreviousBtn(false);
@@ -116,8 +154,13 @@ export default function OttoChat() {
     setSending(true);
 
     try {
-      const reply = await requestOttoReply(nextMessages);
+      const { reply, limitReached } = await requestOttoReply(nextMessages);
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+
+      // Lock sending button for 5 minutes right after showing the 10-chat limit message
+      if (limitReached) {
+        setLockUntil(Date.now() + DAY_LIMIT_LOCK_MS);
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -132,7 +175,7 @@ export default function OttoChat() {
   };
 
   const handleRegenerate = async (assistantIndex: number) => {
-    if (sending) return;
+    if (sending || isSendLocked) return;
 
     const priorMessages = messages.slice(0, assistantIndex);
     const hasUserPrompt = priorMessages.some((m) => m.role === "user");
@@ -142,8 +185,12 @@ export default function OttoChat() {
     setSending(true);
 
     try {
-      const reply = await requestOttoReply(priorMessages);
+      const { reply, limitReached } = await requestOttoReply(priorMessages);
       setMessages([...priorMessages, { role: "assistant", content: reply }]);
+
+      if (limitReached) {
+        setLockUntil(Date.now() + DAY_LIMIT_LOCK_MS);
+      }
     } catch {
       setMessages([
         ...priorMessages,
@@ -239,7 +286,7 @@ export default function OttoChat() {
                 <button
                   key={starter}
                   type="button"
-                  disabled={sending}
+                  disabled={sending || isSendLocked}
                   onClick={() => sendMessage(starter)}
                   className="text-xs font-bold text-[#2563EB] bg-white hover:bg-blue-50 border border-blue-200/80 px-3.5 py-2 rounded-full shadow-2xs transition cursor-pointer disabled:opacity-50"
                 >
@@ -268,9 +315,9 @@ export default function OttoChat() {
                   key={index}
                   role={msg.role}
                   content={msg.content}
-                  isRegenerating={sending}
+                  isRegenerating={sending || isSendLocked}
                   onRegenerate={
-                    msg.role === "assistant"
+                    msg.role === "assistant" && !isSendLocked
                       ? () => handleRegenerate(index)
                       : undefined
                   }
@@ -313,22 +360,30 @@ export default function OttoChat() {
 
           <button
             type="submit"
-            disabled={sending || !input.trim()}
-            aria-label="Send message"
-            className="w-11 h-11 rounded-[14px] bg-[#2563EB] hover:bg-[#1D4ED8] active:translate-y-[2px] border-b-[4px] border-[#1E40AF] active:border-b-[2px] text-white disabled:opacity-45 flex items-center justify-center transition-all cursor-pointer shrink-0"
+            disabled={sending || isSendLocked || !input.trim()}
+            aria-label={isSendLocked ? `Locked for ${formatRemainingTime(remainingMs)}` : "Send message"}
+            className={`${
+              isSendLocked ? "px-3.5 w-auto gap-1.5" : "w-11"
+            } h-11 rounded-[14px] bg-[#2563EB] hover:bg-[#1D4ED8] active:translate-y-[2px] border-b-[4px] border-[#1E40AF] active:border-b-[2px] text-white disabled:opacity-50 flex items-center justify-center transition-all cursor-pointer shrink-0`}
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-5 h-5"
-            >
-              <path d="M22 2L11 13" />
-              <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-            </svg>
+            {isSendLocked ? (
+              <span className="text-xs font-extrabold tabular-nums">
+                {formatRemainingTime(remainingMs)}
+              </span>
+            ) : (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="w-5 h-5"
+              >
+                <path d="M22 2L11 13" />
+                <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+              </svg>
+            )}
           </button>
         </form>
       </footer>
