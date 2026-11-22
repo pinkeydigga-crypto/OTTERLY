@@ -111,24 +111,20 @@ async function resolveRateKey(
   return `ip:${ip}`;
 }
 
-async function verifyAndConsumeLimit(
+async function checkUserQuotaFromSupabase(
   supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
   rateKey: string
 ): Promise<{ allowed: boolean; message?: string; status?: number }> {
   const todayStr = getTodayLocalDate();
   const currentMinuteBucket = Math.floor(Date.now() / 60000);
 
-  const { data, error } = await supabase
-    .rpc("consume_otto_chat_quota", {
-      p_rate_key: rateKey,
-      p_day_date: todayStr,
-      p_minute_bucket: currentMinuteBucket,
-      p_max_per_day: MAX_PER_DAY,
-      p_max_per_minute: MAX_PER_MINUTE,
-    })
-    .single<{ allowed: boolean; reason: string }>();
+  const { data: row, error } = await supabase
+    .from("otto_chat_usage")
+    .select("day_date, day_count, minute_bucket, minute_count")
+    .eq("rate_key", rateKey)
+    .maybeSingle();
 
-  if (error || !data) {
+  if (error) {
     return {
       allowed: false,
       message: "Otto failed to give response, try again later (102)",
@@ -136,8 +132,12 @@ async function verifyAndConsumeLimit(
     };
   }
 
-  if (!data.allowed) {
-    if (data.reason === "day_limit") {
+  if (row && row.day_date === todayStr) {
+    const dayCount = Number(row.day_count) || 0;
+    const minuteCount =
+      Number(row.minute_bucket) === currentMinuteBucket ? Number(row.minute_count) || 0 : 0;
+
+    if (dayCount >= MAX_PER_DAY) {
       return {
         allowed: false,
         message:
@@ -146,14 +146,49 @@ async function verifyAndConsumeLimit(
       };
     }
 
-    return {
-      allowed: false,
-      message: "Give it just a minute and try again 😊",
-      status: 429,
-    };
+    if (minuteCount >= MAX_PER_MINUTE) {
+      return {
+        allowed: false,
+        message: "Give it just a minute and try again 😊",
+        status: 429,
+      };
+    }
   }
 
   return { allowed: true };
+}
+
+async function incrementUserQuotaAfterReply(
+  supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+  rateKey: string
+): Promise<void> {
+  const todayStr = getTodayLocalDate();
+  const currentMinuteBucket = Math.floor(Date.now() / 60000);
+
+  const { data: row } = await supabase
+    .from("otto_chat_usage")
+    .select("day_date, day_count, minute_bucket, minute_count")
+    .eq("rate_key", rateKey)
+    .maybeSingle();
+
+  const sameDay = row?.day_date === todayStr;
+  const nextDayCount = sameDay ? (Number(row?.day_count) || 0) + 1 : 1;
+  const nextMinuteCount =
+    sameDay && Number(row?.minute_bucket) === currentMinuteBucket
+      ? (Number(row?.minute_count) || 0) + 1
+      : 1;
+
+  await supabase.from("otto_chat_usage").upsert(
+    {
+      rate_key: rateKey,
+      day_date: todayStr,
+      day_count: nextDayCount,
+      minute_bucket: currentMinuteBucket,
+      minute_count: nextMinuteCount,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "rate_key" }
+  );
 }
 
 async function askGroq(messages: Array<{ role: string; content: string }>): Promise<string | null> {
@@ -247,12 +282,13 @@ export async function POST(req: NextRequest) {
     }
 
     const rateKey = await resolveRateKey(req, supabase);
-    const limitCheck = await verifyAndConsumeLimit(supabase, rateKey);
+    const quota = await checkUserQuotaFromSupabase(supabase, rateKey);
 
-    if (!limitCheck.allowed) {
+    // 10+ chats reached -> return automated message immediately without calling Groq or Gemini
+    if (!quota.allowed) {
       return NextResponse.json(
-        { reply: limitCheck.message, limitReached: true },
-        { status: limitCheck.status || 429 }
+        { reply: quota.message, limitReached: true },
+        { status: quota.status || 429 }
       );
     }
 
@@ -266,6 +302,9 @@ export async function POST(req: NextRequest) {
     if (!reply) {
       return ottoErrorReply("104", 502);
     }
+
+    // Increment count by +1 from whatever value is currently in Supabase after reply succeeds
+    await incrementUserQuotaAfterReply(supabase, rateKey);
 
     return NextResponse.json({ reply });
   } catch {
