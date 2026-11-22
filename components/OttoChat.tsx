@@ -114,21 +114,31 @@ export default function OttoChat() {
   return (
     <div className="fixed inset-0 z-50 w-full h-dvh bg-[#FAFBFD] flex flex-col overflow-hidden">
       <style jsx>{`
-        @keyframes ottoGentleJump {
-          0%,
-          100% {
-            transform: translateY(0px);
-            opacity: 0.75;
+        @keyframes ottoShinySweep {
+          0% {
+            background-position: 180% center;
           }
-          50% {
-            transform: translateY(-4px);
-            opacity: 1;
+          100% {
+            background-position: -80% center;
           }
         }
-        .otto-thinking-jump {
+        .otto-thinking-shiny {
           display: inline-block;
-          animation: ottoGentleJump 1.1s ease-in-out infinite;
-          will-change: transform, opacity;
+          background: linear-gradient(
+            90deg,
+            #64748b 0%,
+            #64748b 35%,
+            #ffffff 50%,
+            #2563eb 58%,
+            #64748b 72%,
+            #64748b 100%
+          );
+          background-size: 240% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+          animation: ottoShinySweep 1.8s linear infinite;
+          will-change: background-position;
         }
       `}</style>
 
@@ -201,8 +211,8 @@ export default function OttoChat() {
 
               {sending && (
                 <div className="flex justify-start">
-                  <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-500 shadow-2xs">
-                    <span className="otto-thinking-jump">Otto is thinking...</span>
+                  <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl text-xs font-bold shadow-2xs">
+                    <span className="otto-thinking-shiny">Otto is thinking...</span>
                   </div>
                 </div>
               )}
