@@ -3,7 +3,11 @@ import { createClient } from "@supabase/supabase-js";
 
 export const maxDuration = 60;
 
-const apiKey = process.env.GEMINI_API_KEY || "";
+const GEMINI_SCAN_KEYS = [
+  process.env.GEMINI_API_KEY,
+  process.env.GEMINI_SCAN_BACKUP_API_KEY,
+].filter((k): k is string => Boolean(k && k.trim()));
+
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -98,7 +102,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Prefer verified user from Bearer token if provided; fallback to body.userId for simple flow compatibility
     let verifiedUserId: string | null = null;
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
 
@@ -154,9 +157,9 @@ export async function POST(req: Request) {
       }
     }
 
-    if (!apiKey) {
+    if (GEMINI_SCAN_KEYS.length === 0) {
       return NextResponse.json(
-        { isDrawing: false, message: "Something went wrong. Please try again later. (#102)", errorCode: "#102" },
+        { isDrawing: false, message: "Otto scan failed.", errorCode: "#102" },
         { status: 500 }
       );
     }
@@ -185,7 +188,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Strict size check on decoded binary + base64 length
     const approxBase64Bytes = Math.floor((base64Data.length * 3) / 4);
     if (approxBase64Bytes > MAX_IMAGE_BYTES) {
       return NextResponse.json(
@@ -214,11 +216,11 @@ export async function POST(req: Request) {
       Analyze the uploaded artwork in detail using rich, descriptive, and professional yet simple English. Make the points descriptive and detailed.
 
       SCORING CRITERIA:
-      - 0-30: Rough/scribbled.
-      - 31-50: Beginner level.
-      - 51-70: Intermediate attempt.
-      - 71-88: Skilled artwork.
-      - 89-100: Exceptional / Masterpiece.
+- 0-30: Rough/scribbled.
+- 31-50: Beginner level.
+- 51-70: Intermediate attempt.
+- 71-88: Skilled artwork.
+- 89-100: Exceptional / Masterpiece.
 
       VALIDATION RULE:
       If not related to art/drawing/design:
@@ -251,57 +253,56 @@ export async function POST(req: Request) {
 
     let jsonResult: Record<string, unknown> | null = null;
 
-    modelLoop: for (const modelName of MODELS_TO_TRY) {
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
+    keyLoop: for (const currentKey of GEMINI_SCAN_KEYS) {
+      for (const modelName of MODELS_TO_TRY) {
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-          const apiResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
-            {
-              method: "POST",
-              signal: controller.signal,
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    parts: [
-                      { text: promptText },
-                      { inlineData: { mimeType: mimeType, data: base64Data } },
-                    ],
+            const apiResponse = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(currentKey)}`,
+              {
+                method: "POST",
+                signal: controller.signal,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [
+                    {
+                      parts: [
+                        { text: promptText },
+                        { inlineData: { mimeType: mimeType, data: base64Data } },
+                      ],
+                    },
+                  ],
+                  generationConfig: {
+                    responseMimeType: "application/json",
+                    temperature: 0.3,
                   },
-                ],
-                generationConfig: {
-                  responseMimeType: "application/json",
-                  temperature: 0.3,
-                },
-              }),
-            }
-          ).finally(() => clearTimeout(timeoutId));
+                }),
+              }
+            ).finally(() => clearTimeout(timeoutId));
 
-          if (apiResponse.ok) {
-            const data = await apiResponse.json();
-            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (rawText) {
-              const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
-              jsonResult = JSON.parse(cleanJsonText);
-              break modelLoop;
+            if (apiResponse.ok) {
+              const data = await apiResponse.json();
+              const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (rawText) {
+                const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
+                jsonResult = JSON.parse(cleanJsonText);
+                break keyLoop;
+              }
+            } else {
+              if (attempt === 1) await sleep(500);
             }
-          } else {
+          } catch {
             if (attempt === 1) await sleep(500);
           }
-        } catch {
-          if (attempt === 1) await sleep(500);
         }
       }
     }
 
     if (!jsonResult) {
-      return NextResponse.json(
-        { isDrawing: false, message: "Something went wrong. Please try again. (#108)", errorCode: "#108" },
-        { status: 502 }
-      );
+      throw new Error("Otto scan failed.");
     }
 
     const isDrawingValid =
@@ -323,10 +324,14 @@ export async function POST(req: Request) {
 
     return NextResponse.json(jsonResult, { status: 200 });
 
-  } catch {
+  } catch (err) {
+    const errorMsg = err instanceof Error && err.message === "Otto scan failed."
+      ? "Otto scan failed."
+      : "Otto scan failed.";
+
     return NextResponse.json(
-      { isDrawing: false, message: "Something went wrong. Please try again. (#500)", errorCode: "#500" },
+      { isDrawing: false, message: errorMsg, errorCode: "#500" },
       { status: 500 }
     );
   }
-} 
+}

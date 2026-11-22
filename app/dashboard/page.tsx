@@ -21,7 +21,6 @@ import {
   PanelLeft,
   ChevronRight,
   Palette,
-  Grid,
   ArrowRight,
   Sparkles,
   MoreHorizontal,
@@ -40,6 +39,12 @@ interface Profile {
   created_at?: string;
 }
 
+const CHAT_NAV_ICON_URL =
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chatnav.png";
+
+const PRACTICE_CARD_IMAGE_URL =
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/DRAW%20OTTO.png";
+
 const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -55,8 +60,10 @@ export default function DashboardPage() {
   const router = useRouter();
   const isOffline = useOfflineGuard();
 
-  const welcomeMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+  const welcomeMascotUrl =
+    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/otto%20dahsbaord%20mascot.png";
+  const logoUrl =
+    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -82,7 +89,9 @@ export default function DashboardPage() {
     if (typeof window === "undefined") return;
 
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof window.AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
 
       if (!audioCtxRef.current || (audioCtxRef.current.state as string) === "closed") {
@@ -137,7 +146,9 @@ export default function DashboardPage() {
     isFetchingRef.current = true;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
 
       if (!user) {
@@ -190,13 +201,17 @@ export default function DashboardPage() {
             .from("profiles")
             .update({
               streak: profileData.streak || 1,
-              last_login: todayStr
+              last_login: todayStr,
             })
             .eq("id", user.id)
             .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
             .maybeSingle();
 
-          activeProfile = updatedProfile || { ...profileData, streak: profileData.streak || 1, last_login: todayStr };
+          activeProfile = updatedProfile || {
+            ...profileData,
+            streak: profileData.streak || 1,
+            last_login: todayStr,
+          };
         } else {
           const newStreak = (Number(profileData.streak) || 1) + 1;
 
@@ -204,13 +219,17 @@ export default function DashboardPage() {
             .from("profiles")
             .update({
               streak: newStreak,
-              last_login: todayStr
+              last_login: todayStr,
             })
             .eq("id", user.id)
             .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
             .maybeSingle();
 
-          activeProfile = updatedProfile || { ...profileData, streak: newStreak, last_login: todayStr };
+          activeProfile = updatedProfile || {
+            ...profileData,
+            streak: newStreak,
+            last_login: todayStr,
+          };
         }
       }
 
@@ -254,7 +273,6 @@ export default function DashboardPage() {
 
       const exactRank = (higherXpCount || 0) + sameXpTieCount + 1;
       setUserRank(`#${exactRank}`);
-
     } catch (err: unknown) {
       console.error("Dashboard processing error:", err);
     } finally {
@@ -307,7 +325,7 @@ export default function DashboardPage() {
       description: "Ready to improve your drawing today?",
       buttonText: null,
       buttonPath: null,
-      mascot: welcomeMascotUrl
+      mascot: welcomeMascotUrl,
     },
     {
       isWelcome: false,
@@ -315,8 +333,8 @@ export default function DashboardPage() {
       description: "Step-by-step drawing challenges & earn XP.",
       buttonText: "Start Challenge",
       buttonPath: "/challenges",
-      mascot: welcomeMascotUrl
-    }
+      mascot: welcomeMascotUrl,
+    },
   ];
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
@@ -350,14 +368,13 @@ export default function DashboardPage() {
   const navItems = [
     { name: "Dashboard", path: "/dashboard", active: true, icon: LayoutDashboard },
     { name: "Tools", path: "/tools", icon: Sparkles },
-    { name: "Practice", path: "/practice", icon: Palette },
-    { name: "Grid Maker", path: "/grid-maker", icon: Grid },
+    { name: "Otto Chat", path: "/otto-chat", customIconUrl: CHAT_NAV_ICON_URL },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
     { name: "Learning Path", path: "/learning-path", icon: Compass },
     { name: "Profile", path: "/profile", icon: User },
-    { name: "Settings", path: "/settings", icon: Settings }
+    { name: "Settings", path: "/settings", icon: Settings },
   ];
 
   const mobileGamifiedNav = [
@@ -365,50 +382,49 @@ export default function DashboardPage() {
       path: "/dashboard",
       label: "Home",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/HOME.png",
-      sizeClass: "w-[26px] h-[26px]"
+      sizeClass: "w-[26px] h-[26px]",
     },
     {
       path: "/challenges",
       label: "Challenges",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/SWORD.png",
-      sizeClass: "w-[26px] h-[26px]"
+      sizeClass: "w-[26px] h-[26px]",
     },
     {
-      path: "/practice",
-      label: "Practice",
-      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/PAINT.png",
-      sizeClass: "w-[26px] h-[26px]"
+      path: "/otto-chat",
+      label: "Otto Chat",
+      iconUrl: CHAT_NAV_ICON_URL,
+      sizeClass: "w-[26px] h-[26px]",
     },
     {
       path: "/scan",
       label: "Scan",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/EYES%20NAV.png",
-      sizeClass: "w-[30px] h-[30px]"
+      sizeClass: "w-[30px] h-[30px]",
     },
     {
       path: "/leaderboard",
       label: "Leaderboard",
-      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
-      sizeClass: "w-[30px] h-[30px]"
+      iconUrl:
+        "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
+      sizeClass: "w-[30px] h-[30px]",
     },
     {
       path: "/tools",
       label: "Tools",
       isCustomIcon: true,
-      sizeClass: "w-[26px] h-[26px]"
-    }
+      sizeClass: "w-[26px] h-[26px]",
+    },
   ];
 
   const currentSlideData = slidesData[currentSlide];
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-24 md:pb-0 font-sans overflow-x-hidden relative">
-
       {showStreakPopup && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] max-w-sm w-full overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 border border-slate-100">
             <div className="relative bg-[#0D47A1] pt-6 pb-4 px-6 flex items-center justify-between overflow-hidden shadow-inner">
-
               <Star className="absolute top-2.5 left-4 w-4 h-4 text-amber-200 fill-amber-200 opacity-90 pointer-events-none animate-pulse" />
               <Star className="absolute bottom-2 left-[18%] w-3.5 h-3.5 text-yellow-300 fill-yellow-300 opacity-80 pointer-events-none" />
               <Star className="absolute top-3 left-[34%] w-3 h-3 text-orange-300 fill-orange-300 opacity-85 pointer-events-none" />
@@ -534,7 +550,15 @@ export default function DashboardPage() {
                           : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
-                      <Icon className="w-5 h-5 shrink-0" />
+                      {item.customIconUrl ? (
+                        <img
+                          src={item.customIconUrl}
+                          alt={item.name}
+                          className="w-5 h-5 object-contain shrink-0"
+                        />
+                      ) : (
+                        Icon && <Icon className="w-5 h-5 shrink-0" />
+                      )}
                       <span>{item.name}</span>
                     </Link>
                   );
@@ -584,7 +608,15 @@ export default function DashboardPage() {
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <Icon className="w-5 h-5 shrink-0" />
+                  {item.customIconUrl ? (
+                    <img
+                      src={item.customIconUrl}
+                      alt={item.name}
+                      className="w-5 h-5 object-contain shrink-0"
+                    />
+                  ) : (
+                    Icon && <Icon className="w-5 h-5 shrink-0" />
+                  )}
                   <span>{item.name}</span>
                 </Link>
               );
@@ -727,31 +759,29 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-[#F0F6FF] border-2 border-blue-200/80 text-slate-900 p-6 sm:p-9 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-row items-center justify-between gap-4">
-          <div className="absolute top-0 right-0 overflow-hidden w-28 h-28 pointer-events-none z-30">
-            <div className="absolute transform rotate-45 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest py-1 right-[-35px] top-[22px] w-[120px] text-center shadow-md">
-              NEW
-            </div>
-          </div>
-
           <div className="space-y-3 max-w-[62%] sm:max-w-lg z-10">
             <h2 className="text-xl sm:text-3xl font-black leading-tight text-[#0F172A]">
-              Grid Maker for Artists
+              Practice Drawing Canvas
             </h2>
             <p className="text-xs sm:text-sm font-semibold text-slate-600 leading-relaxed">
-              Overlay precise grid lines onto your reference photos to master proportions and make accurate drawings effortlessly!
+              Warm up your strokes, test shading techniques, and sketch freely on the practice canvas every day!
             </p>
             <div className="pt-1">
               <Link
-                href="/grid-maker"
+                href="/practice"
                 onClick={triggerHaptic}
                 className="inline-flex items-center gap-1.5 bg-[#2563EB] text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-700 active:border-b-0 active:translate-y-1 transition-all shadow-md"
               >
-                Open Grid Maker <Grid className="w-4 h-4 stroke-[2.5]" />
+                Open Practice <Palette className="w-4 h-4 stroke-[2.5]" />
               </Link>
             </div>
           </div>
-          <div className="w-20 h-20 sm:w-28 sm:h-28 bg-blue-100/80 rounded-3xl shrink-0 z-10 flex items-center justify-center border border-blue-200">
-            <Grid className="w-10 h-10 sm:w-14 sm:h-14 text-blue-600" />
+          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-blue-100/80 rounded-3xl shrink-0 z-10 flex items-center justify-center border border-blue-200 overflow-hidden p-1.5">
+            <img
+              src={PRACTICE_CARD_IMAGE_URL}
+              alt="Practice Drawing Canvas"
+              className="w-full h-full object-contain"
+            />
           </div>
         </div>
       </main>
@@ -771,9 +801,13 @@ export default function DashboardPage() {
                     aria-label={item.label}
                     className="group relative w-full h-full flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-150 pointer-events-auto"
                   >
-                    <div className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
-                      isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[48px] h-[36px]" : "w-[38px] h-[38px]"
-                    }`}>
+                    <div
+                      className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
+                        isActive
+                          ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[48px] h-[36px]"
+                          : "w-[38px] h-[38px]"
+                      }`}
+                    >
                       <div className="relative flex items-center justify-center w-full h-full">
                         {item.isCustomIcon ? (
                           <MoreHorizontal className="w-6 h-6 text-slate-700 drop-shadow-sm select-none" />
@@ -793,7 +827,6 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -7,7 +7,7 @@ import PracticeCanvas from "@/components/PracticeCanvas";
 import { 
   Download, RotateCcw, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, PanelLeft,
-  X, Palette, Grid, ShieldAlert, AlertCircle, Sparkles, MoreHorizontal
+  X, ShieldAlert, AlertCircle, Sparkles, MoreHorizontal
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -16,9 +16,13 @@ import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 interface NavItem {
   name: string;
   path: string;
-  icon: React.ElementType;
+  icon?: React.ElementType;
+  customIconUrl?: string;
   active?: boolean;
 }
+
+const CHAT_NAV_ICON_URL =
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chatnav.png";
 
 export default function PracticePage() {
   const isOffline = useOfflineGuard();
@@ -187,8 +191,7 @@ export default function PracticePage() {
   const desktopNavItems: NavItem[] = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     { name: "Tools", path: "/tools", icon: Sparkles },
-    { name: "Practice", path: "/practice", active: true, icon: Palette },
-    { name: "Grid Maker", path: "/grid-maker", icon: Grid },
+    { name: "Otto Chat", path: "/otto-chat", customIconUrl: CHAT_NAV_ICON_URL },
     { name: "Challenges", path: "/challenges", icon: Swords },
     { name: "Scan", path: "/scan", icon: Scan },
     { name: "Leaderboard", path: "/leaderboard", icon: Trophy },
@@ -211,9 +214,9 @@ export default function PracticePage() {
       sizeClass: "w-[26px] h-[26px]"
     },
     {
-      path: "/practice",
-      label: "Practice",
-      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/PAINT.png",
+      path: "/otto-chat",
+      label: "Otto Chat",
+      iconUrl: CHAT_NAV_ICON_URL,
       sizeClass: "w-[26px] h-[26px]"
     },
     {
@@ -352,7 +355,15 @@ export default function PracticePage() {
                           : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
-                      <Icon className="w-5 h-5 shrink-0" />
+                      {item.customIconUrl ? (
+                        <img
+                          src={item.customIconUrl}
+                          alt={item.name}
+                          className="w-5 h-5 object-contain shrink-0"
+                        />
+                      ) : (
+                        Icon && <Icon className="w-5 h-5 shrink-0" />
+                      )}
                       <span>{item.name}</span>
                     </Link>
                   );
@@ -392,7 +403,15 @@ export default function PracticePage() {
                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <Icon className="w-5 h-5 shrink-0" />
+                  {item.customIconUrl ? (
+                    <img
+                      src={item.customIconUrl}
+                      alt={item.name}
+                      className="w-5 h-5 object-contain shrink-0"
+                    />
+                  ) : (
+                    Icon && <Icon className="w-5 h-5 shrink-0" />
+                  )}
                   <span>{item.name}</span>
                 </Link>
               );

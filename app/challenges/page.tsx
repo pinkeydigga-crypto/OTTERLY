@@ -1586,9 +1586,9 @@ export default function ChallengesPage() {
       sizeClass: "w-[26px] h-[26px]"
     },
     {
-      path: "/practice",
-      label: "Practice",
-      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/PAINT.png",
+      path: "/otto-chat",
+      label: "Otto Chat",
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chatnav.png",
       sizeClass: "w-[26px] h-[26px]"
     },
     {
