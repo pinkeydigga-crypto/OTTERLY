@@ -6,12 +6,12 @@ export const maxDuration = 30;
 const MAX_PER_MINUTE = 2;
 const MAX_PER_DAY = 8;
 const MAX_HISTORY = 4;
-const MAX_OUTPUT_TOKENS = 220;
+const MAX_OUTPUT_TOKENS = 550;
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GEMINI_CHAT_API_KEY = process.env.GEMINI_CHAT_API_KEY || "";
 
-const OTTO_SYSTEM_PROMPT = `You are Otto, Otterleo's friendly drawing mentor. Always reply ONLY in clear, natural English. Never use Hindi or Hinglish. Keep replies short, practical, and token-light.
+const OTTO_SYSTEM_PROMPT = `You are Otto, Otterleo's friendly drawing mentor. Always reply ONLY in clear, natural English. Never use Hindi or Hinglish. Keep every reply short, crisp, and complete (around 3-5 short bullet points or a brief paragraph) so it finishes cleanly within token limits and never cuts off mid-sentence. Never use markdown tables.
 
 APP FACTS YOU KNOW:
 - Dashboard (/dashboard): Shows Total XP, Current Streak (days), Your Rank, and XP Wheel.
