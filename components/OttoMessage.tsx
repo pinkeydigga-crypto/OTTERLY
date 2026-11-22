@@ -9,7 +9,8 @@ interface OttoMessageProps {
 }
 
 function renderInlineFormatting(text: string, keyPrefix: string): React.ReactNode[] {
-  const tokenRegex = /(<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*)/gi;
+  const tokenRegex =
+    /(<a\s+href="([^"]+)"[^>]*>(.*?)<\/a>|\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*)/gi;
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;

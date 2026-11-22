@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import OttoMessage from "@/components/OttoMessage";
-import { Send, MessageSquare } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -11,14 +12,16 @@ interface ChatMessage {
 }
 
 const STORAGE_KEY = "otto_single_thread_v1";
-const OTTO_MASCOT_URL =
+const OTTO_HEADER_MASCOT_URL =
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/onboard%20(1).png";
+const OTTO_CENTER_MASCOT_URL =
   "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chat.jpeg";
 
 const ENGLISH_STARTERS = [
   "How do I shade a sphere smoothly?",
   "Tips for getting face proportions right",
   "Where can I practice sketching right now?",
-  "How do I check my streak and XP?",
+  "I'm a beginner—where should I start?",
 ];
 
 export default function OttoChat() {
@@ -90,7 +93,7 @@ export default function OttoChat() {
         ...prev,
         {
           role: "assistant",
-          content: data?.reply || "Give it another try in a moment!",
+          content: data?.reply || "Give it another try in a moment! 🎨",
         },
       ]);
     } catch {
@@ -98,7 +101,7 @@ export default function OttoChat() {
         ...prev,
         {
           role: "assistant",
-          content: "Couldn't reach Otto right now. Please try again shortly!",
+          content: "Couldn't reach Otto right now. Please try again shortly! 🤍",
         },
       ]);
     } finally {
@@ -109,126 +112,147 @@ export default function OttoChat() {
   const hasStartedChat = messages.length > 0;
 
   return (
-    <div className="w-full max-w-2xl mx-auto bg-white border border-slate-200/90 rounded-[2rem] shadow-sm overflow-hidden flex flex-col min-h-[600px] h-[calc(100vh-170px)] max-h-[720px]">
+    <div className="fixed inset-0 z-50 w-full h-dvh bg-[#FAFBFD] flex flex-col overflow-hidden">
       <style jsx>{`
-        @keyframes ottoBlurReveal {
-          0% {
-            filter: blur(5px);
-            opacity: 0.45;
-            transform: translateY(2px);
-          }
-          45% {
-            filter: blur(0px);
-            opacity: 1;
-            transform: translateY(0);
-          }
-          80% {
-            filter: blur(0px);
-            opacity: 0.95;
-          }
+        @keyframes ottoGentleJump {
+          0%,
           100% {
-            filter: blur(5px);
-            opacity: 0.45;
-            transform: translateY(2px);
+            transform: translateY(0px);
+            opacity: 0.75;
+          }
+          50% {
+            transform: translateY(-4px);
+            opacity: 1;
           }
         }
-        .otto-thinking-blur {
-          animation: ottoBlurReveal 1.6s ease-in-out infinite;
-          will-change: filter, opacity, transform;
+        .otto-thinking-jump {
+          display: inline-block;
+          animation: ottoGentleJump 1.1s ease-in-out infinite;
+          will-change: transform, opacity;
         }
       `}</style>
 
-      <div className="px-6 py-4 border-b border-slate-100 bg-white flex items-center gap-3.5 shrink-0">
-        <div className="w-11 h-11 rounded-2xl bg-blue-50 text-[#2563EB] flex items-center justify-center shrink-0">
-          <MessageSquare className="w-5 h-5 fill-[#2563EB]/15" />
-        </div>
-        <div>
-          <h1 className="text-xl font-black text-[#0F172A] leading-tight">Chat</h1>
-          <p className="text-xs font-medium text-slate-500">
-            Ask questions, get help and improve your drawings!
-          </p>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-5 py-6 bg-[#FAFBFD] flex flex-col">
-        {!hasStartedChat ? (
-          <div className="my-auto flex flex-col items-center text-center max-w-md mx-auto space-y-4 py-4">
-            <div className="w-40 h-40 sm:w-44 sm:h-44 rounded-3xl overflow-hidden flex items-center justify-center">
-              <img
-                src={OTTO_MASCOT_URL}
-                alt="Otto Drawing Mentor"
-                className="w-full h-full object-contain select-none"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
-                Start a Conversation!
-              </h2>
-              <p className="text-xs sm:text-sm font-medium text-slate-500 leading-relaxed">
-                Ask anything about drawing, get AI help or discuss your art.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap justify-center gap-2 pt-1">
-              {ENGLISH_STARTERS.map((starter) => (
-                <button
-                  key={starter}
-                  type="button"
-                  disabled={sending}
-                  onClick={() => sendMessage(starter)}
-                  className="text-xs font-bold text-[#2563EB] bg-blue-50/90 hover:bg-blue-100 border border-blue-200/70 px-3.5 py-2 rounded-full transition cursor-pointer disabled:opacity-50"
-                >
-                  {starter}
-                </button>
-              ))}
+      {/* Top Header: Mascot + Otto on Left, Back to Home Pill on Right */}
+      <header className="w-full px-4 sm:px-8 py-3 bg-white border-b border-slate-200/80 shrink-0">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <img
+              src={OTTO_HEADER_MASCOT_URL}
+              alt="Otto"
+              className="w-9 h-9 rounded-xl object-cover border border-blue-200 bg-white"
+            />
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm sm:text-base font-black text-[#0F172A]">Otto</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
             </div>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {messages.map((msg, index) => (
-              <OttoMessage key={index} role={msg.role} content={msg.content} />
-            ))}
 
-            {sending && (
-              <div className="flex justify-start">
-                <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-500">
-                  <span className="inline-block otto-thinking-blur">Otto is thinking...</span>
-                </div>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-700 hover:text-[#2563EB] bg-slate-100/90 hover:bg-blue-50 px-4 py-2 rounded-full transition"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Home</span>
+          </Link>
+        </div>
+      </header>
+
+      {/* Full-Screen Scrollable Chat Stream */}
+      <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 flex flex-col">
+        <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col">
+          {!hasStartedChat ? (
+            <div className="my-auto flex flex-col items-center text-center max-w-md mx-auto space-y-5 py-6">
+              <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-3xl overflow-hidden bg-white p-2 shadow-xs border border-slate-100 flex items-center justify-center">
+                <img
+                  src={OTTO_CENTER_MASCOT_URL}
+                  alt="Otto Drawing Mentor"
+                  className="w-full h-full object-contain select-none"
+                />
               </div>
-            )}
-          </div>
-        )}
-        <div ref={endRef} />
-      </div>
 
-      <div className="p-3.5 bg-white border-t border-slate-100 shrink-0">
+              <div className="space-y-1.5">
+                <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight">
+                  Hey! Let&apos;s level up your art 🎨
+                </h1>
+                <p className="text-xs sm:text-sm font-medium text-slate-500 leading-relaxed">
+                  Tell me your skill level or ask any sketching question—I&apos;ll guide you step by step!
+                </p>
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-2 pt-1">
+                {ENGLISH_STARTERS.map((starter) => (
+                  <button
+                    key={starter}
+                    type="button"
+                    disabled={sending}
+                    onClick={() => sendMessage(starter)}
+                    className="text-xs font-bold text-[#2563EB] bg-white hover:bg-blue-50 border border-blue-200/80 px-3.5 py-2 rounded-full shadow-2xs transition cursor-pointer disabled:opacity-50"
+                  >
+                    {starter}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3.5 pb-2">
+              {messages.map((msg, index) => (
+                <OttoMessage key={index} role={msg.role} content={msg.content} />
+              ))}
+
+              {sending && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-500 shadow-2xs">
+                    <span className="otto-thinking-jump">Otto is thinking...</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+      </main>
+
+      {/* Bottom Card Input (No Mic / No Image Icon, 3D Blue Send Button) */}
+      <footer className="w-full px-4 sm:px-6 py-3 bg-[#FAFBFD] shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             sendMessage();
           }}
-          className="flex items-center gap-2.5 bg-white border border-blue-200/90 rounded-full pl-4 pr-1.5 py-1.5 shadow-2xs focus-within:ring-2 focus-within:ring-[#2563EB]/30"
+          className="max-w-3xl mx-auto flex items-center gap-3 bg-white border border-slate-200/90 rounded-[22px] p-2 shadow-sm focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-[#2563EB]/15 transition"
         >
-          <MessageSquare className="w-4 h-4 text-slate-400 shrink-0" />
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={sending}
-            placeholder="Type your message..."
-            className="flex-1 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none py-1.5"
-          />
+          <div className="flex-1 bg-[#F1F3F6] rounded-full px-4 py-2.5 flex items-center">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={sending}
+              placeholder="Ask anything..."
+              className="w-full bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none"
+            />
+          </div>
+
           <button
             type="submit"
             disabled={sending || !input.trim()}
             aria-label="Send message"
-            className="w-9 h-9 rounded-full bg-[#2563EB] hover:bg-blue-700 text-white disabled:opacity-45 flex items-center justify-center transition cursor-pointer shrink-0"
+            className="w-11 h-11 rounded-[14px] bg-[#2563EB] hover:bg-[#1D4ED8] active:translate-y-[2px] border-b-[4px] border-[#1E40AF] active:border-b-[2px] text-white disabled:opacity-45 flex items-center justify-center transition-all cursor-pointer shrink-0"
           >
-            <Send className="w-4 h-4" />
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-5 h-5"
+            >
+              <path d="M22 2L11 13" />
+              <path d="M22 2L15 22L11 13L2 9L22 2Z" />
+            </svg>
           </button>
         </form>
-      </div>
+      </footer>
     </div>
   );
 }

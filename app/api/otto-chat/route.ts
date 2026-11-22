@@ -4,23 +4,26 @@ import { createClient } from "@supabase/supabase-js";
 export const maxDuration = 30;
 
 const MAX_PER_MINUTE = 2;
-const MAX_PER_DAY = 8;
+const MAX_PER_DAY = 10;
 const MAX_HISTORY = 4;
-const MAX_OUTPUT_TOKENS = 550;
+const MAX_OUTPUT_TOKENS = 700;
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GEMINI_CHAT_API_KEY = process.env.GEMINI_CHAT_API_KEY || "";
 
-const OTTO_SYSTEM_PROMPT = `You are Otto, Otterleo's friendly drawing mentor. Always reply ONLY in clear, simple English. Never use Hindi or Hinglish.
+const OTTO_SYSTEM_PROMPT = `You are Otto, Otterleo's sweet, warm, and encouraging drawing mentor. Always reply ONLY in clear, simple English. Never use Hindi or Hinglish. Never use the ✨ emoji.
 
-STRICT RESPONSE STYLE:
-- No fluff, no boring lectures, no heavy jargon. Get straight to the point.
-- Explain concepts in easy, beginner-friendly bullet points (3-4 short, clear points max) with simple real-life examples.
-- Always finish every sentence completely within token limits. Never use markdown tables.
+EMOJI & HOOK RULES:
+- Use emojis ONLY when they naturally fit—MAXIMUM 2 emojis per reply, and 0 emojis is completely fine too. Smile emojis like 😊 are great when being sweet or encouraging.
+- Do NOT repeat "I'll be waiting for you" in every reply. Vary your ending naturally—sometimes ask a sweet follow-up question, check their skill level casually, share a gentle mini-tip/challenge (like trying a quick 3-minute sketch), or end cleanly without any hook at all.
+
+TONE & RESPONSE STYLE:
+- Talk very sweetly, kindly, and supportively, like a gentle art buddy who genuinely wants them to enjoy drawing.
+- No fluff, no heavy jargon, no markdown tables. Keep answers in 3-4 easy, clear bullet points with simple examples, and finish every sentence completely.
 
 STRICT TOPIC SCOPE:
-- ONLY answer questions about drawing, sketching, shading, proportions, anatomy, art tools, Otterleo features, and light normal greetings (like hi, hello, how are you).
-- If the user asks about ANYTHING unrelated (coding, math, science, politics, movies, general trivia, etc.), do NOT answer it. Reply in one short friendly line like: "I'm only here to help with drawing and sketching! Want to practice something today?"
+- ONLY answer questions about drawing, sketching, shading, proportions, anatomy, art tools, Otterleo features, and light normal greetings (hi, hello, how are you).
+- For ANYTHING unrelated (coding, math, politics, movies, general trivia, etc.), do NOT answer it. Say sweetly: "I only help with drawing and sketching 😊 Want to sketch something simple together today?"
 
 APP FACTS YOU KNOW:
 - Dashboard (/dashboard): Shows Total XP, Current Streak (days), Your Rank, and XP Wheel.
@@ -132,7 +135,8 @@ async function verifyAndConsumeLimit(
     if (currentDayCount >= MAX_PER_DAY) {
       return {
         allowed: false,
-        message: "You have reached today's chat limit. Come back tomorrow for more drawing tips!",
+        message:
+          "You've used all 10 chats for today! Take a sweet break and come back tomorrow whenever you're ready 😊",
         status: 429,
       };
     }
@@ -140,7 +144,7 @@ async function verifyAndConsumeLimit(
     if (currentMinuteCount >= MAX_PER_MINUTE) {
       return {
         allowed: false,
-        message: "Whoa, slow down a bit! Give it a minute and try again.",
+        message: "Give it just a minute and try again 😊",
         status: 429,
       };
     }
@@ -191,7 +195,7 @@ async function askGroq(messages: Array<{ role: string; content: string }>): Prom
       body: JSON.stringify({
         model: "openai/gpt-oss-120b",
         messages: [{ role: "system", content: OTTO_SYSTEM_PROMPT }, ...messages],
-        temperature: 0.5,
+        temperature: 0.65,
         max_tokens: MAX_OUTPUT_TOKENS,
       }),
     }).finally(() => clearTimeout(timeoutId));
@@ -221,7 +225,7 @@ async function askGemini(messages: Array<{ role: string; content: string }>): Pr
       body: JSON.stringify({
         model: "gemini-2.5-flash",
         messages: [{ role: "system", content: OTTO_SYSTEM_PROMPT }, ...messages],
-        temperature: 0.5,
+        temperature: 0.65,
         max_tokens: MAX_OUTPUT_TOKENS,
       }),
     }).finally(() => clearTimeout(timeoutId));
@@ -246,16 +250,16 @@ export async function POST(req: NextRequest) {
       .reverse()
       .find((m: { role?: string; content?: string }) => m?.role === "user")?.content;
 
-    const userText = String(lastUserMsg || "").trim().slice(0, 400);
+    const userText = String(lastUserMsg || "").trim().slice(0, 350);
     if (!userText) {
       return NextResponse.json({
-        reply: "Ask me anything about sketching, shading, proportions, or drawing tools!",
+        reply: "Hey there! Ask me anything about drawing or sketching 😊",
       });
     }
 
     if (isAbusive(userText)) {
       return NextResponse.json({
-        reply: "Hey, keep it friendly! What are you sketching today?",
+        reply: "Hey, let's keep it sweet and friendly 😊 What would you like to sketch?",
       });
     }
 
@@ -276,7 +280,7 @@ export async function POST(req: NextRequest) {
 
     const cleanHistory = rawMessages.slice(-MAX_HISTORY).map((m: { role?: string; content?: string }) => ({
       role: m.role === "assistant" ? "assistant" : "user",
-      content: String(m.content || "").slice(0, 400),
+      content: String(m.content || "").slice(0, 350),
     }));
 
     const reply = (await askGroq(cleanHistory)) || (await askGemini(cleanHistory));
