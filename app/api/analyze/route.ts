@@ -1,337 +1,326 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-export const maxDuration = 60;
+export const maxDuration = 30;
 
-const GEMINI_SCAN_KEYS = [
-  process.env.GEMINI_API_KEY,
-  process.env.GEMINI_SCAN_BACKUP_API_KEY,
-].filter((k): k is string => Boolean(k && k.trim()));
+const MAX_PER_MINUTE = 2;
+const MAX_PER_DAY = 10;
+const MAX_HISTORY = 4;
+const MAX_OUTPUT_TOKENS = 600;
 
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const GEMINI_CHAT_API_KEY = process.env.GEMINI_CHAT_API_KEY || "";
 
-const MODELS_TO_TRY = [
+const GEMINI_FALLBACK_MODELS = [
   "gemini-3.8-flash",
   "gemini-3.6-flash",
   "gemini-3.5-flash-lite",
-  "gemini-1.5-flash",
+] as const;
+
+const OTTO_SYSTEM_PROMPT = `You are Otto, Otterleo's sweet, warm, and encouraging drawing mentor.
+
+LANGUAGE ADAPTATION:
+- Always default to clear, simple English.
+- Only switch to Hinglish when the user speaks in Hinglish; if they use another language like Hindi, adapt naturally to that too.
+- Never use the ✨ emoji.
+
+TYPO & CONTEXT UNDERSTANDING:
+- Naturally understand spelling mistakes and typos (such as "drawng", "sktech", "shding", "porpotion") without making a fuss.
+- Treat beginner self-doubt ("I don't know anything", "muje kuch nhi ata yar") and normal friendly conversation warmly—do not mark them as off-topic.
+
+EMOJI & HOOK RULES:
+- Use emojis ONLY when they naturally fit—MAXIMUM 2 emojis per reply, and 0 emojis is completely fine too. Smile emojis like 😊 are great when being sweet or encouraging.
+- Do NOT repeat "I'll be waiting for you" in every reply. Vary endings naturally or leave no hook when none is needed.
+
+TONE, LENGTH & FORMATTING:
+- Talk very sweetly, kindly, and supportively, like a gentle art buddy.
+- Keep replies **medium** in length by default; only give a **short** reply when genuinely needed or when the user asks for something short/brief. Finish every sentence completely.
+- Do NOT use headings or bullet points in every answer. Write in natural paragraphs most of the time, and use headings or bullets only occasionally when they genuinely make a multi-step point easier to read. Never use markdown tables.
+
+TOPIC BOUNDARIES:
+- Focus on drawing, sketching, art confidence/habits, Otterleo features, and normal friendly chat.
+- Only politely decline genuinely unrelated/faltu topics (like coding, math, politics, movies, random homework, trivia) and guide back to drawing.
+
+APP FACTS YOU KNOW:
+- Dashboard (/dashboard): Shows Total XP, Current Streak (days), Your Rank, and XP Wheel.
+- Practice Canvas (/practice): Interactive drawing canvas with Reset and Download controls. Its name is Practice Canvas.
+- AI Scan (/scan): Upload artwork for AI feedback, score, and tips.
+- Leaderboard (/leaderboard): Check XP and rank.
+- Grid Maker (/grid-maker): Reference grids for proportions.
+- Idea Generator (/idea-generator): Drawing prompts and ideas.
+
+STRICT LINK RULES:
+1. Only share links that match what the user needs right now. Never dump all links in every reply.
+2. When recommending Practice: include a blue link to Practice (/practice) and add relevant links (/leaderboard, /grid-maker, /idea-generator) only when helpful. Do not mention or promote any paid plan.
+3. When artwork feedback, critique, or scanning is needed: include a blue link to Scan (/scan).
+4. When the user asks for the name of Practice ("practice ka name", "name of practice", "practice name"): write <a href="/practice" class="text-[#2563EB] font-black underline">Practice Canvas</a> in blue (#2563EB) linking to /practice.
+5. Format links in blue: <a href="PATH" class="text-[#2563EB] font-bold underline">Label</a>.`;
+
+const ABUSE_PATTERNS = [
+  /\b(fuck|fucker|fucking|shit|bitch|asshole|bastard|dick|cunt|slut|whore)\b/i,
+  /\b(chutiya|bhosdike|bhosdi|gaand|gandu|randi|lauda|lund|chut|madarchod|behenchod|bc|mc)\b/i,
+  /teri\s*ma(a)?\s*ki/i,
 ];
 
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const windowMs = 60 * 1000;
-  const maxRequests = 10;
-
-  const record = rateLimitMap.get(ip);
-
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
-    return false;
-  }
-
-  if (record.count >= maxRequests) {
-    return true;
-  }
-
-  record.count += 1;
-  return false;
+function isAbusive(text: string): boolean {
+  return ABUSE_PATTERNS.some((rx) => rx.test(text));
 }
 
-function isValidImageHeader(buffer: Buffer): boolean {
-  if (buffer.length < 4) return false;
-  const hex = buffer.subarray(0, 4).toString("hex").toUpperCase();
-
-  const isJpeg = hex.startsWith("FFD8FF");
-  const isPng = hex.startsWith("89504E47");
-  const isWebp = hex.startsWith("52494646");
-
-  return isJpeg || isPng || isWebp;
-}
-
-const isValidUUID = (id: string) =>
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-
-const getTodayLocalDate = () => {
+function getTodayLocalDate(): string {
   const d = new Date();
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-};
+}
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+function getClientIp(req: NextRequest): string {
+  // Prefer trusted proxy/edge headers first; only fallback to x-forwarded-for / x-real-ip
+  const vercelFwd = req.headers.get("x-vercel-forwarded-for");
+  if (vercelFwd) {
+    const first = vercelFwd.split(",")[0]?.trim();
+    if (first) return first;
+  }
 
-export async function POST(req: Request) {
+  const cfIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) {
+    const parts = fwd
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length > 0) return parts[0];
+  }
+
+  return "unknown";
+}
+
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!url || !serviceKey) return null;
+  return createClient(url, serviceKey, { auth: { persistSession: false } });
+}
+
+function ottoErrorReply(code: "101" | "102" | "103" | "104" | "105" | "106", status = 500) {
+  return NextResponse.json(
+    {
+      reply: `Otto failed to give response, try again later (${code})`,
+      errorCode: code,
+    },
+    { status }
+  );
+}
+
+async function resolveRateKey(
+  req: NextRequest,
+  supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>
+): Promise<string> {
+  const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+
+  if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
+    const token = authHeader.slice(7).trim();
+    if (token) {
+      const { data } = await supabase.auth.getUser(token);
+      if (data?.user?.id) {
+        return `user:${data.user.id}`;
+      }
+    }
+  }
+
+  return `ip:${getClientIp(req)}`;
+}
+
+async function reserveQuotaAtomic(
+  supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+  rateKey: string,
+  todayStr: string,
+  minuteBucket: number
+): Promise<{ allowed: boolean; message?: string; status?: number }> {
+  const { data, error } = await supabase
+    .rpc("reserve_otto_chat_quota", {
+      p_rate_key: rateKey,
+      p_day_date: todayStr,
+      p_minute_bucket: minuteBucket,
+      p_max_per_day: MAX_PER_DAY,
+      p_max_per_minute: MAX_PER_MINUTE,
+    })
+    .single<{ allowed: boolean; reason: string }>();
+
+  if (error || !data) {
+    return {
+      allowed: false,
+      message: "Otto failed to give response, try again later (102)",
+      status: 503,
+    };
+  }
+
+  if (!data.allowed) {
+    if (data.reason === "day_limit") {
+      return {
+        allowed: false,
+        message:
+          "You've used all 10 chats for today! Take a sweet break and come back tomorrow whenever you're ready 😊",
+        status: 429,
+      };
+    }
+
+    return {
+      allowed: false,
+      message: "Give it just a minute and try again 😊",
+      status: 429,
+    };
+  }
+
+  return { allowed: true };
+}
+
+async function refundQuotaOnFailure(
+  supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+  rateKey: string,
+  todayStr: string,
+  minuteBucket: number
+): Promise<void> {
   try {
-    const forwardedFor = req.headers.get("x-forwarded-for");
-    const realIp = req.headers.get("x-real-ip");
-    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "127.0.0.1";
+    await supabase.rpc("refund_otto_chat_quota", {
+      p_rate_key: rateKey,
+      p_day_date: todayStr,
+      p_minute_bucket: minuteBucket,
+    });
+  } catch {}
+}
 
-    if (isRateLimited(ip)) {
-      return NextResponse.json(
+async function askGroq(messages: Array<{ role: string; content: string }>): Promise<string | null> {
+  if (!GROQ_API_KEY) return null;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-oss-120b",
+        messages: [{ role: "system", content: OTTO_SYSTEM_PROMPT }, ...messages],
+        temperature: 0.65,
+        max_tokens: MAX_OUTPUT_TOKENS,
+      }),
+    }).finally(() => clearTimeout(timeoutId));
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.choices?.[0]?.message?.content?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+async function askGemini(messages: Array<{ role: string; content: string }>): Promise<string | null> {
+  if (!GEMINI_CHAT_API_KEY) return null;
+
+  for (const model of GEMINI_FALLBACK_MODELS) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+      const res = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
         {
-          isDrawing: false,
-          message: "Too many requests. Please wait 1 minute before scanning again. (#100)",
-          errorCode: "#100",
-        },
-        { status: 429 }
-      );
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${GEMINI_CHAT_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "system", content: OTTO_SYSTEM_PROMPT }, ...messages],
+            temperature: 0.65,
+            max_tokens: MAX_OUTPUT_TOKENS,
+          }),
+        }
+      ).finally(() => clearTimeout(timeoutId));
+
+      if (!res.ok) continue;
+      const data = await res.json();
+      const content = data?.choices?.[0]?.message?.content?.trim();
+      if (content) return content;
+    } catch {
+      continue;
     }
+  }
 
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      process.env.SUPABASE_URL ||
-      "";
+  return null;
+}
 
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-
+export async function POST(req: NextRequest) {
+  try {
     const body = await req.json().catch(() => null);
+    if (!body) {
+      return ottoErrorReply("106", 400);
+    }
+
+    const rawMessages = Array.isArray(body?.messages) ? body.messages : [];
+    const lastUserMsg = [...rawMessages]
+      .reverse()
+      .find((m: { role?: string; content?: string }) => m?.role === "user")?.content;
+
+    const userText = String(lastUserMsg || "").trim().slice(0, 350);
+    if (!userText) {
+      return NextResponse.json({
+        reply: "Hey there! Ask me anything about drawing or sketching 😊",
+      });
+    }
+
+    if (isAbusive(userText)) {
+      return NextResponse.json({
+        reply: "Hey, let's keep it sweet and friendly 😊 What would you like to sketch?",
+      });
+    }
+
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return ottoErrorReply("101", 503);
+    }
+
+    const rateKey = await resolveRateKey(req, supabase);
     const todayStr = getTodayLocalDate();
+    const minuteBucket = Math.floor(Date.now() / 60000);
 
-    let supabase = null;
-    if (supabaseUrl && supabaseServiceKey) {
-      try {
-        supabase = createClient(supabaseUrl, supabaseServiceKey, {
-          auth: { persistSession: false },
-        });
-      } catch {
-        // Safe fallback without leaking internal details
-      }
-    }
+    // Atomically reserve 1 chat credit before calling AI so concurrent bursts cannot bypass limits
+    const reservation = await reserveQuotaAtomic(supabase, rateKey, todayStr, minuteBucket);
 
-    let verifiedUserId: string | null = null;
-    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
-
-    if (authHeader && authHeader.toLowerCase().startsWith("bearer ") && supabase) {
-      const token = authHeader.slice(7).trim();
-      if (token) {
-        const { data: authUserData } = await supabase.auth.getUser(token);
-        if (authUserData?.user?.id) {
-          verifiedUserId = authUserData.user.id;
-        }
-      }
-    }
-
-    const fallbackBodyUserId = body?.userId ? String(body.userId).trim() : null;
-    const activeUserId = verifiedUserId || (fallbackBodyUserId && isValidUUID(fallbackBodyUserId) ? fallbackBodyUserId : null);
-
-    if (!activeUserId || !isValidUUID(activeUserId)) {
+    if (!reservation.allowed) {
       return NextResponse.json(
-        {
-          isDrawing: false,
-          message: "User authentication failed. Please login to scan. (#109)",
-          errorCode: "#109",
-        },
-        { status: 401 }
+        { reply: reservation.message, limitReached: true },
+        { status: reservation.status || 429 }
       );
     }
 
-    if (supabase) {
-      const { data: profileData, error: dbQueryError } = await supabase
-        .from("profiles")
-        .select("last_scanned_at")
-        .eq("id", activeUserId)
-        .maybeSingle();
+    const cleanHistory = rawMessages.slice(-MAX_HISTORY).map((m: { role?: string; content?: string }) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: String(m.content || "").slice(0, 350),
+    }));
 
-      if (!dbQueryError && profileData && profileData.last_scanned_at) {
-        const lastScanDate = new Date(profileData.last_scanned_at);
-        const lastYear = lastScanDate.getFullYear();
-        const lastMonth = String(lastScanDate.getMonth() + 1).padStart(2, "0");
-        const lastDay = String(lastScanDate.getDate()).padStart(2, "0");
-        const dbScanDateStr = `${lastYear}-${lastMonth}-${lastDay}`;
+    const reply = (await askGroq(cleanHistory)) || (await askGemini(cleanHistory));
 
-        if (dbScanDateStr === todayStr) {
-          return NextResponse.json(
-            {
-              isDrawing: false,
-              lockActive: true,
-              message: "Your scan limit is out. Come back tomorrow!",
-              errorCode: "#101",
-            },
-            { status: 423 }
-          );
-        }
-      }
+    if (!reply) {
+      await refundQuotaOnFailure(supabase, rateKey, todayStr, minuteBucket);
+      return ottoErrorReply("104", 502);
     }
 
-    if (GEMINI_SCAN_KEYS.length === 0) {
-      return NextResponse.json(
-        { isDrawing: false, message: "Otto scan failed.", errorCode: "#102" },
-        { status: 500 }
-      );
-    }
-
-    if (!body || !body.image || typeof body.image !== "string") {
-      return NextResponse.json(
-        { isDrawing: false, message: "Please upload a valid image. (#103)", errorCode: "#103" },
-        { status: 400 }
-      );
-    }
-
-    const imageStr = body.image;
-    let mimeType = "image/jpeg";
-    let base64Data = imageStr;
-
-    if (imageStr.includes(";base64,")) {
-      const parts = imageStr.split(";base64,");
-      mimeType = parts[0].replace("data:", "").toLowerCase().trim();
-      base64Data = parts[1] || "";
-    }
-
-    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-      return NextResponse.json(
-        { isDrawing: false, message: "Format not supported. Please upload JPG, PNG, or WEBP. (#105)", errorCode: "#105" },
-        { status: 400 }
-      );
-    }
-
-    const approxBase64Bytes = Math.floor((base64Data.length * 3) / 4);
-    if (approxBase64Bytes > MAX_IMAGE_BYTES) {
-      return NextResponse.json(
-        { isDrawing: false, message: "Image size too large. Maximum allowed limit is 5MB. (#104)", errorCode: "#104" },
-        { status: 400 }
-      );
-    }
-
-    const buffer = Buffer.from(base64Data, "base64");
-    if (buffer.length === 0 || buffer.length > MAX_IMAGE_BYTES) {
-      return NextResponse.json(
-        { isDrawing: false, message: "Image size too large. Maximum allowed limit is 5MB. (#104)", errorCode: "#104" },
-        { status: 400 }
-      );
-    }
-
-    if (!isValidImageHeader(buffer)) {
-      return NextResponse.json(
-        { isDrawing: false, message: "Corrupted or invalid image file. (#105)", errorCode: "#105" },
-        { status: 400 }
-      );
-    }
-
-    const promptText = `
-      You are "Otto", an expert, highly encouraging, and insightful art mentor.
-      Analyze the uploaded artwork in detail using rich, descriptive, and professional yet simple English. Make the points descriptive and detailed.
-
-      SCORING CRITERIA:
-- 0-30: Rough/scribbled.
-- 31-50: Beginner level.
-- 51-70: Intermediate attempt.
-- 71-88: Skilled artwork.
-- 89-100: Exceptional / Masterpiece.
-
-      VALIDATION RULE:
-      If not related to art/drawing/design:
-      Return ONLY: {"isDrawing": false, "message": "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art. (#106)"}
-
-      PROMO INSTRUCTION:
-      In the 'practiceRecommendation' or 'motivationalFeedback', naturally include a short, friendly nudge or advice for the user to try out daily step-by-step challenges in the 'Challenges' section regularly or practice directly on the digital 'Practice Canvas' to build consistency.
-
-      RETURN STRICTLY VALID JSON ONLY following this exact structure:
-      {
-        "isDrawing": true,
-        "artCategory": "Detected Category Name",
-        "score": 65,
-        "skillLevel": "Intermediate",
-        "strengths": [
-          "First detailed sentence describing a strong artistic point.",
-          "Second detailed sentence highlighting shading, texture, or form definition.",
-          "Third detailed sentence praising emotional expression, creativity, or visual balance."
-        ],
-        "areasToImprove": [
-          "First detailed sentence pointing out proportion, perspective, or contrast adjustment needed.",
-          "Second detailed sentence highlighting edge control, detailing, or lighting consistency."
-        ],
-        "actionableImprovements": ["Provide concrete technical steps to refine the artwork."],
-        "practiceRecommendation": "Write a rich, 2-3 sentence daily practice drill, and naturally add a short friendly promo advice to explore the 'Challenges' section or use the digital 'Practice Canvas' for daily streak growth.",
-        "motivationalFeedback": "Keep your encouragement warm, catchy, and inspiring!",
-        "message": ""
-      }
-    `;
-
-    let jsonResult: Record<string, unknown> | null = null;
-
-    keyLoop: for (const currentKey of GEMINI_SCAN_KEYS) {
-      for (const modelName of MODELS_TO_TRY) {
-        for (let attempt = 1; attempt <= 2; attempt++) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-            const apiResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(currentKey)}`,
-              {
-                method: "POST",
-                signal: controller.signal,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [
-                    {
-                      parts: [
-                        { text: promptText },
-                        { inlineData: { mimeType: mimeType, data: base64Data } },
-                      ],
-                    },
-                  ],
-                  generationConfig: {
-                    responseMimeType: "application/json",
-                    temperature: 0.3,
-                  },
-                }),
-              }
-            ).finally(() => clearTimeout(timeoutId));
-
-            if (apiResponse.ok) {
-              const data = await apiResponse.json();
-              const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-              if (rawText) {
-                const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
-                jsonResult = JSON.parse(cleanJsonText);
-                break keyLoop;
-              }
-            } else {
-              if (attempt === 1) await sleep(500);
-            }
-          } catch {
-            if (attempt === 1) await sleep(500);
-          }
-        }
-      }
-    }
-
-    if (!jsonResult) {
-      throw new Error("Otto scan failed.");
-    }
-
-    const isDrawingValid =
-      jsonResult.isDrawing === true ||
-      jsonResult.isDrawing === "true" ||
-      String(jsonResult.isDrawing).toLowerCase() === "true";
-
-    if (isDrawingValid && supabase) {
-      const nowTimestampz = new Date().toISOString();
-      await supabase
-        .from("profiles")
-        .update({ last_scanned_at: nowTimestampz })
-        .eq("id", activeUserId);
-    }
-
-    if (!jsonResult.message) {
-      jsonResult.message = "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art. (#106)";
-    }
-
-    return NextResponse.json(jsonResult, { status: 200 });
-
-  } catch (err) {
-    const errorMsg = err instanceof Error && err.message === "Otto scan failed."
-      ? "Otto scan failed."
-      : "Otto scan failed.";
-
-    return NextResponse.json(
-      { isDrawing: false, message: errorMsg, errorCode: "#500" },
-      { status: 500 }
-    );
+    return NextResponse.json({ reply });
+  } catch {
+    return ottoErrorReply("105", 500);
   }
 }
