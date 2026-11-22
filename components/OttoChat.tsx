@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import OttoMessage from "@/components/OttoMessage";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, History } from "lucide-react";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -26,34 +26,48 @@ const ENGLISH_STARTERS = [
 
 export default function OttoChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [archivedMessages, setArchivedMessages] = useState<ChatMessage[]>([]);
+  const [showLoadPreviousBtn, setShowLoadPreviousBtn] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
 
+  // On mount / reopen: keep top hero fresh, hold saved chats behind "Load previous chats" button
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setMessages(parsed);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setArchivedMessages(parsed);
+          setShowLoadPreviousBtn(true);
         }
       }
     } catch {}
     setHydrated(true);
   }, []);
 
+  // Persist current active session so page refreshes keep it, while fresh reopen starts with button
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-40)));
+      if (messages.length > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-40)));
+      }
     } catch {}
   }, [messages, hydrated]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending]);
+
+  const handleLoadPreviousChats = () => {
+    if (archivedMessages.length === 0) return;
+    setMessages(archivedMessages);
+    setArchivedMessages([]);
+    setShowLoadPreviousBtn(false);
+  };
 
   const requestOttoReply = async (conversation: ChatMessage[]): Promise<string> => {
     const {
@@ -75,15 +89,25 @@ export default function OttoChat() {
     });
 
     const data = await res.json();
-    return data?.reply || "Give it another try in a moment 😊";
+    return data?.reply || "Give it another try in a moment.";
   };
 
   const sendMessage = async (presetText?: string) => {
     const cleanText = (presetText ?? input).trim();
     if (!cleanText || sending) return;
 
+    // If user sends a message without clicking "Load previous chats", wipe old saved chats
+    if (showLoadPreviousBtn) {
+      setArchivedMessages([]);
+      setShowLoadPreviousBtn(false);
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+    }
+
+    const baseMessages = showLoadPreviousBtn ? [] : messages;
     const nextMessages: ChatMessage[] = [
-      ...messages,
+      ...baseMessages,
       { role: "user", content: cleanText },
     ];
 
@@ -99,7 +123,7 @@ export default function OttoChat() {
         ...prev,
         {
           role: "assistant",
-          content: "Couldn't reach Otto right now. Please try again shortly 😊",
+          content: "Couldn't reach Otto right now. Please try again shortly.",
         },
       ]);
     } finally {
@@ -125,15 +149,13 @@ export default function OttoChat() {
         ...priorMessages,
         {
           role: "assistant",
-          content: "Couldn't reach Otto right now. Please try again shortly 😊",
+          content: "Couldn't reach Otto right now. Please try again shortly.",
         },
       ]);
     } finally {
       setSending(false);
     }
   };
-
-  const hasStartedChat = messages.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 w-full h-dvh bg-[#FAFBFD] flex flex-col overflow-hidden">
@@ -191,44 +213,56 @@ export default function OttoChat() {
         </div>
       </header>
 
-      {/* Full-Screen Scrollable Chat Stream */}
-      <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 flex flex-col">
-        <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col">
-          {!hasStartedChat ? (
-            <div className="my-auto flex flex-col items-center text-center max-w-md mx-auto space-y-5 py-6">
-              <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-3xl overflow-hidden bg-white p-2 shadow-xs border border-slate-100 flex items-center justify-center">
-                <img
-                  src={OTTO_CENTER_MASCOT_URL}
-                  alt="Otto Drawing Mentor"
-                  className="w-full h-full object-contain select-none"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <h1 className="text-2xl sm:text-3xl font-black text-[#0F172A] tracking-tight">
-                  Hey! Let&apos;s level up your art 🎨
-                </h1>
-                <p className="text-xs sm:text-sm font-medium text-slate-500 leading-relaxed">
-                  Tell me your skill level or ask any sketching question—I&apos;ll guide you step by step!
-                </p>
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-2 pt-1">
-                {ENGLISH_STARTERS.map((starter) => (
-                  <button
-                    key={starter}
-                    type="button"
-                    disabled={sending}
-                    onClick={() => sendMessage(starter)}
-                    className="text-xs font-bold text-[#2563EB] bg-white hover:bg-blue-50 border border-blue-200/80 px-3.5 py-2 rounded-full shadow-2xs transition cursor-pointer disabled:opacity-50"
-                  >
-                    {starter}
-                  </button>
-                ))}
-              </div>
+      {/* Scrollable Stream: Top Hero Always Stays in Place */}
+      <main className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 flex flex-col">
+        <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col space-y-6">
+          <div className="flex flex-col items-center text-center max-w-md mx-auto space-y-4 pt-1">
+            <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-3xl overflow-hidden bg-white p-2 shadow-2xs border border-slate-100 flex items-center justify-center">
+              <img
+                src={OTTO_CENTER_MASCOT_URL}
+                alt="Otto Drawing Mentor"
+                className="w-full h-full object-contain select-none"
+              />
             </div>
-          ) : (
-            <div className="space-y-5 pb-2">
+
+            <div className="space-y-1">
+              <h1 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight">
+                Hey! Let&apos;s level up your art 🎨
+              </h1>
+              <p className="text-xs sm:text-sm font-medium text-slate-500 leading-relaxed">
+                Tell me your skill level or ask any sketching question—I&apos;ll guide you step by step!
+              </p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2">
+              {ENGLISH_STARTERS.map((starter) => (
+                <button
+                  key={starter}
+                  type="button"
+                  disabled={sending}
+                  onClick={() => sendMessage(starter)}
+                  className="text-xs font-bold text-[#2563EB] bg-white hover:bg-blue-50 border border-blue-200/80 px-3.5 py-2 rounded-full shadow-2xs transition cursor-pointer disabled:opacity-50"
+                >
+                  {starter}
+                </button>
+              ))}
+            </div>
+
+            {showLoadPreviousBtn && (
+              <button
+                type="button"
+                disabled={sending}
+                onClick={handleLoadPreviousChats}
+                className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-[#2563EB] bg-white hover:bg-blue-50/70 border border-slate-200 hover:border-blue-200 px-4 py-2 rounded-full shadow-2xs transition cursor-pointer disabled:opacity-50"
+              >
+                <History className="w-3.5 h-3.5 text-[#2563EB]" />
+                <span>Load previous chats</span>
+              </button>
+            )}
+          </div>
+
+          {messages.length > 0 && (
+            <div className="space-y-5 pb-2 border-t border-slate-200/60 pt-5">
               {messages.map((msg, index) => (
                 <OttoMessage
                   key={index}
@@ -236,7 +270,9 @@ export default function OttoChat() {
                   content={msg.content}
                   isRegenerating={sending}
                   onRegenerate={
-                    msg.role === "assistant" ? () => handleRegenerate(index) : undefined
+                    msg.role === "assistant"
+                      ? () => handleRegenerate(index)
+                      : undefined
                   }
                 />
               ))}
@@ -250,11 +286,12 @@ export default function OttoChat() {
               )}
             </div>
           )}
+
           <div ref={endRef} />
         </div>
       </main>
 
-      {/* Bottom Card Input (No Mic / No Image Icon, 3D Blue Send Button) */}
+      {/* Bottom Card Input */}
       <footer className="w-full px-4 sm:px-6 py-3 bg-[#FAFBFD] shrink-0">
         <form
           onSubmit={(e) => {
