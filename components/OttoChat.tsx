@@ -55,6 +55,29 @@ export default function OttoChat() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, sending]);
 
+  const requestOttoReply = async (conversation: ChatMessage[]): Promise<string> => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`;
+    }
+
+    const res = await fetch("/api/otto-chat", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ messages: conversation.slice(-4) }),
+    });
+
+    const data = await res.json();
+    return data?.reply || "Give it another try in a moment 😊";
+  };
+
   const sendMessage = async (presetText?: string) => {
     const cleanText = (presetText ?? input).trim();
     if (!cleanText || sending) return;
@@ -69,39 +92,40 @@ export default function OttoChat() {
     setSending(true);
 
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-
-      if (session?.access_token) {
-        headers.Authorization = `Bearer ${session.access_token}`;
-      }
-
-      const res = await fetch("/api/otto-chat", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ messages: nextMessages.slice(-4) }),
-      });
-
-      const data = await res.json();
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: data?.reply || "Give it another try in a moment! 🎨",
-        },
-      ]);
+      const reply = await requestOttoReply(nextMessages);
+      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "Couldn't reach Otto right now. Please try again shortly! 🤍",
+          content: "Couldn't reach Otto right now. Please try again shortly 😊",
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleRegenerate = async (assistantIndex: number) => {
+    if (sending) return;
+
+    const priorMessages = messages.slice(0, assistantIndex);
+    const hasUserPrompt = priorMessages.some((m) => m.role === "user");
+    if (!hasUserPrompt) return;
+
+    setMessages(priorMessages);
+    setSending(true);
+
+    try {
+      const reply = await requestOttoReply(priorMessages);
+      setMessages([...priorMessages, { role: "assistant", content: reply }]);
+    } catch {
+      setMessages([
+        ...priorMessages,
+        {
+          role: "assistant",
+          content: "Couldn't reach Otto right now. Please try again shortly 😊",
         },
       ]);
     } finally {
@@ -204,16 +228,24 @@ export default function OttoChat() {
               </div>
             </div>
           ) : (
-            <div className="space-y-3.5 pb-2">
+            <div className="space-y-5 pb-2">
               {messages.map((msg, index) => (
-                <OttoMessage key={index} role={msg.role} content={msg.content} />
+                <OttoMessage
+                  key={index}
+                  role={msg.role}
+                  content={msg.content}
+                  isRegenerating={sending}
+                  onRegenerate={
+                    msg.role === "assistant" ? () => handleRegenerate(index) : undefined
+                  }
+                />
               ))}
 
               {sending && (
-                <div className="flex justify-start">
-                  <div className="bg-white border border-slate-200 px-4 py-2.5 rounded-2xl text-xs font-bold shadow-2xs">
-                    <span className="otto-thinking-shiny">Otto is thinking...</span>
-                  </div>
+                <div className="py-1">
+                  <span className="otto-thinking-shiny text-sm font-semibold">
+                    Otto is thinking...
+                  </span>
                 </div>
               )}
             </div>

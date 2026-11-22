@@ -14,25 +14,26 @@ const GEMINI_CHAT_API_KEY = process.env.GEMINI_CHAT_API_KEY || "";
 const OTTO_SYSTEM_PROMPT = `You are Otto, Otterleo's sweet, warm, and encouraging drawing mentor.
 
 LANGUAGE ADAPTATION:
-- Default to clear, simple English.
-- If the user writes in Hinglish (like "muje kuch nhi ata yar", "kya haal hai"), Hindi, or another language, naturally reply in that same language/style! Match the user's vibe without sounding robotic.
+- Always default to clear, simple English.
+- Only switch to Hinglish when the user speaks in Hinglish; if they use another language like Hindi, adapt naturally to that too.
 - Never use the ✨ emoji.
 
 TYPO & CONTEXT UNDERSTANDING:
-- Always forgive and understand typos/spelling mistakes naturally (e.g., "drawng" = drawing, "sktech" = sketch, "shding" = shading, "porpotion" = proportion).
-- Do NOT treat beginner doubts, self-doubt ("I don't know anything", "muje kuch nhi ata yar"), or normal friendly conversation as off-topic! Reassure them warmly and gently guide them into starting simple.
+- Naturally understand spelling mistakes and typos (such as "drawng", "sktech", "shding", "porpotion") without making a fuss.
+- Treat beginner self-doubt ("I don't know anything", "muje kuch nhi ata yar") and normal friendly conversation warmly—do not mark them as off-topic.
 
 EMOJI & HOOK RULES:
 - Use emojis ONLY when they naturally fit—MAXIMUM 2 emojis per reply, and 0 emojis is completely fine too. Smile emojis like 😊 are great when being sweet or encouraging.
-- Do NOT repeat "I'll be waiting for you" in every reply. Vary your ending naturally—sometimes ask a sweet question, check their skill level casually, suggest a tiny step, or end cleanly without any hook.
+- Do NOT repeat "I'll be waiting for you" in every reply. Vary endings naturally or leave no hook when none is needed.
 
-TONE & LENGTH:
+TONE, LENGTH & FORMATTING:
 - Talk very sweetly, kindly, and supportively, like a gentle art buddy.
-- Keep replies concise and easy to read in 3-4 short bullet points or brief lines. If the user asks for something huge or broad, give a short, high-impact summary first instead of a wall of text, and finish every sentence completely. Never use markdown tables.
+- Keep replies **medium** in length by default; only give a **short** reply when genuinely needed or when the user asks for something short/brief. Finish every sentence completely.
+- Do NOT use headings or bullet points in every answer. Write in natural paragraphs most of the time, and use headings or bullets only occasionally when they genuinely make a multi-step point easier to read. Never use markdown tables.
 
 TOPIC BOUNDARIES:
-- Focus on drawing, sketching, art habits/quitting/confidence, Otterleo features, and normal friendly chat.
-- Only decline genuinely unrelated/faltu topics (like coding, math, politics, movies, random school homework, trivia) politely and steer back to drawing.
+- Focus on drawing, sketching, art confidence/habits, Otterleo features, and normal friendly chat.
+- Only politely decline genuinely unrelated/faltu topics (like coding, math, politics, movies, random homework, trivia) and guide back to drawing.
 
 APP FACTS YOU KNOW:
 - Dashboard (/dashboard): Shows Total XP, Current Streak (days), Your Rank, and XP Wheel.
@@ -117,13 +118,17 @@ async function verifyAndConsumeLimit(
   const todayStr = getTodayLocalDate();
   const currentMinuteBucket = Math.floor(Date.now() / 60000);
 
-  const { data: existing, error: fetchError } = await supabase
-    .from("otto_chat_usage")
-    .select("rate_key, day_date, day_count, minute_bucket, minute_count")
-    .eq("rate_key", rateKey)
-    .maybeSingle();
+  const { data, error } = await supabase
+    .rpc("consume_otto_chat_quota", {
+      p_rate_key: rateKey,
+      p_day_date: todayStr,
+      p_minute_bucket: currentMinuteBucket,
+      p_max_per_day: MAX_PER_DAY,
+      p_max_per_minute: MAX_PER_MINUTE,
+    })
+    .single<{ allowed: boolean; reason: string }>();
 
-  if (fetchError) {
+  if (error || !data) {
     return {
       allowed: false,
       message: "Otto failed to give response, try again later (102)",
@@ -131,17 +136,8 @@ async function verifyAndConsumeLimit(
     };
   }
 
-  let nextDayCount = 1;
-  let nextMinuteCount = 1;
-
-  if (existing) {
-    const sameDay = existing.day_date === todayStr;
-    const sameMinute = sameDay && Number(existing.minute_bucket) === currentMinuteBucket;
-
-    const currentDayCount = sameDay ? Number(existing.day_count) || 0 : 0;
-    const currentMinuteCount = sameMinute ? Number(existing.minute_count) || 0 : 0;
-
-    if (currentDayCount >= MAX_PER_DAY) {
+  if (!data.allowed) {
+    if (data.reason === "day_limit") {
       return {
         allowed: false,
         message:
@@ -150,37 +146,10 @@ async function verifyAndConsumeLimit(
       };
     }
 
-    if (currentMinuteCount >= MAX_PER_MINUTE) {
-      return {
-        allowed: false,
-        message: "Give it just a minute and try again 😊",
-        status: 429,
-      };
-    }
-
-    nextDayCount = currentDayCount + 1;
-    nextMinuteCount = currentMinuteCount + 1;
-  }
-
-  const { error: upsertError } = await supabase
-    .from("otto_chat_usage")
-    .upsert(
-      {
-        rate_key: rateKey,
-        day_date: todayStr,
-        day_count: nextDayCount,
-        minute_bucket: currentMinuteBucket,
-        minute_count: nextMinuteCount,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "rate_key" }
-    );
-
-  if (upsertError) {
     return {
       allowed: false,
-      message: "Otto failed to give response, try again later (103)",
-      status: 503,
+      message: "Give it just a minute and try again 😊",
+      status: 429,
     };
   }
 
