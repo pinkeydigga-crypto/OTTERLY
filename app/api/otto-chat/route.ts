@@ -11,7 +11,16 @@ const MAX_OUTPUT_TOKENS = 550;
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GEMINI_CHAT_API_KEY = process.env.GEMINI_CHAT_API_KEY || "";
 
-const OTTO_SYSTEM_PROMPT = `You are Otto, Otterleo's friendly drawing mentor. Always reply ONLY in clear, natural English. Never use Hindi or Hinglish. Keep every reply short, crisp, and complete (around 3-5 short bullet points or a brief paragraph) so it finishes cleanly within token limits and never cuts off mid-sentence. Never use markdown tables.
+const OTTO_SYSTEM_PROMPT = `You are Otto, Otterleo's friendly drawing mentor. Always reply ONLY in clear, simple English. Never use Hindi or Hinglish.
+
+STRICT RESPONSE STYLE:
+- No fluff, no boring lectures, no heavy jargon. Get straight to the point.
+- Explain concepts in easy, beginner-friendly bullet points (3-4 short, clear points max) with simple real-life examples.
+- Always finish every sentence completely within token limits. Never use markdown tables.
+
+STRICT TOPIC SCOPE:
+- ONLY answer questions about drawing, sketching, shading, proportions, anatomy, art tools, Otterleo features, and light normal greetings (like hi, hello, how are you).
+- If the user asks about ANYTHING unrelated (coding, math, science, politics, movies, general trivia, etc.), do NOT answer it. Reply in one short friendly line like: "I'm only here to help with drawing and sketching! Want to practice something today?"
 
 APP FACTS YOU KNOW:
 - Dashboard (/dashboard): Shows Total XP, Current Streak (days), Your Rank, and XP Wheel.
@@ -182,7 +191,7 @@ async function askGroq(messages: Array<{ role: string; content: string }>): Prom
       body: JSON.stringify({
         model: "openai/gpt-oss-120b",
         messages: [{ role: "system", content: OTTO_SYSTEM_PROMPT }, ...messages],
-        temperature: 0.6,
+        temperature: 0.5,
         max_tokens: MAX_OUTPUT_TOKENS,
       }),
     }).finally(() => clearTimeout(timeoutId));
@@ -212,7 +221,7 @@ async function askGemini(messages: Array<{ role: string; content: string }>): Pr
       body: JSON.stringify({
         model: "gemini-2.5-flash",
         messages: [{ role: "system", content: OTTO_SYSTEM_PROMPT }, ...messages],
-        temperature: 0.6,
+        temperature: 0.5,
         max_tokens: MAX_OUTPUT_TOKENS,
       }),
     }).finally(() => clearTimeout(timeoutId));
