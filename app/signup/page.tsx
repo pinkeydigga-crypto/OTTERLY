@@ -8,123 +8,21 @@ import { ChevronLeft, User, Mail, Lock } from 'lucide-react';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME_MS = 60 * 1000;
-const PENDING_GOOGLE_SIGNUP_KEY = 'otterleo_pending_google_signup_v2';
 
 const BLOCKED_EXACT_WORDS = new Set([
-  // Adult / 18+ / Sexual / Slurs
-  "porn",
-  "porno",
-  "pornhub",
-  "xxx",
-  "nsfw",
-  "hentai",
-  "erotic",
-  "nude",
-  "nudes",
-  "naked",
-  "boob",
-  "boobs",
-  "booby",
-  "boobies",
-  "tits",
-  "titties",
-  "tit",
-  "vagina",
-  "penis",
-  "dick",
-  "cock",
-  "pussy",
-  "asshole",
-  "bitch",
-  "bastard",
-  "slut",
-  "whore",
-  "fuck",
-  "fucker",
-  "fucking",
-  "shit",
-  "cunt",
-  "cum",
-  "jizz",
-  "blowjob",
-  "handjob",
-  "anal",
-  "anus",
-  "rape",
-  "rapist",
-  "molest",
-  "pedophile",
-  "pedo",
-  "chutiya",
-  "bc",
-  "mc",
-  "bhosdike",
-  "gaand",
-  "gandu",
-  "randi",
-  "lauda",
-  "lund",
-  "chut",
-
-  // Alcohol / Daaru / Drinks
-  "daaru",
-  "daru",
-  "sharab",
-  "sharaab",
-  "alcohol",
-  "liquor",
-  "booze",
-  "beer",
-  "vodka",
-  "whiskey",
-  "whisky",
-  "rum",
-  "gin",
-  "tequila",
-  "wine",
-  "scotch",
-  "brandy",
-  "drunk",
-  "peeyakkad",
-  "bewda",
-  "bevda",
-  "tharra",
-  "countryliquor",
-
-  // Drugs / Nasha / Substances
-  "drug",
-  "drugs",
-  "nasha",
-  "nashedi",
-  "ganja",
-  "weed",
-  "marijuana",
-  "charas",
-  "hash",
-  "hashish",
-  "cocaine",
-  "coke",
-  "heroin",
-  "smack",
-  "brownsugar",
-  "meth",
-  "amphetamine",
-  "ecstasy",
-  "molly",
-  "lsd",
-  "acid",
-  "opium",
-  "afeem",
-  "bhang",
-  "ketamine",
-  "xanax",
-  "stoney",
-  "stoner",
-  "high",
-  "junkie",
-  "addict",
-  "cartel",
-  "dealer",
+  "porn", "porno", "pornhub", "xxx", "nsfw", "hentai", "erotic", "nude", "nudes", "naked",
+  "boob", "boobs", "booby", "boobies", "tits", "titties", "tit", "vagina", "penis", "dick",
+  "cock", "pussy", "asshole", "bitch", "bastard", "slut", "whore", "fuck", "fucker", "fucking",
+  "shit", "cunt", "cum", "jizz", "blowjob", "handjob", "anal", "anus", "rape", "rapist",
+  "molest", "pedophile", "pedo", "chutiya", "bc", "mc", "bhosdike", "gaand", "gandu", "randi",
+  "lauda", "lund", "chut",
+  "daaru", "daru", "sharab", "sharaab", "alcohol", "liquor", "booze", "beer", "vodka",
+  "whiskey", "whisky", "rum", "gin", "tequila", "wine", "scotch", "brandy", "drunk",
+  "peeyakkad", "bewda", "bevda", "tharra", "countryliquor",
+  "drug", "drugs", "nasha", "nashedi", "ganja", "weed", "marijuana", "charas", "hash",
+  "hashish", "cocaine", "coke", "heroin", "smack", "brownsugar", "meth", "amphetamine",
+  "ecstasy", "molly", "lsd", "acid", "opium", "afeem", "bhang", "ketamine", "xanax",
+  "stoney", "stoner", "high", "junkie", "addict", "cartel", "dealer",
 ]);
 
 const BLOCKED_PHRASES = [
@@ -135,47 +33,12 @@ const BLOCKED_PHRASES = [
 ];
 
 const BLOCKED_SUBSTRINGS = [
-  "porn",
-  "xxx",
-  "hentai",
-  "boob",
-  "vagina",
-  "penis",
-  "blowjob",
-  "handjob",
-  "chutiya",
-  "bhosdi",
-  "gaand",
-  "gandu",
-  "randi",
-  "lauda",
-  "lund",
-  "chut",
-  "terimaaki",
-  "terimaki",
-  "daaru",
-  "daru",
-  "sharab",
-  "sharaab",
-  "alcohol",
-  "liquor",
-  "booze",
-  "vodka",
-  "whiskey",
-  "whisky",
-  "tequila",
-  "cocaine",
-  "heroin",
-  "marijuana",
-  "charas",
-  "hashish",
-  "ganja",
-  "nashedi",
-  "brownsugar",
-  "afeem",
-  "bhang",
-  "ketamine",
-  "pedophile",
+  "porn", "xxx", "hentai", "boob", "vagina", "penis", "blowjob", "handjob",
+  "chutiya", "bhosdi", "gaand", "gandu", "randi", "lauda", "lund", "chut",
+  "terimaaki", "terimaki", "daaru", "daru", "sharab", "sharaab", "alcohol",
+  "liquor", "booze", "vodka", "whiskey", "whisky", "tequila", "cocaine",
+  "heroin", "marijuana", "charas", "hashish", "ganja", "nashedi", "brownsugar",
+  "afeem", "bhang", "ketamine", "pedophile",
 ];
 
 function normalizeText(input: string): string {
@@ -235,6 +98,20 @@ const getLocalDateString = (date = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
+async function getCurrentAuthUser() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (sessionData?.session?.user?.email) {
+    return sessionData.session.user;
+  }
+
+  const { data: userData, error } = await supabase.auth.getUser();
+  if (!error && userData?.user?.email) {
+    return userData.user;
+  }
+
+  return null;
+}
+
 function GoogleColorIcon() {
   return (
     <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
@@ -263,14 +140,21 @@ export default function SignupPage() {
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/onboard%20(1).png';
   const introGifUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hloi%20(1).gif';
 
-  // Step 1: Intro, Step 2: Avatar, Step 3: Skill, Step 4: Name & Consent,
-  // Step 5: Google + Sign up with email, Step 6: Email + Password signup, Step 7: Fallback if sessionStorage cleared
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
+  // Steps:
+  // 1: Intro ("Hi there! I'm Otto")
+  // 2: Auth choice (Google / Email)
+  // 3: Email + Password form
+  // 4: Onboarding - Avatar (only if profile does not exist)
+  // 5: Onboarding - Skill level
+  // 6: Onboarding - Name & Consent (SUBMIT)
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
+  const [introDone, setIntroDone] = useState(false);
+  const [authUser, setAuthUser] = useState<{ id: string; email: string } | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
   const [skillLevel, setSkillLevel] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [alreadyExistsPrompt, setAlreadyExistsPrompt] = useState(false);
+  const [showLoginLink, setShowLoginLink] = useState(false);
   const [consent, setConsent] = useState(false);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
@@ -300,8 +184,12 @@ export default function SignupPage() {
   useEffect(() => {
     let fullText = "Hi there! I'm Otto";
     if (step === 2) {
-      fullText = "Choose your avatar!";
+      fullText = "Sign up with Google or email to begin!";
     } else if (step === 3) {
+      fullText = "Enter your email and password.";
+    } else if (step === 4) {
+      fullText = "Choose your avatar!";
+    } else if (step === 5) {
       if (skillLevel === 'beginner') {
         fullText = "That's great! We will help you build your sketching skills from scratch.";
       } else if (skillLevel === 'intermediate') {
@@ -311,14 +199,8 @@ export default function SignupPage() {
       } else {
         fullText = "What's your drawing level?";
       }
-    } else if (step === 4) {
-      fullText = "What should Otto call you?";
-    } else if (step === 5) {
-      fullText = "Save your information and get started!";
     } else if (step === 6) {
-      fullText = "Almost done! Let's make your account.";
-    } else if (step === 7) {
-      fullText = "Almost there! Fill your name to finish.";
+      fullText = "What should Otto call you?";
     }
 
     setTypedText('');
@@ -337,186 +219,130 @@ export default function SignupPage() {
     return () => clearInterval(timer);
   }, [step, skillLevel]);
 
-  const handleAlreadyCreatedAccount = useCallback(async () => {
-    try {
-      sessionStorage.removeItem(PENDING_GOOGLE_SIGNUP_KEY);
-      await supabase.auth.signOut();
-      localStorage.removeItem('isLoggedIn');
-      localStorage.removeItem('user');
-    } catch (e) {}
-
-    setLoading(false);
-    setAlreadyExistsPrompt(true);
-    setErrorMessage("Account already created. Please log in.");
-  }, []);
-
-  const checkExistingProfile = useCallback(async (userId: string, email: string): Promise<boolean> => {
-    const { data: byId } = await supabase
+  const findExistingProfile = useCallback(async (userId: string, email: string) => {
+    const { data: byId, error: idErr } = await supabase
       .from('profiles')
-      .select('id')
+      .select('*')
       .eq('id', userId)
       .maybeSingle();
 
-    if (byId?.id) return true;
+    if (idErr) throw idErr;
+    if (byId) return byId;
 
     if (email) {
-      const { data: byEmail } = await supabase
+      const { data: byEmail, error: emailErr } = await supabase
         .from('profiles')
-        .select('id')
+        .select('*')
         .eq('email', email.trim().toLowerCase())
         .maybeSingle();
 
-      if (byEmail?.id) return true;
+      if (emailErr) throw emailErr;
+      if (byEmail) return byEmail;
     }
 
-    return false;
+    return null;
   }, []);
 
-  const createNewProfileAndRedirect = useCallback(
-    async ({
-      userId,
-      verifiedEmail,
-      cleanName,
-      avatar,
-      skill,
-    }: {
-      userId: string;
-      verifiedEmail: string;
-      cleanName: string;
-      avatar: string;
-      skill: string;
-    }) => {
-      const exists = await checkExistingProfile(userId, verifiedEmail);
-      if (exists) {
-        await handleAlreadyCreatedAccount();
-        return;
-      }
-
-      const todayStr = getLocalDateString();
-
-      const { data: createdProfile, error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: userId,
-            name: cleanName,
-            email: verifiedEmail,
-            avatar_url: avatar,
-            skill_level: skill || 'beginner',
-            xp: 0,
-            streak: 1,
-            last_login: todayStr,
-          }
-        ])
-        .select('id')
-        .maybeSingle();
-
-      if (profileError) {
-        if (profileError.code === '23505') {
-          await handleAlreadyCreatedAccount();
-          return;
-        }
-        console.error("Profile creation error:", profileError);
-        throw new Error(`Profile could not be created in Supabase: ${profileError.message}`);
-      }
-
-      if (!createdProfile?.id) {
-        throw new Error("Profile row was not created in Supabase. Please check your profile permissions and try again.");
-      }
-
-      const { error: consentError } = await supabase
-        .from('user_consents')
-        .insert([
-          {
-            user_id: userId,
-            consent_given: true,
-            policy_version: '1.0'
-          }
-        ]);
-
-      if (consentError) {
-        console.error("Consent recording error:", consentError);
-        throw new Error(`Consent could not be saved: ${consentError.message}`);
-      }
-
+  const redirectToDashboardWithProfile = useCallback(
+    (profile: any, userId: string, email: string) => {
       try {
-        sessionStorage.removeItem(PENDING_GOOGLE_SIGNUP_KEY);
         localStorage.removeItem('signup_attempts');
         localStorage.removeItem('signup_lockout_until');
       } catch (e) {}
 
+      const cleanEmail = (profile?.email || email || '').trim().toLowerCase();
       const userData = {
-        id: userId,
-        name: cleanName,
-        email: verifiedEmail,
-        avatar,
-        skill_level: skill || 'beginner',
+        id: profile?.id || userId,
+        name: profile?.name || cleanEmail.split('@')[0],
+        email: cleanEmail,
+        avatar:
+          profile?.avatar_url ||
+          `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
+        skill_level: profile?.skill_level || 'beginner',
       };
 
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
-
+      setLoading(false);
       router.push('/dashboard');
     },
-    [checkExistingProfile, handleAlreadyCreatedAccount, router]
+    [router]
   );
 
-  // After Google OAuth redirect: if profile already exists -> prompt login without updating;
-  // if new user with saved info -> create profile once and go to /dashboard;
-  // if sessionStorage lost -> fallback step 7
+  // After authentication succeeds: check profile in DB.
+  // If exists -> direct /dashboard without updating. If missing -> start onboarding (step 4).
+  const handleAuthenticatedSignupUser = useCallback(
+    async (user: any) => {
+      const cleanEmail = (user?.email || '').trim().toLowerCase();
+      if (!user?.id || !cleanEmail) return;
+
+      setIntroDone(true);
+      setLoading(true);
+      setErrorMessage('');
+      setShowLoginLink(false);
+
+      const existing = await findExistingProfile(user.id, cleanEmail);
+      if (existing) {
+        redirectToDashboardWithProfile(existing, user.id, cleanEmail);
+        return;
+      }
+
+      const googleName =
+        typeof user?.user_metadata?.full_name === 'string'
+          ? user.user_metadata.full_name.trim()
+          : typeof user?.user_metadata?.name === 'string'
+          ? user.user_metadata.name.trim()
+          : '';
+
+      if (googleName && /^[a-zA-Z\s'-]{2,15}$/.test(googleName) && isAppropriateName(googleName)) {
+        setFormData((prev) => ({ ...prev, name: prev.name || googleName }));
+      }
+
+      setAuthUser({ id: user.id, email: cleanEmail });
+      setLoading(false);
+      setStep(4);
+    },
+    [findExistingProfile, redirectToDashboardWithProfile]
+  );
+
   useEffect(() => {
     let active = true;
 
-    async function handleGoogleReturn() {
+    async function checkAuthReturn() {
       try {
-        const savedRaw = sessionStorage.getItem(PENDING_GOOGLE_SIGNUP_KEY);
-        const { data, error } = await supabase.auth.getUser();
-
-        if (!active || error || !data?.user?.email) return;
-
-        const verifiedEmail = data.user.email.trim().toLowerCase();
-        const exists = await checkExistingProfile(data.user.id, verifiedEmail);
-
-        if (!active) return;
-
-        if (exists) {
-          await handleAlreadyCreatedAccount();
-          return;
-        }
-
-        if (savedRaw) {
-          const saved = JSON.parse(savedRaw);
-          if (saved?.name) {
-            setLoading(true);
-            setErrorMessage('');
-            setAlreadyExistsPrompt(false);
-            await createNewProfileAndRedirect({
-              userId: data.user.id,
-              verifiedEmail,
-              cleanName: saved.name.trim(),
-              avatar: saved.avatar || AVATARS[0].url,
-              skill: saved.skillLevel || 'beginner',
-            });
-            return;
-          }
-        }
-
-        setStep(7);
+        const user = await getCurrentAuthUser();
+        if (!active || !user) return;
+        await handleAuthenticatedSignupUser(user);
       } catch (err: any) {
         if (!active) return;
-        console.error("Google post-redirect error:", err);
-        setErrorMessage(err?.message || "Could not finish Google sign up.");
+        console.error("Signup session check error:", err);
+        setIntroDone(true);
         setLoading(false);
-        setStep(7);
+        setErrorMessage(err?.message || "Could not verify your account after sign up.");
       }
     }
 
-    handleGoogleReturn();
+    checkAuthReturn();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!active) return;
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user?.email) {
+        try {
+          await handleAuthenticatedSignupUser(session.user);
+        } catch (err: any) {
+          if (!active) return;
+          setIntroDone(true);
+          setLoading(false);
+          setErrorMessage(err?.message || "Could not verify your account.");
+        }
+      }
+    });
 
     return () => {
       active = false;
+      listener.subscription.unsubscribe();
     };
-  }, [checkExistingProfile, createNewProfileAndRedirect, handleAlreadyCreatedAccount]);
+  }, [handleAuthenticatedSignupUser]);
 
   const syncLockoutState = useCallback(() => {
     try {
@@ -553,102 +379,19 @@ export default function SignupPage() {
     const lockUntil = Date.now() + LOCKOUT_TIME_MS;
     localStorage.setItem('signup_lockout_until', lockUntil.toString());
     setLockoutSeconds(60);
-    setAlreadyExistsPrompt(false);
-    setErrorMessage('Too many attempts. Registration locked for 60 seconds.');
+    setShowLoginLink(false);
+    setErrorMessage('Too many attempts. Please wait 60 seconds and try again.');
   };
 
-  const validateProfileInfo = (): { cleanName: string } | null => {
-    const cleanName = formData.name.trim();
-
-    if (!cleanName) {
-      setAlreadyExistsPrompt(false);
-      setErrorMessage('Please fill in your name.');
-      return null;
-    }
-
-    const nameRegex = /^[a-zA-Z\s'-]{2,15}$/;
-    if (!nameRegex.test(cleanName)) {
-      setAlreadyExistsPrompt(false);
-      setErrorMessage('Name must be 2 to 15 characters long and contain only letters.');
-      return null;
-    }
-
-    if (!isAppropriateName(cleanName)) {
-      setAlreadyExistsPrompt(false);
-      setErrorMessage('Please choose a clean name without inappropriate, offensive, alcohol, or drug words.');
-      return null;
-    }
-
-    if (!consent) {
-      setAlreadyExistsPrompt(false);
-      setErrorMessage('You must check the consent box to agree to the Terms & Privacy Policy.');
-      return null;
-    }
-
-    return { cleanName };
-  };
-
-  const handleNextStep = (e: React.FormEvent) => {
-    e.preventDefault();
-    triggerSoundAndHaptic();
-    setErrorMessage('');
-    setAlreadyExistsPrompt(false);
-
-    if (step === 3 && !skillLevel) {
-      setErrorMessage('Please select your drawing level to continue.');
-      return;
-    }
-
-    if (step === 4) {
-      const valid = validateProfileInfo();
-      if (!valid) return;
-      setStep(5);
-      return;
-    }
-
-    setStep((prev) => (prev < 4 ? ((prev + 1) as 1 | 2 | 3 | 4) : prev));
-  };
-
-  const handleGoogleVerifyStart = async () => {
+  const handleGoogleSignupStart = async () => {
     triggerSoundAndHaptic();
     if (lockoutSeconds > 0 || loading) return;
 
-    const validated = validateProfileInfo();
-    if (!validated) return;
-
-    let attempts = 0;
-    try {
-      attempts = parseInt(localStorage.getItem('signup_attempts') || '0', 10);
-      if (isNaN(attempts)) attempts = 0;
-    } catch (e) {
-      attempts = 0;
-    }
-
-    const newAttempts = attempts + 1;
-    try {
-      localStorage.setItem('signup_attempts', newAttempts.toString());
-    } catch (e) {}
-
-    if (newAttempts >= MAX_ATTEMPTS) {
-      triggerLockout();
-      return;
-    }
-
     setLoading(true);
     setErrorMessage('');
-    setAlreadyExistsPrompt(false);
+    setShowLoginLink(false);
 
     try {
-      sessionStorage.setItem(
-        PENDING_GOOGLE_SIGNUP_KEY,
-        JSON.stringify({
-          name: validated.cleanName,
-          avatar: selectedAvatar,
-          skillLevel: skillLevel || 'beginner',
-          consent: true,
-        })
-      );
-
       const redirectTo =
         typeof window !== 'undefined' ? `${window.location.origin}/signup` : undefined;
 
@@ -661,71 +404,24 @@ export default function SignupPage() {
 
       if (error) throw error;
     } catch (err: any) {
-      console.error("Google Verification Error:", err);
-      const remaining = MAX_ATTEMPTS - newAttempts;
-      setErrorMessage(
-        err?.message || `Unable to start Google verification. (${remaining} attempt${remaining > 1 ? 's' : ''} left)`
-      );
+      console.error("Google OAuth start error:", err);
+      setErrorMessage(err?.message || "Could not start Google sign up.");
       setLoading(false);
     }
   };
 
-  // Fallback submit if sessionStorage was lost during OAuth redirect
-  const handleFallbackGoogleFinish = async (e: React.FormEvent) => {
-    e.preventDefault();
-    triggerSoundAndHaptic();
-
-    if (loading) return;
-
-    const validated = validateProfileInfo();
-    if (!validated) return;
-
-    setLoading(true);
-    setErrorMessage('');
-    setAlreadyExistsPrompt(false);
-
-    try {
-      const { data: authData, error: authError } = await supabase.auth.getUser();
-      if (authError) throw authError;
-
-      const user = authData.user;
-      const verifiedEmail = (user?.email || '').trim().toLowerCase();
-
-      if (!user || !verifiedEmail) {
-        throw new Error("Google verification not found. Please try signing up with Google again.");
-      }
-
-      await createNewProfileAndRedirect({
-        userId: user.id,
-        verifiedEmail,
-        cleanName: validated.cleanName,
-        avatar: selectedAvatar,
-        skill: skillLevel || 'beginner',
-      });
-    } catch (err: any) {
-      console.error("Fallback Google Finish Error:", err);
-      setErrorMessage(err?.message || "Unable to complete account creation.");
-      setLoading(false);
-    }
-  };
-
-  // Email + password signup flow (no email verification required; never overwrites existing account)
-  const handleEmailSignup = async (e: React.FormEvent) => {
+  const handleEmailSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     triggerSoundAndHaptic();
 
     if (lockoutSeconds > 0 || loading) return;
 
-    const validated = validateProfileInfo();
-    if (!validated) return;
-
-    const { cleanName } = validated;
     const cleanEmail = formData.email.trim().toLowerCase();
     const password = formData.password;
     const confirmPassword = formData.confirmPassword;
 
     if (!cleanEmail || !password || !confirmPassword) {
-      setErrorMessage('Please fill in all fields.');
+      setErrorMessage('Please fill in email, password, and confirm password.');
       return;
     }
 
@@ -765,64 +461,163 @@ export default function SignupPage() {
 
     setLoading(true);
     setErrorMessage('');
-    setAlreadyExistsPrompt(false);
+    setShowLoginLink(false);
 
     try {
-      try {
-        await supabase.auth.signOut();
-      } catch (e) {}
-
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: cleanEmail,
-        password: password,
+        password,
       });
 
       if (authError) {
         const msg = authError.message?.toLowerCase() || '';
         if (msg.includes('already registered') || msg.includes('already exists')) {
-          await handleAlreadyCreatedAccount();
+          setErrorMessage("Account already created. Please log in.");
+          setShowLoginLink(true);
+          setLoading(false);
           return;
         }
         throw authError;
       }
 
       const user = authData.user;
-      if (!user) throw new Error("Could not create authentication session.");
+      if (!user) {
+        throw new Error("Could not create authentication session.");
+      }
 
-      // If Supabase returns an existing user with empty identities, do not overwrite profile
       if (Array.isArray(user.identities) && user.identities.length === 0) {
-        await handleAlreadyCreatedAccount();
+        setErrorMessage("Account already created. Please log in.");
+        setShowLoginLink(true);
+        setLoading(false);
         return;
       }
 
-      const alreadyHasProfile = await checkExistingProfile(user.id, cleanEmail);
-      if (alreadyHasProfile) {
-        await handleAlreadyCreatedAccount();
-        return;
-      }
-
-      await createNewProfileAndRedirect({
-        userId: user.id,
-        verifiedEmail: cleanEmail,
-        cleanName,
-        avatar: selectedAvatar,
-        skill: skillLevel || 'beginner',
-      });
+      await handleAuthenticatedSignupUser(user);
     } catch (err: any) {
-      console.error("Signup Internal Error:", err);
+      console.error("Email signup error:", err);
       const remaining = MAX_ATTEMPTS - newAttempts;
 
       if (err?.status === 429 || err?.message?.toLowerCase().includes("rate limit")) {
         triggerLockout();
       } else {
         setErrorMessage(
-          err?.message || `Unable to create account. (${remaining} attempt${remaining > 1 ? 's' : ''} left)`
+          err?.message || `Unable to sign up. (${remaining} attempt${remaining > 1 ? 's' : ''} left)`
         );
       }
 
       setLoading(false);
     }
   };
+
+  // Create profile + consent safely after onboarding, then redirect to /dashboard
+  const handleCompleteOnboarding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    triggerSoundAndHaptic();
+
+    if (loading) return;
+
+    if (!skillLevel) {
+      setErrorMessage('Please select your drawing level.');
+      return;
+    }
+
+    const cleanName = formData.name.trim();
+    if (!cleanName) {
+      setErrorMessage('Please enter your name.');
+      return;
+    }
+
+    const nameRegex = /^[a-zA-Z\s'-]{2,15}$/;
+    if (!nameRegex.test(cleanName)) {
+      setErrorMessage('Name must be 2 to 15 characters long and contain only letters.');
+      return;
+    }
+
+    if (!isAppropriateName(cleanName)) {
+      setErrorMessage('Please choose a clean name without inappropriate, offensive, alcohol, or drug words.');
+      return;
+    }
+
+    if (!consent) {
+      setErrorMessage('Please check the consent box to agree to the Terms & Privacy Policy.');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+    setShowLoginLink(false);
+
+    try {
+      const currentUser = authUser || (await getCurrentAuthUser());
+      const verifiedEmail = (currentUser?.email || '').trim().toLowerCase();
+
+      if (!currentUser?.id || !verifiedEmail) {
+        throw new Error("Session expired before saving profile. Please sign up again.");
+      }
+
+      const existing = await findExistingProfile(currentUser.id, verifiedEmail);
+      if (existing) {
+        redirectToDashboardWithProfile(existing, currentUser.id, verifiedEmail);
+        return;
+      }
+
+      const todayStr = getLocalDateString();
+
+      const { data: createdProfile, error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: currentUser.id,
+            name: cleanName,
+            email: verifiedEmail,
+            avatar_url: selectedAvatar,
+            skill_level: skillLevel,
+            xp: 0,
+            streak: 1,
+            last_login: todayStr,
+          }
+        ])
+        .select('*')
+        .maybeSingle();
+
+      if (profileError) {
+        if (profileError.code === '23505') {
+          const raceProfile = await findExistingProfile(currentUser.id, verifiedEmail);
+          if (raceProfile) {
+            redirectToDashboardWithProfile(raceProfile, currentUser.id, verifiedEmail);
+            return;
+          }
+        }
+        throw new Error(`Profile could not be saved: ${profileError.message}`);
+      }
+
+      if (!createdProfile?.id) {
+        throw new Error("Profile was not created. Please check database permissions and try again.");
+      }
+
+      const { error: consentError } = await supabase
+        .from('user_consents')
+        .insert([
+          {
+            user_id: currentUser.id,
+            consent_given: true,
+            policy_version: '1.0'
+          }
+        ]);
+
+      if (consentError) {
+        throw new Error(`Consent could not be saved: ${consentError.message}`);
+      }
+
+      redirectToDashboardWithProfile(createdProfile, currentUser.id, verifiedEmail);
+    } catch (err: any) {
+      console.error("Onboarding completion error:", err);
+      setErrorMessage(err?.message || "Unable to complete sign up.");
+      setLoading(false);
+    }
+  };
+
+  const showIntroScreen = step === 1 && !introDone;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden font-sans">
@@ -876,7 +671,7 @@ export default function SignupPage() {
         }
       `}</style>
 
-      {step !== 1 && (
+      {!showIntroScreen && (
         <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
           <Link
             href="/"
@@ -890,7 +685,7 @@ export default function SignupPage() {
 
       <div className="relative max-w-md w-full pt-4">
 
-        {step === 1 ? (
+        {showIntroScreen ? (
           <div className="flex flex-col items-center justify-center space-y-6 py-6 z-10 relative">
             <div className="relative px-6 py-3.5 rounded-2xl text-center text-base sm:text-lg font-black text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-md max-w-xs">
               <span>
@@ -923,6 +718,7 @@ export default function SignupPage() {
                 type="button"
                 onClick={() => {
                   triggerSoundAndHaptic();
+                  setIntroDone(true);
                   setStep(2);
                 }}
                 style={{
@@ -941,29 +737,31 @@ export default function SignupPage() {
             <div className="flex items-center justify-between pb-1">
               <button
                 type="button"
+                disabled={loading}
                 onClick={() => {
                   triggerSoundAndHaptic();
-                  if (step === 6) {
-                    setStep(5);
-                  } else if (step > 2) {
-                    setStep((prev) => (prev - 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7);
-                  } else {
-                    setStep(1);
-                  }
                   setErrorMessage('');
-                  setAlreadyExistsPrompt(false);
+                  setShowLoginLink(false);
+                  if (step === 3) {
+                    setStep(2);
+                  } else if (step === 2) {
+                    setIntroDone(false);
+                    setStep(1);
+                  } else if (step > 4) {
+                    setStep((prev) => (prev - 1) as 4 | 5 | 6);
+                  }
                 }}
-                className="inline-flex items-center gap-1 text-xs font-black text-[#2563EB] hover:underline cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs font-black text-[#2563EB] hover:underline cursor-pointer disabled:opacity-50"
               >
                 <ChevronLeft className="w-4 h-4" />
                 <span>Back</span>
               </button>
 
               <div className="flex items-center justify-center gap-2 mx-auto">
-                <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
-                <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 3 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+                <div className={`h-2.5 rounded-full transition-all duration-300 ${step <= 3 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
                 <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 4 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
-                <div className={`h-2.5 rounded-full transition-all duration-300 ${step >= 5 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+                <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 5 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+                <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 6 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
               </div>
 
               <div className="w-10" />
@@ -991,7 +789,7 @@ export default function SignupPage() {
             {errorMessage && (
               <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-semibold space-y-2">
                 <p>{errorMessage}</p>
-                {alreadyExistsPrompt && (
+                {showLoginLink && (
                   <div>
                     <Link
                       href="/login"
@@ -1006,181 +804,10 @@ export default function SignupPage() {
             )}
 
             {step === 2 && (
-              <div className="space-y-4 pt-1">
-                <div className="grid grid-cols-4 gap-3.5 max-w-md mx-auto">
-                  {AVATARS.map((avatar) => {
-                    const isSelected = selectedAvatar === avatar.url;
-                    return (
-                      <button
-                        key={avatar.id}
-                        type="button"
-                        onClick={() => {
-                          triggerSoundAndHaptic();
-                          setSelectedAvatar(avatar.url);
-                          setErrorMessage('');
-                          setAlreadyExistsPrompt(false);
-                        }}
-                        className={`relative aspect-square rounded-2xl p-1.5 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col items-center justify-center ${
-                          isSelected
-                            ? 'ring-4 ring-[#2563EB] scale-105 shadow-md bg-blue-50 border-2 border-[#2563EB]'
-                            : 'opacity-80 hover:opacity-100 border-2 border-slate-200 hover:scale-105'
-                        }`}
-                      >
-                        <img
-                          src={avatar.url}
-                          alt={avatar.name}
-                          className="w-full h-full object-contain scale-125 rounded-xl pointer-events-none"
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerSoundAndHaptic();
-                    setErrorMessage('');
-                    setAlreadyExistsPrompt(false);
-                    setStep(3);
-                  }}
-                  style={{
-                    backgroundColor: '#2563EB',
-                    boxShadow: '0px 6px 0px #1D4ED8',
-                  }}
-                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2"
-                >
-                  NEXT
-                </button>
-              </div>
-            )}
-
-            {step === 3 && (
-              <form onSubmit={handleNextStep} className="space-y-3 pt-1">
-                <div className="pt-1">
-                  <div className="space-y-2.5">
-                    {SKILL_LEVELS.map((lvl) => {
-                      const isSelected = skillLevel === lvl.id;
-                      return (
-                        <button
-                          key={lvl.id}
-                          type="button"
-                          onClick={() => {
-                            triggerSoundAndHaptic();
-                            setSkillLevel(lvl.id);
-                            setErrorMessage('');
-                            setAlreadyExistsPrompt(false);
-                          }}
-                          className={`w-full p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-center justify-between relative overflow-hidden ${
-                            isSelected
-                              ? 'border-[#2563EB] bg-[#F0F7FF] shadow-xs'
-                              : 'border-slate-200 hover:border-slate-300 bg-white'
-                          }`}
-                        >
-                          {isSelected && (
-                            <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#2563EB]" />
-                          )}
-
-                          <div className={`pl-1 ${isSelected ? 'pl-3' : ''} min-w-0`}>
-                            <p className={`text-xs sm:text-sm font-black ${isSelected ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>
-                              {lvl.label}
-                            </p>
-                            <p className="text-[11px] font-medium text-slate-500">
-                              {lvl.desc}
-                            </p>
-                          </div>
-
-                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                            isSelected ? 'border-[#2563EB] bg-[#2563EB]' : 'border-slate-300'
-                          }`}>
-                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  style={{
-                    backgroundColor: '#2563EB',
-                    boxShadow: '0px 6px 0px #1D4ED8',
-                  }}
-                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2"
-                >
-                  NEXT
-                </button>
-              </form>
-            )}
-
-            {step === 4 && (
-              <form onSubmit={handleNextStep} className="space-y-3.5 pt-1">
-                <div>
-                  <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
-                  <div className="relative flex items-center">
-                    <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
-                    <input
-                      type="text"
-                      name="name"
-                      disabled={lockoutSeconds > 0 || loading}
-                      value={formData.name}
-                      onChange={(e) => {
-                        handleChange(e);
-                        setErrorMessage('');
-                        setAlreadyExistsPrompt(false);
-                      }}
-                      placeholder="John Doe"
-                      className="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-2 pt-1">
-                  <input
-                    type="checkbox"
-                    id="consent"
-                    disabled={lockoutSeconds > 0 || loading}
-                    checked={consent}
-                    onChange={(e) => {
-                      triggerSoundAndHaptic();
-                      setConsent(e.target.checked);
-                      setErrorMessage('');
-                      setAlreadyExistsPrompt(false);
-                    }}
-                    className="mt-0.5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
-                  />
-                  <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
-                    I consent to the collection and processing of my personal data in accordance with our{' '}
-                    <Link href="/terms" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
-                      Terms & Conditions
-                    </Link>{' '}
-                    and{' '}
-                    <Link href="/privacy" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
-                      Privacy Policy
-                    </Link>.
-                  </label>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading || lockoutSeconds > 0}
-                  style={{
-                    backgroundColor: lockoutSeconds > 0 || loading ? '#94A3B8' : '#2563EB',
-                    boxShadow: lockoutSeconds > 0 || loading ? 'none' : '0px 6px 0px #1D4ED8',
-                  }}
-                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  SUBMIT
-                </button>
-              </form>
-            )}
-
-            {step === 5 && (
               <div className="space-y-3 pt-1">
                 <button
                   type="button"
-                  onClick={handleGoogleVerifyStart}
+                  onClick={handleGoogleSignupStart}
                   disabled={loading || lockoutSeconds > 0}
                   className="w-full py-3.5 px-4 rounded-full bg-white hover:bg-slate-50 border-2 border-[#CBD5E1] hover:border-[#2563EB] shadow-sm font-bold text-sm sm:text-base text-[#0F172A] cursor-pointer active:translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5"
                 >
@@ -1206,8 +833,8 @@ export default function SignupPage() {
                   onClick={() => {
                     triggerSoundAndHaptic();
                     setErrorMessage('');
-                    setAlreadyExistsPrompt(false);
-                    setStep(6);
+                    setShowLoginLink(false);
+                    setStep(3);
                   }}
                   className="w-full py-2.5 px-4 rounded-full bg-white hover:bg-slate-50 border border-slate-300 font-bold text-xs text-[#0F172A] cursor-pointer active:translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
@@ -1217,8 +844,8 @@ export default function SignupPage() {
               </div>
             )}
 
-            {step === 6 && (
-              <form onSubmit={handleEmailSignup} className="space-y-3 pt-1">
+            {step === 3 && (
+              <form onSubmit={handleEmailSignupSubmit} className="space-y-3 pt-1">
                 <div>
                   <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
                   <div className="relative flex items-center">
@@ -1231,7 +858,7 @@ export default function SignupPage() {
                       onChange={(e) => {
                         handleChange(e);
                         setErrorMessage('');
-                        setAlreadyExistsPrompt(false);
+                        setShowLoginLink(false);
                       }}
                       placeholder="youremail@gmail.com"
                       className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
@@ -1251,7 +878,7 @@ export default function SignupPage() {
                       onChange={(e) => {
                         handleChange(e);
                         setErrorMessage('');
-                        setAlreadyExistsPrompt(false);
+                        setShowLoginLink(false);
                       }}
                       placeholder="At least 8 characters"
                       className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
@@ -1271,7 +898,7 @@ export default function SignupPage() {
                       onChange={(e) => {
                         handleChange(e);
                         setErrorMessage('');
-                        setAlreadyExistsPrompt(false);
+                        setShowLoginLink(false);
                       }}
                       placeholder="Re-enter password"
                       className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
@@ -1291,52 +918,166 @@ export default function SignupPage() {
                   {lockoutSeconds > 0
                     ? `LOCKED (${lockoutSeconds}s)`
                     : loading
-                    ? 'CREATING...'
-                    : 'CREATE ACCOUNT'}
+                    ? 'VERIFYING...'
+                    : 'CONTINUE'}
                 </button>
               </form>
             )}
 
-            {step === 7 && (
-              <form onSubmit={handleFallbackGoogleFinish} className="space-y-3 pt-1">
+            {step === 4 && (
+              <div className="space-y-4 pt-1">
+                <div className="grid grid-cols-4 gap-3.5 max-w-md mx-auto">
+                  {AVATARS.map((avatar) => {
+                    const isSelected = selectedAvatar === avatar.url;
+                    return (
+                      <button
+                        key={avatar.id}
+                        type="button"
+                        onClick={() => {
+                          triggerSoundAndHaptic();
+                          setSelectedAvatar(avatar.url);
+                          setErrorMessage('');
+                        }}
+                        className={`relative aspect-square rounded-2xl p-1.5 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col items-center justify-center ${
+                          isSelected
+                            ? 'ring-4 ring-[#2563EB] scale-105 shadow-md bg-blue-50 border-2 border-[#2563EB]'
+                            : 'opacity-80 hover:opacity-100 border-2 border-slate-200 hover:scale-105'
+                        }`}
+                      >
+                        <img
+                          src={avatar.url}
+                          alt={avatar.name}
+                          className="w-full h-full object-contain scale-125 rounded-xl pointer-events-none"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerSoundAndHaptic();
+                    setErrorMessage('');
+                    setStep(5);
+                  }}
+                  style={{
+                    backgroundColor: '#2563EB',
+                    boxShadow: '0px 6px 0px #1D4ED8',
+                  }}
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2"
+                >
+                  NEXT
+                </button>
+              </div>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-3 pt-1">
+                <div className="space-y-2.5">
+                  {SKILL_LEVELS.map((lvl) => {
+                    const isSelected = skillLevel === lvl.id;
+                    return (
+                      <button
+                        key={lvl.id}
+                        type="button"
+                        onClick={() => {
+                          triggerSoundAndHaptic();
+                          setSkillLevel(lvl.id);
+                          setErrorMessage('');
+                        }}
+                        className={`w-full p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-center justify-between relative overflow-hidden ${
+                          isSelected
+                            ? 'border-[#2563EB] bg-[#F0F7FF] shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="absolute left-0 top-0 bottom-0 w-2 bg-[#2563EB]" />
+                        )}
+
+                        <div className={`pl-1 ${isSelected ? 'pl-3' : ''} min-w-0`}>
+                          <p className={`text-xs sm:text-sm font-black ${isSelected ? 'text-[#2563EB]' : 'text-[#0F172A]'}`}>
+                            {lvl.label}
+                          </p>
+                          <p className="text-[11px] font-medium text-slate-500">
+                            {lvl.desc}
+                          </p>
+                        </div>
+
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                          isSelected ? 'border-[#2563EB] bg-[#2563EB]' : 'border-slate-300'
+                        }`}>
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerSoundAndHaptic();
+                    if (!skillLevel) {
+                      setErrorMessage('Please select your drawing level to continue.');
+                      return;
+                    }
+                    setErrorMessage('');
+                    setStep(6);
+                  }}
+                  style={{
+                    backgroundColor: '#2563EB',
+                    boxShadow: '0px 6px 0px #1D4ED8',
+                  }}
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2"
+                >
+                  NEXT
+                </button>
+              </div>
+            )}
+
+            {step === 6 && (
+              <form onSubmit={handleCompleteOnboarding} className="space-y-3.5 pt-1">
                 <div>
                   <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    disabled={loading}
-                    value={formData.name}
-                    onChange={(e) => {
-                      handleChange(e);
-                      setErrorMessage('');
-                      setAlreadyExistsPrompt(false);
-                    }}
-                    placeholder="John Doe"
-                    className="w-full px-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] font-medium text-[#0F172A]"
-                  />
+                  <div className="relative flex items-center">
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
+                    <input
+                      type="text"
+                      name="name"
+                      disabled={loading}
+                      value={formData.name}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setErrorMessage('');
+                      }}
+                      placeholder="John Doe"
+                      className="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-start gap-2 pt-1">
                   <input
                     type="checkbox"
-                    id="consentFallback"
+                    id="consent"
                     disabled={loading}
                     checked={consent}
                     onChange={(e) => {
                       triggerSoundAndHaptic();
                       setConsent(e.target.checked);
                       setErrorMessage('');
-                      setAlreadyExistsPrompt(false);
                     }}
-                    className="mt-0.5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer"
+                    className="mt-0.5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
                   />
-                  <label htmlFor="consentFallback" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
-                    I agree to the{' '}
-                    <Link href="/terms" className="text-[#2563EB] font-bold hover:underline">
+                  <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
+                    I consent to the collection and processing of my personal data in accordance with our{' '}
+                    <Link href="/terms" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
                       Terms & Conditions
                     </Link>{' '}
                     and{' '}
-                    <Link href="/privacy" className="text-[#2563EB] font-bold hover:underline">
+                    <Link href="/privacy" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
                       Privacy Policy
                     </Link>.
                   </label>
@@ -1349,9 +1090,9 @@ export default function SignupPage() {
                     backgroundColor: loading ? '#94A3B8' : '#2563EB',
                     boxShadow: loading ? 'none' : '0px 6px 0px #1D4ED8',
                   }}
-                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'FINISHING...' : 'SUBMIT'}
+                  {loading ? 'SAVING...' : 'SUBMIT'}
                 </button>
               </form>
             )}

@@ -1,16 +1,28 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { ArrowLeft } from 'lucide-react';
 
-// Updated: 4 attempts max
 const MAX_ATTEMPTS = 4;
-// Updated: 5 minutes lockout (5 * 60 * 1000 ms)
 const LOCKOUT_TIME_MS = 5 * 60 * 1000;
-// Throttle cooldown: 3 seconds to prevent button spamming
 const THROTTLE_COOLDOWN_MS = 3000;
+
+async function getCurrentAuthUser() {
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (sessionData?.session?.user?.email) {
+    return sessionData.session.user;
+  }
+
+  const { data: userData, error } = await supabase.auth.getUser();
+  if (!error && userData?.user?.email) {
+    return userData.user;
+  }
+
+  return null;
+}
 
 function GoogleColorIcon() {
   return (
@@ -36,15 +48,16 @@ function GoogleColorIcon() {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
 
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [showSignupOption, setShowSignupOption] = useState(false);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const [isThrottled, setIsThrottled] = useState(false);
 
-  // Dynamic Typewriter effect state
   const [typedText, setTypedText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
@@ -66,68 +79,100 @@ export default function LoginPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Sync user profile to localStorage when returning from Google OAuth login
+  const handleMissingProfileSignOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('user');
+    } catch (e) {}
+
+    setLoading(false);
+    setGoogleLoading(false);
+    setShowSignupOption(true);
+    setErrorMessage("No account found. Please sign up first.");
+  }, []);
+
+  // Steps 3-5 of Login: check profile -> if exists go /dashboard, if missing sign out + signup option
+  const completeLoginAfterAuth = useCallback(
+    async (user: any) => {
+      const cleanEmail = (user?.email || '').trim().toLowerCase();
+      if (!user?.id || !cleanEmail) return;
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        throw new Error(`Could not check profile: ${profileError.message}`);
+      }
+
+      if (profile) {
+        localStorage.removeItem('login_attempts');
+        localStorage.removeItem('login_lockout_until');
+
+        const userData = {
+          id: user.id,
+          email: cleanEmail,
+          name: profile?.name || cleanEmail.split('@')[0],
+          avatar:
+            profile?.avatar_url ||
+            `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
+          skill_level: profile?.skill_level || 'beginner',
+        };
+
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('isLoggedIn', 'true');
+        router.push('/dashboard');
+      } else {
+        await handleMissingProfileSignOut();
+      }
+    },
+    [handleMissingProfileSignOut, router]
+  );
+
   useEffect(() => {
     let active = true;
 
-    async function syncGoogleSession() {
+    async function syncGoogleLoginReturn() {
       try {
-        const { data, error } = await supabase.auth.getUser();
-        if (!active || error || !data?.user?.email) return;
-
-        const cleanEmail = data.user.email.trim().toLowerCase();
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .maybeSingle();
-
+        const user = await getCurrentAuthUser();
+        if (!active || !user) return;
+        setGoogleLoading(true);
+        await completeLoginAfterAuth(user);
+      } catch (err: any) {
         if (!active) return;
-
-        if (profileError) {
-          console.error("Google profile lookup error:", profileError);
-          setErrorMessage("Could not verify your account. Please try again.");
-          return;
-        }
-
-        if (profile) {
-          localStorage.removeItem('login_attempts');
-          localStorage.removeItem('login_lockout_until');
-
-          const userData = {
-            id: data.user.id,
-            email: cleanEmail,
-            name: profile?.name || cleanEmail.split('@')[0],
-            avatar: profile?.avatar_url || `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
-          };
-
-          localStorage.setItem('user', JSON.stringify(userData));
-          localStorage.setItem('isLoggedIn', 'true');
-          window.location.assign('/dashboard');
-        } else {
-          try {
-            await supabase.auth.signOut();
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('user');
-          } catch (e) {}
-
-          if (!active) return;
-          setGoogleLoading(false);
-          setErrorMessage("No account found. Please sign up first.");
-        }
-      } catch (e) {
-        // Ignore non-OAuth session checks
+        console.error("Google login sync error:", err);
+        setGoogleLoading(false);
+        setShowSignupOption(false);
+        setErrorMessage(err?.message || "Could not verify your account. Please try again.");
       }
     }
 
-    syncGoogleSession();
+    syncGoogleLoginReturn();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!active) return;
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user?.email) {
+        try {
+          setGoogleLoading(true);
+          await completeLoginAfterAuth(session.user);
+        } catch (err: any) {
+          if (!active) return;
+          setGoogleLoading(false);
+          setShowSignupOption(false);
+          setErrorMessage(err?.message || "Could not verify your account.");
+        }
+      }
+    });
 
     return () => {
       active = false;
+      listener.subscription.unsubscribe();
     };
-  }, []);
+  }, [completeLoginAfterAuth]);
 
-  // Ref to keep track of the last click timestamp for throttling
   const lastClickTimeRef = useRef<number>(0);
 
   const [formData, setFormData] = useState({
@@ -159,7 +204,6 @@ export default function LoginPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Helper function to format remaining seconds into M:SS
   const formatTime = (totalSeconds: number) => {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
@@ -171,6 +215,7 @@ export default function LoginPage() {
 
     setGoogleLoading(true);
     setErrorMessage('');
+    setShowSignupOption(false);
 
     try {
       const redirectTo =
@@ -195,10 +240,8 @@ export default function LoginPage() {
     e.preventDefault();
     e.stopPropagation();
 
-    // 1. Lockout & Loading Check
     if (lockoutSeconds > 0 || loading || googleLoading) return;
 
-    // 2. Throttling / Debouncing Check (Prevent rapid spam clicks)
     const now = Date.now();
     if (now - lastClickTimeRef.current < THROTTLE_COOLDOWN_MS) {
       return;
@@ -211,6 +254,7 @@ export default function LoginPage() {
       const lockUntil = Date.now() + LOCKOUT_TIME_MS;
       localStorage.setItem('login_lockout_until', lockUntil.toString());
       setLockoutSeconds(LOCKOUT_TIME_MS / 1000);
+      setShowSignupOption(false);
       setErrorMessage('Too many failed attempts. Login locked for 5 minutes.');
       setIsThrottled(false);
       return;
@@ -218,6 +262,7 @@ export default function LoginPage() {
 
     setLoading(true);
     setErrorMessage('');
+    setShowSignupOption(false);
 
     const cleanEmail = formData.email.trim().toLowerCase();
 
@@ -230,25 +275,7 @@ export default function LoginPage() {
       if (authError) throw authError;
 
       if (authData.user) {
-        localStorage.removeItem('login_attempts');
-        localStorage.removeItem('login_lockout_until');
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authData.user.id)
-          .single();
-
-        const userData = {
-          id: authData.user.id,
-          email: cleanEmail,
-          name: profile?.name || cleanEmail.split('@')[0],
-          avatar: profile?.avatar_url || `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
-        };
-
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('isLoggedIn', 'true');
-        window.location.assign('/dashboard');
+        await completeLoginAfterAuth(authData.user);
       }
     } catch (err: any) {
       console.error("Internal Auth Debug:", err);
@@ -267,7 +294,6 @@ export default function LoginPage() {
       }
 
       setLoading(false);
-      // Reset throttle state after failure delay
       setTimeout(() => setIsThrottled(false), THROTTLE_COOLDOWN_MS);
     }
   };
@@ -275,7 +301,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
 
-      {/* Speech Bubble Tail Pointing Left */}
       <style jsx global>{`
         .speech-bubble-tail-left {
           position: absolute;
@@ -301,7 +326,6 @@ export default function LoginPage() {
         }
       `}</style>
 
-      {/* BACK TO HOME BUTTON */}
       <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
         <Link
           href="/"
@@ -314,10 +338,8 @@ export default function LoginPage() {
 
       <div className="relative max-w-md w-full pt-10">
 
-        {/* Main Card Container */}
         <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
 
-          {/* MASCOT & SPEECH BUBBLE (SAME AS SIGNUP PAGE) */}
           <div className="flex items-center gap-3 my-2 pl-1">
             <div className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md shrink-0">
               <img src={mascotUrl} alt="Otto Mascot" className="w-full h-full object-contain" />
@@ -334,8 +356,18 @@ export default function LoginPage() {
           </div>
 
           {errorMessage && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-semibold">
-              {errorMessage}
+            <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-semibold space-y-2">
+              <p>{errorMessage}</p>
+              {showSignupOption && (
+                <div>
+                  <Link
+                    href="/signup"
+                    className="inline-block px-4 py-1.5 rounded-full bg-[#2563EB] text-white font-black text-[11px] uppercase tracking-wider hover:opacity-95"
+                  >
+                    Create an Account
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
@@ -371,7 +403,11 @@ export default function LoginPage() {
                 disabled={lockoutSeconds > 0}
                 autoComplete="off"
                 value={formData.email}
-                onChange={handleChange}
+                onChange={(e) => {
+                  handleChange(e);
+                  setErrorMessage('');
+                  setShowSignupOption(false);
+                }}
                 placeholder="youremail@gmail.com"
                 className="w-full px-4 py-2.5 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50"
               />
@@ -386,7 +422,11 @@ export default function LoginPage() {
                 disabled={lockoutSeconds > 0}
                 autoComplete="current-password"
                 value={formData.password}
-                onChange={handleChange}
+                onChange={(e) => {
+                  handleChange(e);
+                  setErrorMessage('');
+                  setShowSignupOption(false);
+                }}
                 placeholder="••••••••"
                 className="w-full px-4 py-2.5 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-medium text-[#0F172A] disabled:opacity-50"
               />
