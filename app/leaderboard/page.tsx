@@ -386,6 +386,8 @@ export default function LeaderboardPage() {
     );
   }
 
+  const modalRank = currentUser?.rank ?? 0;
+
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-28 md:pb-0">
       <style jsx global>{`
@@ -859,7 +861,7 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {isShareModalOpen && isUserEligibleForShare && currentUser && (
+      {isShareModalOpen && isUserEligibleForShare && currentUser && modalRank > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-[2.5rem] w-full max-w-[420px] p-4 sm:p-6 shadow-2xl relative border-2 border-slate-100 my-auto">
             <button
@@ -929,7 +931,7 @@ export default function LeaderboardPage() {
                   </svg>
 
                   <span className="font-handwritten text-7xl sm:text-8xl font-black leading-none text-[#1e3a8a] tracking-tight">
-                    {currentUser.rank}
+                    {modalRank}
                   </span>
 
                   <svg className="w-10 h-20 sm:w-11 sm:h-22 text-[#93c5fd] transform scale-x-[-1]" viewBox="0 0 50 100" fill="currentColor">
@@ -948,12 +950,12 @@ export default function LeaderboardPage() {
 
                 <div className="mt-1 px-5 py-1 bg-[#fef3c7] rounded-full border border-[#fde68a]">
                   <span className="text-xs sm:text-sm font-extrabold text-[#78350f] tracking-tight uppercase">
-                    {currentUser.rank <= 3 ? "LEGENDARY" : "RISING STAR"}
+                    {modalRank <= 3 ? "LEGENDARY" : "RISING STAR"}
                   </span>
                 </div>
 
                 <p className="text-xs font-bold text-[#64748b] mt-2 tracking-tight">
-                  You&apos;re in the top {currentUser.rank}!
+                  You&apos;re in the top {modalRank}!
                 </p>
               </div>
 
