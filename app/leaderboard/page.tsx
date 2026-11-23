@@ -23,16 +23,19 @@ interface ProfileUser {
 }
 
 const PAGE_SIZE = 50;
+const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
 
 export default function LeaderboardPage() {
   const isOffline = useOfflineGuard();
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [showNoXpShareNotice, setShowNoXpShareNotice] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   const [leaderboardData, setLeaderboardData] = useState<ProfileUser[]>([]);
   const [currentUser, setCurrentUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshingRank, setIsRefreshingRank] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
@@ -129,6 +132,7 @@ export default function LeaderboardPage() {
       const { data: profiles, error } = await supabase
         .from("profiles")
         .select("id, name, avatar_url, streak, xp, created_at")
+        .gt("xp", 0)
         .order("xp", { ascending: false })
         .order("created_at", { ascending: true })
         .limit(PAGE_SIZE);
@@ -140,7 +144,8 @@ export default function LeaderboardPage() {
         return;
       }
 
-      const rawMapped = (profiles || []).map((p: any) => mapProfileRow(p, 0));
+      const activeProfiles = (profiles || []).filter((p: any) => Number(p.xp ?? 0) > 0);
+      const rawMapped = activeProfiles.map((p: any) => mapProfileRow(p, 0));
       const sortedTop = sortProfiles(rawMapped).map((item, index) => ({
         ...item,
         rank: index + 1,
@@ -152,6 +157,7 @@ export default function LeaderboardPage() {
       const userInTop50 = sortedTop.find((u) => u.id === user.id);
       if (userInTop50) {
         setCurrentUser(userInTop50);
+        setShowNoXpShareNotice(false);
       } else {
         const { data: userProfile } = await supabase
           .from("profiles")
@@ -162,12 +168,22 @@ export default function LeaderboardPage() {
         if (userProfile) {
           const p = userProfile as any;
           const myXP = Number(p.xp ?? 0);
-          const actualRank = await computeActualRank(user.id, myXP, p.created_at);
 
-          setCurrentUser({
-            ...mapProfileRow(p, actualRank),
-            full_name: p.name || "You",
-          });
+          if (myXP > 0) {
+            const actualRank = await computeActualRank(user.id, myXP, p.created_at);
+            setCurrentUser({
+              ...mapProfileRow(p, actualRank),
+              full_name: p.name || "You",
+            });
+            setShowNoXpShareNotice(false);
+          } else {
+            setCurrentUser({
+              ...mapProfileRow(p, 0),
+              full_name: p.name || "You",
+              xp_points: 0,
+              rank: undefined,
+            });
+          }
         }
       }
     } catch (err: unknown) {
@@ -179,6 +195,27 @@ export default function LeaderboardPage() {
       setLoading(false);
     }
   }, [isOffline]);
+
+  const handleManualRefresh = async () => {
+    if (isRefreshingRank || loading) return;
+    triggerHaptic();
+    setIsRefreshingRank(true);
+    try {
+      await fetchLeaderboardAndUser(true);
+    } finally {
+      setIsRefreshingRank(false);
+    }
+  };
+
+  const handleShareRankClick = () => {
+    triggerHaptic();
+    if (!currentUser || currentUser.xp_points <= 0 || !currentUser.rank) {
+      setShowNoXpShareNotice(true);
+      return;
+    }
+    setShowNoXpShareNotice(false);
+    setIsShareModalOpen(true);
+  };
 
   const handleLoadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -192,6 +229,7 @@ export default function LeaderboardPage() {
       const { data: nextProfiles, error } = await supabase
         .from("profiles")
         .select("id, name, avatar_url, streak, xp, created_at")
+        .gt("xp", 0)
         .order("xp", { ascending: false })
         .order("created_at", { ascending: true })
         .range(startIndex, endIndex);
@@ -201,8 +239,8 @@ export default function LeaderboardPage() {
         return;
       }
 
-      const nextRows = nextProfiles || [];
-      if (nextRows.length < PAGE_SIZE) {
+      const nextRows = (nextProfiles || []).filter((p: any) => Number(p.xp ?? 0) > 0);
+      if ((nextProfiles || []).length < PAGE_SIZE) {
         setHasMore(false);
       }
 
@@ -233,7 +271,7 @@ export default function LeaderboardPage() {
       if (document.visibilityState === "visible") {
         fetchLeaderboardAndUser(true);
       }
-    }, 3600000);
+    }, AUTO_REFRESH_MS);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -253,6 +291,7 @@ export default function LeaderboardPage() {
   const rank2 = leaderboardData.length > 1 ? leaderboardData[1] : null;
   const rank3 = leaderboardData.length > 2 ? leaderboardData[2] : null;
 
+  const isUserEligibleForShare = Boolean(currentUser && currentUser.xp_points > 0 && currentUser.rank);
   const isCurrentUserInLoadedList = currentUser
     ? leaderboardData.some((u) => u.id === currentUser.id)
     : false;
@@ -530,26 +569,55 @@ export default function LeaderboardPage() {
             <span className="sm:hidden">Back</span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-100/80 px-3 py-2 rounded-xl">
-              <RefreshCw className="w-3.5 h-3.5" />
-              Refreshes every hour
-            </span>
-
-            {currentUser && (
+          {currentUser && (
+            <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={() => {
-                  triggerHaptic();
-                  setIsShareModalOpen(true);
-                }}
+                type="button"
+                onClick={handleShareRankClick}
                 className="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs sm:text-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-xs shrink-0 cursor-pointer"
               >
                 <Share2 className="w-4 h-4" />
                 <span>Share Rank Card</span>
               </button>
-            )}
-          </div>
+
+              <button
+                type="button"
+                onClick={handleManualRefresh}
+                disabled={isRefreshingRank}
+                aria-label="Refresh rank"
+                title="Refresh rank"
+                className="p-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-2xl border-2 border-slate-200/90 active:scale-95 transition-all shadow-xs shrink-0 cursor-pointer disabled:opacity-60"
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshingRank ? "animate-spin text-[#2563eb]" : ""}`} />
+              </button>
+            </div>
+          )}
         </div>
+
+        {showNoXpShareNotice && (
+          <div className="bg-amber-50 border-2 border-amber-200/90 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 shadow-2xs">
+            <p className="text-xs sm:text-sm font-black text-amber-900">
+              Complete challenges to gain XP
+            </p>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/challenges"
+                onClick={triggerHaptic}
+                className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-xs transition"
+              >
+                Go to Challenges
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowNoXpShareNotice(false)}
+                className="p-1 text-amber-700 hover:text-amber-950 rounded-lg cursor-pointer"
+                aria-label="Close notice"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white px-5 sm:px-8 pt-4 pb-0 rounded-[2rem] border-2 border-slate-100 shadow-xs flex flex-row items-end justify-center gap-4 sm:gap-6 text-left relative overflow-hidden min-h-[120px] sm:min-h-[140px]">
           <div className="w-32 sm:w-44 md:w-48 shrink-0 flex items-end justify-center -mb-1">
@@ -567,7 +635,7 @@ export default function LeaderboardPage() {
               </h1>
             </div>
             <p className="text-xs sm:text-sm font-bold text-slate-500 max-w-md">
-              Compete with fellow learners and climb the global rankings! (Refreshes every hour)
+              Compete with fellow learners and climb the global rankings!
             </p>
           </div>
         </div>
@@ -654,12 +722,11 @@ export default function LeaderboardPage() {
         <div className="bg-white rounded-[2.5rem] border-2 border-slate-100 p-4 sm:p-6 shadow-xs">
           <div className="flex items-center justify-between mb-4 px-2">
             <h3 className="font-black text-slate-900 text-base">Top Rankings</h3>
-            <span className="text-[11px] font-bold text-slate-400">Refreshes every hour</span>
           </div>
 
           {leaderboardData.length === 0 ? (
             <div className="text-center py-8 text-slate-500 font-bold text-sm">
-              No active users found.
+              No active users with XP yet.
             </div>
           ) : (
             <div className="space-y-2">
@@ -719,7 +786,7 @@ export default function LeaderboardPage() {
                 </div>
               )}
 
-              {currentUser && !isCurrentUserInLoadedList && (
+              {isUserEligibleForShare && currentUser && !isCurrentUserInLoadedList && (
                 <div className="pt-2">
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/80 border-2 border-blue-200 shadow-2xs transition-all">
                     <div className="flex items-center gap-3 min-w-0">
@@ -792,7 +859,7 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {isShareModalOpen && currentUser && (
+      {isShareModalOpen && isUserEligibleForShare && currentUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-[2.5rem] w-full max-w-[420px] p-4 sm:p-6 shadow-2xl relative border-2 border-slate-100 my-auto">
             <button
@@ -862,7 +929,7 @@ export default function LeaderboardPage() {
                   </svg>
 
                   <span className="font-handwritten text-7xl sm:text-8xl font-black leading-none text-[#1e3a8a] tracking-tight">
-                    {currentUser?.rank || "2"}
+                    {currentUser.rank}
                   </span>
 
                   <svg className="w-10 h-20 sm:w-11 sm:h-22 text-[#93c5fd] transform scale-x-[-1]" viewBox="0 0 50 100" fill="currentColor">
@@ -881,12 +948,12 @@ export default function LeaderboardPage() {
 
                 <div className="mt-1 px-5 py-1 bg-[#fef3c7] rounded-full border border-[#fde68a]">
                   <span className="text-xs sm:text-sm font-extrabold text-[#78350f] tracking-tight uppercase">
-                    {currentUser?.rank && currentUser.rank <= 3 ? "LEGENDARY" : "RISING STAR"}
+                    {currentUser.rank <= 3 ? "LEGENDARY" : "RISING STAR"}
                   </span>
                 </div>
 
                 <p className="text-xs font-bold text-[#64748b] mt-2 tracking-tight">
-                  You&apos;re in the top {currentUser?.rank || "2"}!
+                  You&apos;re in the top {currentUser.rank}!
                 </p>
               </div>
 
@@ -897,7 +964,7 @@ export default function LeaderboardPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-[9px] font-extrabold uppercase text-slate-400 leading-none mb-0.5 tracking-tight">XP</p>
-                    <p className="text-xs font-extrabold text-slate-900 tracking-tight">{currentUser?.xp_points || 0} XP</p>
+                    <p className="text-xs font-extrabold text-slate-900 tracking-tight">{currentUser.xp_points} XP</p>
                   </div>
                 </div>
 
@@ -909,7 +976,7 @@ export default function LeaderboardPage() {
                   </div>
                   <div className="text-left">
                     <p className="text-[9px] font-extrabold uppercase text-slate-400 leading-none mb-0.5 tracking-tight">STREAK</p>
-                    <p className="text-xs font-extrabold text-slate-900 tracking-tight">{currentUser?.streak || 0} Days</p>
+                    <p className="text-xs font-extrabold text-slate-900 tracking-tight">{currentUser.streak} Days</p>
                   </div>
                 </div>
               </div>
@@ -917,12 +984,12 @@ export default function LeaderboardPage() {
               <div className="relative z-10 w-full flex items-center justify-between pt-1">
                 <div className="flex items-center gap-2">
                   <img
-                    src={currentUser?.avatar_url}
-                    alt={currentUser?.full_name}
+                    src={currentUser.avatar_url}
+                    alt={currentUser.full_name}
                     className="w-6 h-6 rounded-full object-cover border border-blue-300 shadow-2xs"
                   />
                   <span className="text-xs font-bold text-[#1e3a8a] tracking-tight">
-                    @{currentUser?.full_name?.toLowerCase().replace(/\s+/g, '') || "user"}
+                    @{currentUser.full_name?.toLowerCase().replace(/\s+/g, '') || "user"}
                   </span>
                 </div>
 
