@@ -14,6 +14,8 @@ import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import PracticeCanvas from "@/components/PracticeCanvas";
 import LoadingScreen from "@/components/LoadingScreen";
 
+const MAX_CHALLENGE_XP = 200;
+
 declare global {
   interface Window {
     __OTTERLEO_CHALLENGE_FLOW_ACTIVE__?: boolean;
@@ -505,52 +507,6 @@ const EYE_STEPS: TutorialStep[] = [
   }
 ];
 
-const HEADPHONES_STEPS: TutorialStep[] = [
-  {
-    step: 1,
-    title: "Step 1: Get Your Pencil Ready",
-    instruction: "",
-    tips: ["Use a light pencil for clean curves", "Keep an eraser handy"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
-    typewriterText: "Get ready to draw cool headphones!"
-  },
-  {
-    step: 2,
-    title: "Step 2: Sketch Headband Arc and Earcups",
-    instruction: "Draw a smooth curved arch at the top for the headband and sketch two matching oval-rounded earcups on the sides.",
-    tips: ["Keep both earcups balanced in size", "Draw light guide strokes first"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones1.jpeg"
-  },
-  {
-    step: 3,
-    title: "Step 3: Add Band Thickness, Sliders and Cushions",
-    instruction: "Give the headband thickness, add the connector brackets on each side, and draw the inner cushion lines on both earcups.",
-    tips: ["Keep the headband curve even", "Align left and right brackets cleanly"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones2.jpeg"
-  },
-  {
-    step: 4,
-    title: "Step 4: Refine Cushion Edges and Details",
-    instruction: "Add the inner padded band along the headband and refine the outer cushion curves on the earcups.",
-    tips: ["Keep lines smooth and neat", "Check symmetry on both sides"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones3.jpeg"
-  },
-  {
-    step: 5,
-    title: "Step 5: Add Soft Shading and Highlights",
-    instruction: "Shade softly along the earcups, band edges, and brackets while keeping light highlights for a sleek 3D look.",
-    tips: ["Blend shading smoothly", "Keep highlight bands clean"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice drawing cool headphones on the digital canvas below.",
-    tips: ["Start with the arch and earcups", "Have fun shading"],
-    imageUrl: ""
-  }
-];
-
 const NOSE_STEPS: TutorialStep[] = [
   {
     step: 1,
@@ -633,6 +589,137 @@ const LIP_STEPS: TutorialStep[] = [
     instruction: "Make lip corners dark and use your eraser to make a bright shine spot on the bottom lip.",
     tips: ["High contrast gives a glossy look", "Test your skills on canvas next"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips%204.jpeg"
+  }
+];
+
+const TWO_POINT_BUILDING_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil and straight ruler for perspective lines", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw a 2-point perspective building!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Set Horizon, Vanishing Points and Center Corner",
+    instruction: "Draw a horizontal horizon line with left and right vanishing points, a center vertical corner line, and guide lines connecting to both points.",
+    tips: ["Keep perspective guide lines light", "Make the center vertical edge straight"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/building1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Draw Outer Walls and Middle Ledge",
+    instruction: "Add the outer vertical edges of both walls and draw the protruding middle band along the perspective guide lines.",
+    tips: ["Keep vertical walls parallel to the center line", "Align the middle band cleanly toward both vanishing points"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/building2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Add Upper Floor, Windows and Door",
+    instruction: "Draw the upper story walls, windows on both sides, and the front entrance door following the left and right vanishing points.",
+    tips: ["Align top and bottom window edges with the vanishing points", "Keep window and door spacing balanced"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/building3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Finalize Roof Ledge and Clean Outlines",
+    instruction: "Add the top roof overhang ledge, refine all structural edges cleanly, and erase extra guide lines.",
+    tips: ["Keep main building outlines crisp and neat", "Check alignment toward both vanishing points"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/building4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice your 2-point perspective building on the digital canvas below.",
+    tips: ["Start with the horizon line and center edge", "Follow both vanishing points carefully"],
+    imageUrl: ""
+  }
+];
+
+const HEADPHONES_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for clean curves", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw cool headphones!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch Headband Arc and Earcups",
+    instruction: "Draw a smooth curved arch at the top for the headband and sketch two matching oval-rounded earcups on the sides.",
+    tips: ["Keep both earcups balanced in size", "Draw light guide strokes first"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Band Thickness, Sliders and Cushions",
+    instruction: "Give the headband thickness, add the connector brackets on each side, and draw the inner cushion lines on both earcups.",
+    tips: ["Keep the headband curve even", "Align left and right brackets cleanly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Refine Cushion Edges and Details",
+    instruction: "Add the inner padded band along the headband and refine the outer cushion curves on the earcups.",
+    tips: ["Keep lines smooth and neat", "Check symmetry on both sides"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Add Soft Shading and Highlights",
+    instruction: "Shade softly along the earcups, band edges, and brackets while keeping light highlights for a sleek 3D look.",
+    tips: ["Blend shading smoothly", "Keep highlight bands clean"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice drawing cool headphones on the digital canvas below.",
+    tips: ["Start with the arch and earcups", "Have fun shading"],
+    imageUrl: ""
+  }
+];
+
+const WATERDROP_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for clean teardrop curves", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready for realistic water drop shading!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Draw Clean Teardrop Outline",
+    instruction: "Draw a smooth, symmetrical teardrop shape with a sharp top tip and a rounded base using light pencil strokes.",
+    tips: ["Keep left and right curves balanced", "Draw light lines before adding shading"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/waterdrop1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Base Shading and Main Highlight",
+    instruction: "Shade softly along the outer edges and upper-left curve while keeping a clean bright crescent highlight on the left.",
+    tips: ["Leave the left highlight strip clean", "Keep initial shading soft and even"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/waterdrop2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Deepen Contrast, Bounce Light and Cast Shadow",
+    instruction: "Deepen the upper-left shadow, add a pinpoint highlight dot, brighten the bottom-right rim, and blend a soft shadow below.",
+    tips: ["Strong contrast makes water look realistic", "Blend the ground cast shadow smoothly"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/waterdrop3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice realistic water drop shading on the digital canvas below.",
+    tips: ["Start with a clean teardrop outline", "Layer shading and highlights carefully"],
+    imageUrl: ""
   }
 ];
 
@@ -820,6 +907,52 @@ const GLASS_BOTTLE_STEPS: TutorialStep[] = [
   }
 ];
 
+const CLOTH_FOLD_TEXTURE_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for drape outlines and a soft pencil for shading", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw cloth fold texture!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch Cloth Drape and Fold Lines",
+    instruction: "Draw the outer draped cloth shape and trace the main ridge and crease lines flowing down to the base.",
+    tips: ["Keep initial lines light and flowing", "Follow how fabric gathers and spreads at the bottom"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cloth1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Soft Crease Shadows and Base Tones",
+    instruction: "Shade softly inside the fold valleys and along the draped curves to separate raised ridges from recessed folds.",
+    tips: ["Keep shadows softer in open areas and deeper in creases", "Build shading gently without harsh lines"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cloth2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Build Mid-Tones and Fabric Texture",
+    instruction: "Layer medium pencil tones across the cloth body with fine directional strokes while keeping raised ridges lighter.",
+    tips: ["Follow the flow of the fabric with your pencil strokes", "Preserve lighter highlight zones on fold peaks"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cloth2.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Deepen Fold Contrast, Texture and Ground Shadow",
+    instruction: "Darken deep fold creases and under-edges, refine the woven cloth texture, and blend a soft cast shadow beneath the fabric.",
+    tips: ["Strong contrast in creases makes folds look three-dimensional", "Blend the ground shadow smoothly under the hem"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cloth4.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice cloth fold texture on the digital canvas below.",
+    tips: ["Start with the main drape and fold lines", "Layer crease shadows and fabric texture step by step"],
+    imageUrl: ""
+  }
+];
+
 const LOCAL_CHALLENGES: LocalChallenge[] = [
   // --- BEGINNER ---
   {
@@ -895,6 +1028,26 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
 
   // --- INTERMEDIATE ---
   {
+    id: "anime-boy-intermediate",
+    title: "Challenge: Anime Boy",
+    description: "Sketch head guides and jawline, add ears and neck, draw spiky hair and eyes, and finish with clean anime details step by step.",
+    difficulty: "intermediate",
+    xp: 85,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale4.jpeg",
+    steps: ANIME_BOY_STEPS
+  },
+  {
+    id: "anime-girl-intermediate",
+    title: "Challenge: Anime Girl",
+    description: "Sketch face guides and neck, add flowing hair and bangs, refine hair layers, and finish with big anime eyes and expression step by step.",
+    difficulty: "intermediate",
+    xp: 85,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animegirl4.jpeg",
+    steps: ANIME_GIRL_STEPS
+  },
+  {
     id: "eye-drawing-1min",
     title: "Challenge: The Realistic Eye",
     description: "Master iris details, pupil depth, eyelid folds, and realistic eyelashes step by step.",
@@ -903,16 +1056,6 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye4.jpeg",
     steps: EYE_STEPS
-  },
-  {
-    id: "cool-headphones-intermediate",
-    title: "Challenge: Cool Headphones",
-    description: "Sketch the headband and earcups, add cushions and brackets, and finish with soft 3D shading step by step.",
-    difficulty: "intermediate",
-    xp: 75,
-    stepsCount: 4,
-    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones4.jpeg",
-    steps: HEADPHONES_STEPS
   },
   {
     id: "nose-drawing-challenge",
@@ -935,24 +1078,34 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     steps: LIP_STEPS
   },
   {
-    id: "anime-girl-intermediate",
-    title: "Challenge: Anime Girl",
-    description: "Sketch face guides and neck, add flowing hair and bangs, refine hair layers, and finish with big anime eyes and expression step by step.",
+    id: "two-point-building-intermediate",
+    title: "Challenge: 2-Point Perspective Building",
+    description: "Set vanishing points and center corner, build outer walls and middle ledge, add windows and door, and finish with roof ledge step by step.",
     difficulty: "intermediate",
     xp: 85,
     stepsCount: 4,
-    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animegirl4.jpeg",
-    steps: ANIME_GIRL_STEPS
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/building4.jpeg",
+    steps: TWO_POINT_BUILDING_STEPS
   },
   {
-    id: "anime-boy-intermediate",
-    title: "Challenge: Anime Boy",
-    description: "Sketch head guides and jawline, add ears and neck, draw spiky hair and eyes, and finish with clean anime details step by step.",
+    id: "cool-headphones-intermediate",
+    title: "Challenge: Cool Headphones",
+    description: "Sketch the headband and earcups, add cushions and brackets, and finish with soft 3D shading step by step.",
     difficulty: "intermediate",
-    xp: 85,
+    xp: 75,
     stepsCount: 4,
-    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale4.jpeg",
-    steps: ANIME_BOY_STEPS
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones4.jpeg",
+    steps: HEADPHONES_STEPS
+  },
+  {
+    id: "realistic-waterdrop-intermediate",
+    title: "Challenge: The Realistic Water Drop",
+    description: "Draw a clean teardrop outline, add base shading and main highlight, and finish with contrast, bounce light, and cast shadow step by step.",
+    difficulty: "intermediate",
+    xp: 75,
+    stepsCount: 3,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/waterdrop3.jpeg",
+    steps: WATERDROP_STEPS
   },
 
   // --- ADVANCED ---
@@ -995,6 +1148,16 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     stepsCount: 4,
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/botttlee4.jpeg",
     steps: GLASS_BOTTLE_STEPS
+  },
+  {
+    id: "cloth-fold-texture-advanced",
+    title: "Challenge: Cloth Fold Texture",
+    description: "Sketch fabric folds and creases, build layered shading and crease contrast, and finish with cloth texture and ground shadow step by step.",
+    difficulty: "advanced",
+    xp: 140,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cloth4.jpeg",
+    steps: CLOTH_FOLD_TEXTURE_STEPS
   }
 ];
 
@@ -1457,6 +1620,7 @@ export default function ChallengesPage() {
 
     setClaimingId(challenge.id);
     const previousXp = userXp;
+    const safeXpToAdd = Math.max(0, Math.min(Number(challenge.xp) || 0, MAX_CHALLENGE_XP));
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1476,7 +1640,7 @@ export default function ChallengesPage() {
 
       const { data: newTotalXp, error: rpcError } = await supabase.rpc('complete_challenge_and_add_xp', {
         p_challenge_id: challenge.id,
-        p_xp_to_add: challenge.xp
+        p_xp_to_add: safeXpToAdd
       });
 
       if (rpcError) {
@@ -1486,9 +1650,10 @@ export default function ChallengesPage() {
         return;
       }
 
-      const updatedXp = Number.isFinite(Number(newTotalXp))
+      const rawUpdatedXp = Number.isFinite(Number(newTotalXp))
         ? Number(newTotalXp)
-        : previousXp + challenge.xp;
+        : previousXp + safeXpToAdd;
+      const updatedXp = Math.min(rawUpdatedXp, previousXp + MAX_CHALLENGE_XP);
 
       const updatedStreak = await updateActivityStreak(user.id);
       if (updatedStreak !== null) {
@@ -1846,7 +2011,6 @@ export default function ChallengesPage() {
               />
             </div>
 
-            {/* Dark Change Level pill */}
             <div className="flex items-stretch justify-between bg-white rounded-full border border-slate-200/90 shadow-2xs overflow-hidden">
               <div className="flex flex-col justify-center pl-5 pr-4 py-2">
                 <span className="text-[11px] font-bold text-slate-500 leading-tight">
@@ -1880,7 +2044,6 @@ export default function ChallengesPage() {
                       key={challenge.id}
                       className="relative overflow-hidden bg-[#E8F1FF] rounded-[2rem] p-5 border border-blue-100 shadow-2xs space-y-4"
                     >
-                      {/* Single slim white shine beam every 3 seconds */}
                       <div className="pointer-events-none absolute inset-y-0 left-0 w-24 sm:w-28 bg-gradient-to-r from-transparent via-white/65 to-transparent animate-card-shine z-30" />
 
                       {isDone && (
@@ -1911,10 +2074,6 @@ export default function ChallengesPage() {
                           <span className="flex items-center gap-1 text-amber-500 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full">
                             <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                             +{challenge.xp} XP
-                          </span>
-
-                          <span className="px-2.5 py-1 rounded-full text-[11px] uppercase border bg-white/85 text-slate-600 border-slate-200">
-                            {challenge.difficulty}
                           </span>
 
                           <span className="px-2.5 py-1 rounded-full text-[11px] uppercase border bg-blue-50 text-blue-700 border-blue-200/70">
