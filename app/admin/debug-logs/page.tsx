@@ -1,36 +1,126 @@
 "use client";
 
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import React, { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+interface ErrorLogRecord {
+  error_code?: string;
+  timestamp?: string;
+  page_feature?: string;
+  user_id?: string | null;
+  actual_error_message?: string;
+  stack_trace?: string | null;
+  request_info?: unknown;
+}
 
 export default function AdminDebugLogsPage() {
-  const [searchCode, setSearchCode] = useState('');
-  const [logDetails, setLogDetails] = useState<any>(null);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  const [searchCode, setSearchCode] = useState("");
+  const [logDetails, setLogDetails] = useState<ErrorLogRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [accessError, setAccessError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function verifyAdminAccess() {
+      try {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (!active) return;
+
+        const userEmail = (user?.email || "").toLowerCase();
+        const allowed =
+          !error &&
+          Boolean(user) &&
+          ADMIN_EMAILS.length > 0 &&
+          ADMIN_EMAILS.includes(userEmail);
+
+        setIsAuthorized(allowed);
+      } catch {
+        if (active) {
+          setIsAuthorized(false);
+        }
+      } finally {
+        if (active) {
+          setAuthChecking(false);
+        }
+      }
+    }
+
+    verifyAdminAccess();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchCode.trim()) return;
-
-    setLoading(true);
+    setAccessError("");
     setNotFound(false);
     setLogDetails(null);
 
-    const { data, error } = await supabase
-      .from('system_error_logs')
-      .select('*')
-      .eq('error_code', searchCode.trim().toUpperCase())
-      .single();
+    if (!isAuthorized) {
+      setAccessError("Unauthorized: Admin access required.");
+      return;
+    }
 
-    setLoading(false);
+    const cleanedCode = searchCode.trim().toUpperCase();
+    if (!cleanedCode) return;
 
-    if (error || !data) {
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("system_error_logs")
+        .select("*")
+        .eq("error_code", cleanedCode)
+        .single();
+
+      if (error || !data) {
+        setNotFound(true);
+      } else {
+        setLogDetails(data as ErrorLogRecord);
+      }
+    } catch {
       setNotFound(true);
-    } else {
-      setLogDetails(data);
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-300 p-6 md:p-12 font-mono flex items-center justify-center">
+        <p className="text-sm">Verifying admin access...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 p-6 md:p-12 font-mono flex items-center justify-center">
+        <div className="max-w-md w-full p-6 bg-slate-800 border border-red-500/50 rounded-xl space-y-2">
+          <h1 className="text-lg font-bold text-red-400">403 — Access Denied</h1>
+          <p className="text-xs text-slate-400">
+            This internal debugger is restricted to authorized administrators only.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-6 md:p-12 font-mono">
@@ -51,11 +141,17 @@ export default function AdminDebugLogsPage() {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 font-bold rounded-lg transition-colors"
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 font-bold rounded-lg transition-colors"
           >
-            {loading ? 'Searching...' : 'Search Log'}
+            {loading ? "Searching..." : "Search Log"}
           </button>
         </form>
+
+        {accessError && (
+          <div className="p-4 bg-red-900/30 border border-red-500 text-red-300 rounded-lg text-xs">
+            {accessError}
+          </div>
+        )}
 
         {notFound && (
           <div className="p-4 bg-red-900/30 border border-red-500 text-red-300 rounded-lg">
@@ -72,21 +168,25 @@ export default function AdminDebugLogsPage() {
               </div>
               <div>
                 <span className="text-slate-500">Timestamp:</span>
-                <p className="text-slate-300">{new Date(logDetails.timestamp).toLocaleString()}</p>
+                <p className="text-slate-300">
+                  {logDetails.timestamp ? new Date(logDetails.timestamp).toLocaleString() : "N/A"}
+                </p>
               </div>
               <div>
                 <span className="text-slate-500">Feature/Location:</span>
-                <p className="text-slate-300">{logDetails.page_feature}</p>
+                <p className="text-slate-300">{logDetails.page_feature || "N/A"}</p>
               </div>
               <div>
                 <span className="text-slate-500">User ID:</span>
-                <p className="text-slate-300">{logDetails.user_id || 'Guest / Unauthenticated'}</p>
+                <p className="text-slate-300">{logDetails.user_id || "Guest / Unauthenticated"}</p>
               </div>
             </div>
 
             <div>
               <span className="text-slate-500">Actual Exception Message:</span>
-              <p className="text-red-400 font-semibold mt-1 p-2 bg-slate-900 rounded">{logDetails.actual_error_message}</p>
+              <p className="text-red-400 font-semibold mt-1 p-2 bg-slate-900 rounded">
+                {logDetails.actual_error_message || "N/A"}
+              </p>
             </div>
 
             {logDetails.stack_trace && (
@@ -101,7 +201,7 @@ export default function AdminDebugLogsPage() {
             <div>
               <span className="text-slate-500">Request Meta Data (Sanitized):</span>
               <pre className="mt-1 p-3 bg-slate-950 text-green-400 rounded overflow-x-auto">
-                {JSON.stringify(logDetails.request_info, null, 2)}
+                {JSON.stringify(logDetails.request_info ?? null, null, 2)}
               </pre>
             </div>
           </div>

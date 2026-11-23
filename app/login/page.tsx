@@ -12,10 +12,34 @@ const LOCKOUT_TIME_MS = 5 * 60 * 1000;
 // Throttle cooldown: 3 seconds to prevent button spamming
 const THROTTLE_COOLDOWN_MS = 3000;
 
+function GoogleColorIcon() {
+  return (
+    <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.5-1.14 2.77-2.4 3.62v3.01h3.88c2.27-2.09 3.54-5.17 3.54-8.88Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.01c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.21v3.11C3.18 21.31 7.26 24 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.28 14.28c-.24-.72-.38-1.49-.38-2.28s.14-1.56.38-2.28V6.61H1.21A11.98 11.98 0 0 0 0 12c0 1.93.46 3.75 1.21 5.39l4.07-3.11Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.26 0 3.18 2.69 1.21 6.61l4.07 3.11c.95-2.85 3.6-4.97 6.72-4.97Z"
+      />
+    </svg>
+  );
+}
+
 export default function LoginPage() {
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO%20SIGNUP.png';
 
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
   const [isThrottled, setIsThrottled] = useState(false);
@@ -40,6 +64,67 @@ export default function LoginPage() {
     }, 70);
 
     return () => clearInterval(timer);
+  }, []);
+
+  // Sync user profile to localStorage when returning from Google OAuth login
+  useEffect(() => {
+    let active = true;
+
+    async function syncGoogleSession() {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (!active || error || !data?.user?.email) return;
+
+        const cleanEmail = data.user.email.trim().toLowerCase();
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        if (!active) return;
+
+        if (profileError) {
+          console.error("Google profile lookup error:", profileError);
+          setErrorMessage("Could not verify your account. Please try again.");
+          return;
+        }
+
+        if (profile) {
+          localStorage.removeItem('login_attempts');
+          localStorage.removeItem('login_lockout_until');
+
+          const userData = {
+            id: data.user.id,
+            email: cleanEmail,
+            name: profile?.name || cleanEmail.split('@')[0],
+            avatar: profile?.avatar_url || `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
+          };
+
+          localStorage.setItem('user', JSON.stringify(userData));
+          localStorage.setItem('isLoggedIn', 'true');
+          window.location.assign('/dashboard');
+        } else {
+          try {
+            await supabase.auth.signOut();
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('user');
+          } catch (e) {}
+
+          if (!active) return;
+          setGoogleLoading(false);
+          setErrorMessage("No account found. Please sign up first.");
+        }
+      } catch (e) {
+        // Ignore non-OAuth session checks
+      }
+    }
+
+    syncGoogleSession();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Ref to keep track of the last click timestamp for throttling
@@ -81,12 +166,37 @@ export default function LoginPage() {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  const handleGoogleLogin = async () => {
+    if (lockoutSeconds > 0 || loading || googleLoading) return;
+
+    setGoogleLoading(true);
+    setErrorMessage('');
+
+    try {
+      const redirectTo =
+        typeof window !== 'undefined' ? `${window.location.origin}/login` : undefined;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+        },
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Google Login Error:", err);
+      setErrorMessage(err?.message || "Unable to continue with Google.");
+      setGoogleLoading(false);
+    }
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     e.stopPropagation();
 
     // 1. Lockout & Loading Check
-    if (lockoutSeconds > 0 || loading) return;
+    if (lockoutSeconds > 0 || loading || googleLoading) return;
 
     // 2. Throttling / Debouncing Check (Prevent rapid spam clicks)
     const now = Date.now();
@@ -133,7 +243,6 @@ export default function LoginPage() {
           id: authData.user.id,
           email: cleanEmail,
           name: profile?.name || cleanEmail.split('@')[0],
-          username: profile?.username || cleanEmail.split('@')[0],
           avatar: profile?.avatar_url || `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
         };
 
@@ -165,7 +274,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col justify-center items-center px-4 py-8 relative overflow-hidden">
-      
+
       {/* Speech Bubble Tail Pointing Left */}
       <style jsx global>{`
         .speech-bubble-tail-left {
@@ -194,8 +303,8 @@ export default function LoginPage() {
 
       {/* BACK TO HOME BUTTON */}
       <div className="absolute top-3 sm:top-4 left-4 sm:left-6 z-40">
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-[#0F172A] font-extrabold text-xs px-4 py-2.5 rounded-2xl border-2 border-slate-200 shadow-sm transition-all active:scale-95"
         >
           <ArrowLeft className="w-4 h-4 text-[#2563EB]" />
@@ -204,10 +313,10 @@ export default function LoginPage() {
       </div>
 
       <div className="relative max-w-md w-full pt-10">
-        
+
         {/* Main Card Container */}
         <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border-4 border-[#2563EB] shadow-2xl relative z-10 w-full space-y-4">
-          
+
           {/* MASCOT & SPEECH BUBBLE (SAME AS SIGNUP PAGE) */}
           <div className="flex items-center gap-3 my-2 pl-1">
             <div className="w-20 h-20 sm:w-24 sm:h-24 drop-shadow-md shrink-0">
@@ -230,7 +339,29 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4 pt-1">
+          <button
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={loading || googleLoading || lockoutSeconds > 0}
+            className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-[#CBD5E1] hover:border-[#2563EB] shadow-sm font-bold text-sm text-[#0F172A] cursor-pointer active:translate-y-0.5 transition-all disabled:opacity-50 flex items-center justify-center gap-2.5"
+          >
+            <GoogleColorIcon />
+            <span>
+              {lockoutSeconds > 0
+                ? `LOCKED (${formatTime(lockoutSeconds)})`
+                : googleLoading
+                ? 'CONNECTING...'
+                : 'Continue with Google'}
+            </span>
+          </button>
+
+          <div className="relative flex items-center py-0.5">
+            <div className="flex-grow border-t border-slate-200" />
+            <span className="mx-3 text-[10px] font-black uppercase tracking-wider text-slate-400">or</span>
+            <div className="flex-grow border-t border-slate-200" />
+          </div>
+
+          <form onSubmit={handleLoginSubmit} autoComplete="off" className="space-y-4 pt-0.5">
             <div>
               <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
               <input
@@ -263,14 +394,14 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading || lockoutSeconds > 0 || isThrottled}
+              disabled={loading || googleLoading || lockoutSeconds > 0 || isThrottled}
               style={{ backgroundColor: '#2563EB', boxShadow: '0px 6px 0px #1D4ED8' }}
               className="w-full py-3.5 rounded-2xl font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-50"
             >
-              {lockoutSeconds > 0 
-                ? `LOCKED (${formatTime(lockoutSeconds)})` 
-                : loading 
-                ? 'LOGGING IN...' 
+              {lockoutSeconds > 0
+                ? `LOCKED (${formatTime(lockoutSeconds)})`
+                : loading
+                ? 'LOGGING IN...'
                 : isThrottled
                 ? 'PLEASE WAIT...'
                 : 'LOG IN'}

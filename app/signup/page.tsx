@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ChevronLeft, ChevronRight, User, Mail, Lock } from 'lucide-react';
+import { ChevronLeft, User, Mail, Lock } from 'lucide-react';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME_MS = 60 * 1000;
+const PENDING_GOOGLE_SIGNUP_KEY = 'otterleo_pending_google_signup_v2';
 
 const BLOCKED_EXACT_WORDS = new Set([
   // Adult / 18+ / Sexual / Slurs
@@ -234,21 +235,54 @@ const getLocalDateString = (date = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
+function GoogleColorIcon() {
+  return (
+    <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.5-1.14 2.77-2.4 3.62v3.01h3.88c2.27-2.09 3.54-5.17 3.54-8.88Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.01c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.21v3.11C3.18 21.31 7.26 24 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.28 14.28c-.24-.72-.38-1.49-.38-2.28s.14-1.56.38-2.28V6.61H1.21A11.98 11.98 0 0 0 0 12c0 1.93.46 3.75 1.21 5.39l4.07-3.11Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.26 0 3.18 2.69 1.21 6.61l4.07 3.11c.95-2.85 3.6-4.97 6.72-4.97Z"
+      />
+    </svg>
+  );
+}
+
 export default function SignupPage() {
   const router = useRouter();
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/onboard%20(1).png';
   const introGifUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hloi%20(1).gif';
 
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  // Step 1: Intro, Step 2: Avatar, Step 3: Skill, Step 4: Name & Consent,
+  // Step 5: Google + Sign up with email, Step 6: Email + Password signup, Step 7: Fallback if sessionStorage cleared
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
   const [skillLevel, setSkillLevel] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [alreadyExistsPrompt, setAlreadyExistsPrompt] = useState(false);
   const [consent, setConsent] = useState(false);
   const [lockoutSeconds, setLockoutSeconds] = useState(0);
 
   const [typedText, setTypedText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
 
   const triggerSoundAndHaptic = () => {
     if (typeof window !== "undefined") {
@@ -278,7 +312,13 @@ export default function SignupPage() {
         fullText = "What's your drawing level?";
       }
     } else if (step === 4) {
+      fullText = "What should Otto call you?";
+    } else if (step === 5) {
+      fullText = "Save your information and get started!";
+    } else if (step === 6) {
       fullText = "Almost done! Let's make your account.";
+    } else if (step === 7) {
+      fullText = "Almost there! Fill your name to finish.";
     }
 
     setTypedText('');
@@ -297,13 +337,186 @@ export default function SignupPage() {
     return () => clearInterval(timer);
   }, [step, skillLevel]);
 
-  const [formData, setFormData] = useState({
-    username: '',
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
+  const handleAlreadyCreatedAccount = useCallback(async () => {
+    try {
+      sessionStorage.removeItem(PENDING_GOOGLE_SIGNUP_KEY);
+      await supabase.auth.signOut();
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('user');
+    } catch (e) {}
+
+    setLoading(false);
+    setAlreadyExistsPrompt(true);
+    setErrorMessage("Account already created. Please log in.");
+  }, []);
+
+  const checkExistingProfile = useCallback(async (userId: string, email: string): Promise<boolean> => {
+    const { data: byId } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (byId?.id) return true;
+
+    if (email) {
+      const { data: byEmail } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
+
+      if (byEmail?.id) return true;
+    }
+
+    return false;
+  }, []);
+
+  const createNewProfileAndRedirect = useCallback(
+    async ({
+      userId,
+      verifiedEmail,
+      cleanName,
+      avatar,
+      skill,
+    }: {
+      userId: string;
+      verifiedEmail: string;
+      cleanName: string;
+      avatar: string;
+      skill: string;
+    }) => {
+      const exists = await checkExistingProfile(userId, verifiedEmail);
+      if (exists) {
+        await handleAlreadyCreatedAccount();
+        return;
+      }
+
+      const todayStr = getLocalDateString();
+
+      const { data: createdProfile, error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: userId,
+            name: cleanName,
+            email: verifiedEmail,
+            avatar_url: avatar,
+            skill_level: skill || 'beginner',
+            xp: 0,
+            streak: 1,
+            last_login: todayStr,
+          }
+        ])
+        .select('id')
+        .maybeSingle();
+
+      if (profileError) {
+        if (profileError.code === '23505') {
+          await handleAlreadyCreatedAccount();
+          return;
+        }
+        console.error("Profile creation error:", profileError);
+        throw new Error(`Profile could not be created in Supabase: ${profileError.message}`);
+      }
+
+      if (!createdProfile?.id) {
+        throw new Error("Profile row was not created in Supabase. Please check your profile permissions and try again.");
+      }
+
+      const { error: consentError } = await supabase
+        .from('user_consents')
+        .insert([
+          {
+            user_id: userId,
+            consent_given: true,
+            policy_version: '1.0'
+          }
+        ]);
+
+      if (consentError) {
+        console.error("Consent recording error:", consentError);
+        throw new Error(`Consent could not be saved: ${consentError.message}`);
+      }
+
+      try {
+        sessionStorage.removeItem(PENDING_GOOGLE_SIGNUP_KEY);
+        localStorage.removeItem('signup_attempts');
+        localStorage.removeItem('signup_lockout_until');
+      } catch (e) {}
+
+      const userData = {
+        id: userId,
+        name: cleanName,
+        email: verifiedEmail,
+        avatar,
+        skill_level: skill || 'beginner',
+      };
+
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('isLoggedIn', 'true');
+
+      router.push('/dashboard');
+    },
+    [checkExistingProfile, handleAlreadyCreatedAccount, router]
+  );
+
+  // After Google OAuth redirect: if profile already exists -> prompt login without updating;
+  // if new user with saved info -> create profile once and go to /dashboard;
+  // if sessionStorage lost -> fallback step 7
+  useEffect(() => {
+    let active = true;
+
+    async function handleGoogleReturn() {
+      try {
+        const savedRaw = sessionStorage.getItem(PENDING_GOOGLE_SIGNUP_KEY);
+        const { data, error } = await supabase.auth.getUser();
+
+        if (!active || error || !data?.user?.email) return;
+
+        const verifiedEmail = data.user.email.trim().toLowerCase();
+        const exists = await checkExistingProfile(data.user.id, verifiedEmail);
+
+        if (!active) return;
+
+        if (exists) {
+          await handleAlreadyCreatedAccount();
+          return;
+        }
+
+        if (savedRaw) {
+          const saved = JSON.parse(savedRaw);
+          if (saved?.name) {
+            setLoading(true);
+            setErrorMessage('');
+            setAlreadyExistsPrompt(false);
+            await createNewProfileAndRedirect({
+              userId: data.user.id,
+              verifiedEmail,
+              cleanName: saved.name.trim(),
+              avatar: saved.avatar || AVATARS[0].url,
+              skill: saved.skillLevel || 'beginner',
+            });
+            return;
+          }
+        }
+
+        setStep(7);
+      } catch (err: any) {
+        if (!active) return;
+        console.error("Google post-redirect error:", err);
+        setErrorMessage(err?.message || "Could not finish Google sign up.");
+        setLoading(false);
+        setStep(7);
+      }
+    }
+
+    handleGoogleReturn();
+
+    return () => {
+      active = false;
+    };
+  }, [checkExistingProfile, createNewProfileAndRedirect, handleAlreadyCreatedAccount]);
 
   const syncLockoutState = useCallback(() => {
     try {
@@ -340,53 +553,179 @@ export default function SignupPage() {
     const lockUntil = Date.now() + LOCKOUT_TIME_MS;
     localStorage.setItem('signup_lockout_until', lockUntil.toString());
     setLockoutSeconds(60);
+    setAlreadyExistsPrompt(false);
     setErrorMessage('Too many attempts. Registration locked for 60 seconds.');
+  };
+
+  const validateProfileInfo = (): { cleanName: string } | null => {
+    const cleanName = formData.name.trim();
+
+    if (!cleanName) {
+      setAlreadyExistsPrompt(false);
+      setErrorMessage('Please fill in your name.');
+      return null;
+    }
+
+    const nameRegex = /^[a-zA-Z\s'-]{2,15}$/;
+    if (!nameRegex.test(cleanName)) {
+      setAlreadyExistsPrompt(false);
+      setErrorMessage('Name must be 2 to 15 characters long and contain only letters.');
+      return null;
+    }
+
+    if (!isAppropriateName(cleanName)) {
+      setAlreadyExistsPrompt(false);
+      setErrorMessage('Please choose a clean name without inappropriate, offensive, alcohol, or drug words.');
+      return null;
+    }
+
+    if (!consent) {
+      setAlreadyExistsPrompt(false);
+      setErrorMessage('You must check the consent box to agree to the Terms & Privacy Policy.');
+      return null;
+    }
+
+    return { cleanName };
   };
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     triggerSoundAndHaptic();
     setErrorMessage('');
+    setAlreadyExistsPrompt(false);
 
     if (step === 3 && !skillLevel) {
       setErrorMessage('Please select your drawing level to continue.');
       return;
     }
 
+    if (step === 4) {
+      const valid = validateProfileInfo();
+      if (!valid) return;
+      setStep(5);
+      return;
+    }
+
     setStep((prev) => (prev < 4 ? ((prev + 1) as 1 | 2 | 3 | 4) : prev));
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleGoogleVerifyStart = async () => {
+    triggerSoundAndHaptic();
+    if (lockoutSeconds > 0 || loading) return;
+
+    const validated = validateProfileInfo();
+    if (!validated) return;
+
+    let attempts = 0;
+    try {
+      attempts = parseInt(localStorage.getItem('signup_attempts') || '0', 10);
+      if (isNaN(attempts)) attempts = 0;
+    } catch (e) {
+      attempts = 0;
+    }
+
+    const newAttempts = attempts + 1;
+    try {
+      localStorage.setItem('signup_attempts', newAttempts.toString());
+    } catch (e) {}
+
+    if (newAttempts >= MAX_ATTEMPTS) {
+      triggerLockout();
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage('');
+    setAlreadyExistsPrompt(false);
+
+    try {
+      sessionStorage.setItem(
+        PENDING_GOOGLE_SIGNUP_KEY,
+        JSON.stringify({
+          name: validated.cleanName,
+          avatar: selectedAvatar,
+          skillLevel: skillLevel || 'beginner',
+          consent: true,
+        })
+      );
+
+      const redirectTo =
+        typeof window !== 'undefined' ? `${window.location.origin}/signup` : undefined;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+        },
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Google Verification Error:", err);
+      const remaining = MAX_ATTEMPTS - newAttempts;
+      setErrorMessage(
+        err?.message || `Unable to start Google verification. (${remaining} attempt${remaining > 1 ? 's' : ''} left)`
+      );
+      setLoading(false);
+    }
+  };
+
+  // Fallback submit if sessionStorage was lost during OAuth redirect
+  const handleFallbackGoogleFinish = async (e: React.FormEvent) => {
+    e.preventDefault();
+    triggerSoundAndHaptic();
+
+    if (loading) return;
+
+    const validated = validateProfileInfo();
+    if (!validated) return;
+
+    setLoading(true);
+    setErrorMessage('');
+    setAlreadyExistsPrompt(false);
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+
+      const user = authData.user;
+      const verifiedEmail = (user?.email || '').trim().toLowerCase();
+
+      if (!user || !verifiedEmail) {
+        throw new Error("Google verification not found. Please try signing up with Google again.");
+      }
+
+      await createNewProfileAndRedirect({
+        userId: user.id,
+        verifiedEmail,
+        cleanName: validated.cleanName,
+        avatar: selectedAvatar,
+        skill: skillLevel || 'beginner',
+      });
+    } catch (err: any) {
+      console.error("Fallback Google Finish Error:", err);
+      setErrorMessage(err?.message || "Unable to complete account creation.");
+      setLoading(false);
+    }
+  };
+
+  // Email + password signup flow (no email verification required; never overwrites existing account)
+  const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     triggerSoundAndHaptic();
 
     if (lockoutSeconds > 0 || loading) return;
 
-    const cleanName = formData.name.trim();
-    const cleanUsername = formData.username.trim();
+    const validated = validateProfileInfo();
+    if (!validated) return;
+
+    const { cleanName } = validated;
     const cleanEmail = formData.email.trim().toLowerCase();
     const password = formData.password;
     const confirmPassword = formData.confirmPassword;
 
-    if (!cleanName || !cleanUsername || !cleanEmail || !password || !confirmPassword) {
+    if (!cleanEmail || !password || !confirmPassword) {
       setErrorMessage('Please fill in all fields.');
-      return;
-    }
-
-    const nameRegex = /^[a-zA-Z\s'-]{2,15}$/;
-    if (!nameRegex.test(cleanName)) {
-      setErrorMessage('Name must be 2 to 15 characters long and contain only letters.');
-      return;
-    }
-
-    if (!isAppropriateName(cleanName) || !isAppropriateName(cleanUsername)) {
-      setErrorMessage('Please choose a clean name without inappropriate, offensive, alcohol, or drug words.');
-      return;
-    }
-
-    const usernameRegex = /^[a-zA-Z0-9_]{2,12}$/;
-    if (!usernameRegex.test(cleanUsername)) {
-      setErrorMessage('Username must be 2-12 characters long (letters, numbers, underscore).');
       return;
     }
 
@@ -403,11 +742,6 @@ export default function SignupPage() {
 
     if (password !== confirmPassword) {
       setErrorMessage('Passwords do not match.');
-      return;
-    }
-
-    if (!consent) {
-      setErrorMessage('You must check the consent box to agree to the Terms & Privacy Policy.');
       return;
     }
 
@@ -431,6 +765,7 @@ export default function SignupPage() {
 
     setLoading(true);
     setErrorMessage('');
+    setAlreadyExistsPrompt(false);
 
     try {
       try {
@@ -442,72 +777,37 @@ export default function SignupPage() {
         password: password,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        const msg = authError.message?.toLowerCase() || '';
+        if (msg.includes('already registered') || msg.includes('already exists')) {
+          await handleAlreadyCreatedAccount();
+          return;
+        }
+        throw authError;
+      }
 
       const user = authData.user;
       if (!user) throw new Error("Could not create authentication session.");
 
-      const todayStr = getLocalDateString();
-
-      const { data: savedProfile, error: profileError } = await supabase
-        .from('profiles')
-        .upsert([
-          {
-            id: user.id,
-            name: cleanName,
-            username: cleanUsername,
-            email: cleanEmail,
-            avatar_url: selectedAvatar,
-            skill_level: skillLevel,
-            xp: 0,
-            streak: 1,
-            last_login: todayStr,
-          }
-        ], { onConflict: 'id' })
-        .select('id')
-        .maybeSingle();
-
-      if (profileError || !savedProfile?.id) {
-        console.error("Profile creation error:", profileError);
-        throw new Error(
-          profileError?.message
-            ? `Profile could not be created in Supabase: ${profileError.message}`
-            : "Profile row was not created in Supabase. Please check your profile permissions and try again."
-        );
+      // If Supabase returns an existing user with empty identities, do not overwrite profile
+      if (Array.isArray(user.identities) && user.identities.length === 0) {
+        await handleAlreadyCreatedAccount();
+        return;
       }
 
-      const { error: consentError } = await supabase
-        .from('user_consents')
-        .insert([
-          {
-            user_id: user.id,
-            consent_given: true,
-            policy_version: '1.0'
-          }
-        ]);
-
-      if (consentError) {
-        console.error("Consent recording error:", consentError);
-        throw new Error(`Consent could not be saved: ${consentError.message}`);
+      const alreadyHasProfile = await checkExistingProfile(user.id, cleanEmail);
+      if (alreadyHasProfile) {
+        await handleAlreadyCreatedAccount();
+        return;
       }
 
-      localStorage.removeItem('signup_attempts');
-      localStorage.removeItem('signup_lockout_until');
-
-      const userData = {
-        id: user.id,
-        name: cleanName,
-        username: cleanUsername,
-        email: cleanEmail,
+      await createNewProfileAndRedirect({
+        userId: user.id,
+        verifiedEmail: cleanEmail,
+        cleanName,
         avatar: selectedAvatar,
-        skill_level: skillLevel,
-      };
-
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('isLoggedIn', 'true');
-
-      setLoading(false);
-      router.push('/dashboard');
+        skill: skillLevel || 'beginner',
+      });
     } catch (err: any) {
       console.error("Signup Internal Error:", err);
       const remaining = MAX_ATTEMPTS - newAttempts;
@@ -643,8 +943,15 @@ export default function SignupPage() {
                 type="button"
                 onClick={() => {
                   triggerSoundAndHaptic();
-                  setStep((prev) => (prev - 1) as 1 | 2 | 3 | 4);
+                  if (step === 6) {
+                    setStep(5);
+                  } else if (step > 2) {
+                    setStep((prev) => (prev - 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7);
+                  } else {
+                    setStep(1);
+                  }
                   setErrorMessage('');
+                  setAlreadyExistsPrompt(false);
                 }}
                 className="inline-flex items-center gap-1 text-xs font-black text-[#2563EB] hover:underline cursor-pointer"
               >
@@ -656,6 +963,7 @@ export default function SignupPage() {
                 <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
                 <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 3 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
                 <div className={`h-2.5 rounded-full transition-all duration-300 ${step === 4 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
+                <div className={`h-2.5 rounded-full transition-all duration-300 ${step >= 5 ? 'w-8 bg-[#2563EB]' : 'w-2.5 bg-slate-200'}`} />
               </div>
 
               <div className="w-10" />
@@ -681,8 +989,19 @@ export default function SignupPage() {
             </div>
 
             {errorMessage && (
-              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-semibold">
-                {errorMessage}
+              <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs text-center font-semibold space-y-2">
+                <p>{errorMessage}</p>
+                {alreadyExistsPrompt && (
+                  <div>
+                    <Link
+                      href="/login"
+                      onClick={triggerSoundAndHaptic}
+                      className="inline-block px-4 py-1.5 rounded-full bg-[#2563EB] text-white font-black text-[11px] uppercase tracking-wider hover:opacity-95"
+                    >
+                      Go to Log In
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
@@ -699,6 +1018,7 @@ export default function SignupPage() {
                           triggerSoundAndHaptic();
                           setSelectedAvatar(avatar.url);
                           setErrorMessage('');
+                          setAlreadyExistsPrompt(false);
                         }}
                         className={`relative aspect-square rounded-2xl p-1.5 overflow-hidden transition-all duration-200 cursor-pointer flex flex-col items-center justify-center ${
                           isSelected
@@ -721,16 +1041,16 @@ export default function SignupPage() {
                   onClick={() => {
                     triggerSoundAndHaptic();
                     setErrorMessage('');
+                    setAlreadyExistsPrompt(false);
                     setStep(3);
                   }}
                   style={{
                     backgroundColor: '#2563EB',
                     boxShadow: '0px 6px 0px #1D4ED8',
                   }}
-                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2"
                 >
-                  <span>NEXT</span>
-                  <ChevronRight className="w-5 h-5 stroke-[3]" />
+                  NEXT
                 </button>
               </div>
             )}
@@ -749,6 +1069,7 @@ export default function SignupPage() {
                             triggerSoundAndHaptic();
                             setSkillLevel(lvl.id);
                             setErrorMessage('');
+                            setAlreadyExistsPrompt(false);
                           }}
                           className={`w-full p-3.5 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-center justify-between relative overflow-hidden ${
                             isSelected
@@ -786,107 +1107,31 @@ export default function SignupPage() {
                     backgroundColor: '#2563EB',
                     boxShadow: '0px 6px 0px #1D4ED8',
                   }}
-                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 flex items-center justify-center gap-1.5"
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2"
                 >
-                  <span>NEXT</span>
-                  <ChevronRight className="w-5 h-5 stroke-[3]" />
+                  NEXT
                 </button>
               </form>
             )}
 
             {step === 4 && (
-              <form onSubmit={handleSignup} className="space-y-3 pt-1">
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
-                    <div className="relative flex items-center">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={(e) => {
-                          handleChange(e);
-                          setErrorMessage('');
-                        }}
-                        placeholder="John Doe"
-                        className="w-full pl-9 pr-2.5 py-2 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A]"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Username</label>
-                    <div className="relative flex items-center">
-                      <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
-                      <input
-                        type="text"
-                        name="username"
-                        value={formData.username}
-                        onChange={(e) => {
-                          handleChange(e);
-                          setErrorMessage('');
-                        }}
-                        placeholder="john12"
-                        className="w-full pl-9 pr-2.5 py-2 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
+              <form onSubmit={handleNextStep} className="space-y-3.5 pt-1">
                 <div>
-                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
+                  <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
                   <div className="relative flex items-center">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <User className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
                     <input
-                      type="email"
-                      name="email"
+                      type="text"
+                      name="name"
                       disabled={lockoutSeconds > 0 || loading}
-                      value={formData.email}
+                      value={formData.name}
                       onChange={(e) => {
                         handleChange(e);
                         setErrorMessage('');
+                        setAlreadyExistsPrompt(false);
                       }}
-                      placeholder="youremail@gmail.com"
-                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Set Password</label>
-                  <div className="relative flex items-center">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-                    <input
-                      type="password"
-                      name="password"
-                      disabled={lockoutSeconds > 0 || loading}
-                      value={formData.password}
-                      onChange={(e) => {
-                        handleChange(e);
-                        setErrorMessage('');
-                      }}
-                      placeholder="At least 8 characters"
-                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Confirm Password</label>
-                  <div className="relative flex items-center">
-                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
-                    <input
-                      type="password"
-                      name="confirmPassword"
-                      disabled={lockoutSeconds > 0 || loading}
-                      value={formData.confirmPassword}
-                      onChange={(e) => {
-                        handleChange(e);
-                        setErrorMessage('');
-                      }}
-                      placeholder="Re-enter password"
-                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                      placeholder="John Doe"
+                      className="w-full pl-9 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -901,6 +1146,7 @@ export default function SignupPage() {
                       triggerSoundAndHaptic();
                       setConsent(e.target.checked);
                       setErrorMessage('');
+                      setAlreadyExistsPrompt(false);
                     }}
                     className="mt-0.5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer disabled:opacity-50"
                   />
@@ -925,11 +1171,187 @@ export default function SignupPage() {
                   }}
                   className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
+                  SUBMIT
+                </button>
+              </form>
+            )}
+
+            {step === 5 && (
+              <div className="space-y-3 pt-1">
+                <button
+                  type="button"
+                  onClick={handleGoogleVerifyStart}
+                  disabled={loading || lockoutSeconds > 0}
+                  className="w-full py-3.5 px-4 rounded-full bg-white hover:bg-slate-50 border-2 border-[#CBD5E1] hover:border-[#2563EB] shadow-sm font-bold text-sm sm:text-base text-[#0F172A] cursor-pointer active:translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2.5"
+                >
+                  <GoogleColorIcon />
+                  <span>
+                    {lockoutSeconds > 0
+                      ? `LOCKED (${lockoutSeconds}s)`
+                      : loading
+                      ? 'CONNECTING...'
+                      : 'Continue with Google'}
+                  </span>
+                </button>
+
+                <div className="relative flex items-center py-0.5">
+                  <div className="flex-grow border-t border-slate-200" />
+                  <span className="mx-3 text-[10px] font-black uppercase tracking-wider text-slate-400">or</span>
+                  <div className="flex-grow border-t border-slate-200" />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={loading || lockoutSeconds > 0}
+                  onClick={() => {
+                    triggerSoundAndHaptic();
+                    setErrorMessage('');
+                    setAlreadyExistsPrompt(false);
+                    setStep(6);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-full bg-white hover:bg-slate-50 border border-slate-300 font-bold text-xs text-[#0F172A] cursor-pointer active:translate-y-0.5 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Mail className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Sign up with email</span>
+                </button>
+              </div>
+            )}
+
+            {step === 6 && (
+              <form onSubmit={handleEmailSignup} className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Email Address</label>
+                  <div className="relative flex items-center">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="email"
+                      name="email"
+                      disabled={lockoutSeconds > 0 || loading}
+                      value={formData.email}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setErrorMessage('');
+                        setAlreadyExistsPrompt(false);
+                      }}
+                      placeholder="youremail@gmail.com"
+                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Set Password</label>
+                  <div className="relative flex items-center">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="password"
+                      name="password"
+                      disabled={lockoutSeconds > 0 || loading}
+                      value={formData.password}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setErrorMessage('');
+                        setAlreadyExistsPrompt(false);
+                      }}
+                      placeholder="At least 8 characters"
+                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Confirm Password</label>
+                  <div className="relative flex items-center">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      disabled={lockoutSeconds > 0 || loading}
+                      value={formData.confirmPassword}
+                      onChange={(e) => {
+                        handleChange(e);
+                        setErrorMessage('');
+                        setAlreadyExistsPrompt(false);
+                      }}
+                      placeholder="Re-enter password"
+                      className="w-full pl-10 pr-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 transition-all font-medium text-[#0F172A] disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || lockoutSeconds > 0}
+                  style={{
+                    backgroundColor: lockoutSeconds > 0 || loading ? '#94A3B8' : '#2563EB',
+                    boxShadow: lockoutSeconds > 0 || loading ? 'none' : '0px 6px 0px #1D4ED8',
+                  }}
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
                   {lockoutSeconds > 0
                     ? `LOCKED (${lockoutSeconds}s)`
                     : loading
                     ? 'CREATING...'
                     : 'CREATE ACCOUNT'}
+                </button>
+              </form>
+            )}
+
+            {step === 7 && (
+              <form onSubmit={handleFallbackGoogleFinish} className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-[10px] sm:text-[11px] font-black text-[#0F172A] uppercase tracking-wider mb-1">Your Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    disabled={loading}
+                    value={formData.name}
+                    onChange={(e) => {
+                      handleChange(e);
+                      setErrorMessage('');
+                      setAlreadyExistsPrompt(false);
+                    }}
+                    placeholder="John Doe"
+                    className="w-full px-3 py-2.5 text-xs sm:text-sm rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-[#2563EB] font-medium text-[#0F172A]"
+                  />
+                </div>
+
+                <div className="flex items-start gap-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="consentFallback"
+                    disabled={loading}
+                    checked={consent}
+                    onChange={(e) => {
+                      triggerSoundAndHaptic();
+                      setConsent(e.target.checked);
+                      setErrorMessage('');
+                      setAlreadyExistsPrompt(false);
+                    }}
+                    className="mt-0.5 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] cursor-pointer"
+                  />
+                  <label htmlFor="consentFallback" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
+                    I agree to the{' '}
+                    <Link href="/terms" className="text-[#2563EB] font-bold hover:underline">
+                      Terms & Conditions
+                    </Link>{' '}
+                    and{' '}
+                    <Link href="/privacy" className="text-[#2563EB] font-bold hover:underline">
+                      Privacy Policy
+                    </Link>.
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    backgroundColor: loading ? '#94A3B8' : '#2563EB',
+                    boxShadow: loading ? 'none' : '0px 6px 0px #1D4ED8',
+                  }}
+                  className="w-full py-3.5 rounded-full font-black text-base text-white uppercase tracking-wider cursor-pointer active:translate-y-1 active:shadow-none transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'FINISHING...' : 'SUBMIT'}
                 </button>
               </form>
             )}
