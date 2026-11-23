@@ -48,7 +48,6 @@ interface AIAnalysisResult {
 interface Profile {
   id: string;
   name: string;
-  username: string;
   email: string;
   avatar_url: string;
   xp: number;
@@ -147,7 +146,7 @@ export default function ScanPage() {
         } else {
           const { data: profileData } = await supabase
             .from("profiles")
-            .select("id, name, username, email, avatar_url, xp, last_scanned_at")
+            .select("id, name, email, avatar_url, xp, last_scanned_at")
             .eq("id", user.id)
             .maybeSingle();
 
@@ -179,7 +178,6 @@ export default function ScanPage() {
             setProfile({
               id: user.id,
               name: user.user_metadata?.full_name || user.email?.split("@")[0] || "Artist",
-              username: user.email?.split("@")[0] || "artist",
               email: user.email || "",
               avatar_url: user.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user.id}`,
               xp: 0,
@@ -303,9 +301,9 @@ export default function ScanPage() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           image: selectedImage,
-          userId: activeUserId 
+          userId: activeUserId
         }),
       });
 
@@ -414,7 +412,7 @@ export default function ScanPage() {
   ];
 
   const userXp = Number(profile?.xp) || 0;
-  const rawUserName = profile?.name || profile?.username || "Artist";
+  const rawUserName = profile?.name || "Artist";
   const userName = rawUserName.replace(/<[^>]*>?/gm, "").trim();
 
   if (authLoading) {
@@ -423,7 +421,6 @@ export default function ScanPage() {
 
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-28 md:pb-0">
-      
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -883,7 +880,6 @@ export default function ScanPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -30,7 +30,6 @@ import {
 interface Profile {
   id: string;
   name: string;
-  username: string;
   email: string;
   avatar_url: string;
   xp: number;
@@ -168,7 +167,7 @@ export default function DashboardPage() {
 
       const { data: profileData, error: profError } = await supabase
         .from("profiles")
-        .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
+        .select("id, name, email, avatar_url, xp, streak, last_login, created_at")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -204,7 +203,7 @@ export default function DashboardPage() {
               last_login: todayStr,
             })
             .eq("id", user.id)
-            .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
+            .select("id, name, email, avatar_url, xp, streak, last_login, created_at")
             .maybeSingle();
 
           activeProfile = updatedProfile || {
@@ -222,7 +221,7 @@ export default function DashboardPage() {
               last_login: todayStr,
             })
             .eq("id", user.id)
-            .select("id, name, username, email, avatar_url, xp, streak, last_login, created_at")
+            .select("id, name, email, avatar_url, xp, streak, last_login, created_at")
             .maybeSingle();
 
           activeProfile = updatedProfile || {
@@ -312,7 +311,7 @@ export default function DashboardPage() {
 
   const userXp = Number(profile?.xp) || 0;
   const userStreak = Number(profile?.streak) || 0;
-  const rawUserName = profile?.name || profile?.username || "Artist";
+  const rawUserName = profile?.name || profile?.email?.split("@")[0] || "Artist";
   const sanitizedName = sanitizeString(rawUserName);
 
   const formattedUserName = `${sanitizedName.charAt(0).toUpperCase()}${sanitizedName.slice(1)}!`;

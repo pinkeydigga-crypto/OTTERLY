@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { 
+import {
   ArrowLeft, Share2, X, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
   Star, Palette, Grid, ShieldAlert, RefreshCw, Globe, Sparkles, MoreHorizontal
@@ -56,7 +56,7 @@ export default function LeaderboardPage() {
 
     return {
       id: p.id,
-      full_name: p.name || p.username || "Artist",
+      full_name: p.name || "Artist",
       avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
       streak: Number(userStreak),
       xp_points: totalXP,
@@ -128,7 +128,7 @@ export default function LeaderboardPage() {
 
       const { data: profiles, error } = await supabase
         .from("profiles")
-        .select("id, name, username, avatar_url, streak, xp, created_at")
+        .select("id, name, avatar_url, streak, xp, created_at")
         .order("xp", { ascending: false })
         .order("created_at", { ascending: true })
         .limit(PAGE_SIZE);
@@ -155,7 +155,7 @@ export default function LeaderboardPage() {
       } else {
         const { data: userProfile } = await supabase
           .from("profiles")
-          .select("id, name, username, avatar_url, streak, xp, created_at")
+          .select("id, name, avatar_url, streak, xp, created_at")
           .eq("id", user.id)
           .maybeSingle();
 
@@ -166,7 +166,7 @@ export default function LeaderboardPage() {
 
           setCurrentUser({
             ...mapProfileRow(p, actualRank),
-            full_name: p.name || p.username || "You",
+            full_name: p.name || "You",
           });
         }
       }
@@ -191,7 +191,7 @@ export default function LeaderboardPage() {
 
       const { data: nextProfiles, error } = await supabase
         .from("profiles")
-        .select("id, name, username, avatar_url, streak, xp, created_at")
+        .select("id, name, avatar_url, streak, xp, created_at")
         .order("xp", { ascending: false })
         .order("created_at", { ascending: true })
         .range(startIndex, endIndex);
@@ -349,7 +349,6 @@ export default function LeaderboardPage() {
 
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight font-sans pb-28 md:pb-0">
-      
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700;800&family=Caveat:wght@700&family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
         .font-badge {
@@ -520,7 +519,6 @@ export default function LeaderboardPage() {
       </aside>
 
       <main className="flex-1 p-3 sm:p-6 md:p-8 max-w-5xl mx-auto w-full min-w-0 space-y-5 overflow-y-auto">
-
         <div className="flex items-center justify-between gap-2">
           <Link
             href="/dashboard"
@@ -576,7 +574,6 @@ export default function LeaderboardPage() {
 
         {leaderboardData.length > 0 ? (
           <div className="pt-4 pb-1 grid grid-cols-3 gap-2 sm:gap-4 md:gap-5 items-end w-full max-w-xl mx-auto">
-            
             <div className="flex flex-col items-center">
               {rank2 ? (
                 <>
@@ -651,7 +648,6 @@ export default function LeaderboardPage() {
                 </>
               ) : <div className="h-20" />}
             </div>
-
           </div>
         ) : null}
 
@@ -814,7 +810,7 @@ export default function LeaderboardPage() {
               className="w-full relative overflow-hidden flex flex-col justify-between p-6 sm:p-7 select-none rounded-[2rem] mb-4 font-badge border border-slate-100 bg-white shadow-md aspect-square min-h-[380px]"
             >
               <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[2rem]">
-                <div 
+                <div
                   className="absolute -top-[10%] -right-[10%] w-[130%] h-[130%]"
                   style={{
                     background: `
@@ -935,7 +931,6 @@ export default function LeaderboardPage() {
                   <span>Top 2% Worldwide</span>
                 </div>
               </div>
-
             </div>
 
             <div className="text-center pt-1 pb-2 space-y-1">
@@ -949,7 +944,6 @@ export default function LeaderboardPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
