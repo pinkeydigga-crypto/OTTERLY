@@ -23,10 +23,9 @@ import {
   Palette,
   ArrowRight,
   Sparkles,
-  MoreHorizontal,
   X,
   Grid,
-  Lightbulb
+  Lightbulb,
 } from "lucide-react";
 
 interface Profile {
@@ -45,6 +44,9 @@ const CHAT_NAV_ICON_URL =
 
 const PRACTICE_CARD_IMAGE_URL =
   "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/DRAW%20OTTO.png";
+
+const DASHBOARD_CACHE_KEY = "otterleo_dashboard_cache_v1";
+const DASHBOARD_CACHE_TTL_MS = 90 * 1000;
 
 const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
@@ -142,148 +144,203 @@ export default function DashboardPage() {
     }
   }, [showStreakPopup, playCelebrationSound]);
 
-  const fetchDashboardData = useCallback(async () => {
-    if (isFetchingRef.current) return;
-    isFetchingRef.current = true;
+  const computeExactRank = useCallback(async (targetProfile: Profile) => {
+    const userXpVal = Number(targetProfile.xp) || 0;
 
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+    const higherPromise = supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .gt("xp", userXpVal);
 
-      if (!user) {
-        if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
-          localStorage.clear();
-          router.replace("/login");
+    const tiePromise = targetProfile.created_at
+      ? supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("xp", userXpVal)
+          .lt("created_at", targetProfile.created_at)
+      : supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("xp", userXpVal)
+          .lt("id", targetProfile.id);
+
+    const [{ count: higherXpCount }, { count: tieCount }] = await Promise.all([
+      higherPromise,
+      tiePromise,
+    ]);
+
+    return (higherXpCount || 0) + (tieCount || 0) + 1;
+  }, []);
+
+  const fetchDashboardData = useCallback(
+    async (forceRefresh = false) => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const user = session?.user || (await supabase.auth.getUser()).data.user;
+
+        if (!user) {
+          if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+            localStorage.clear();
+            router.replace("/login");
+          }
+          return;
         }
-        return;
-      }
 
-      if (typeof window !== "undefined") {
-        const cachedXp = localStorage.getItem("user_xp_cache");
-        if (cachedXp) {
-          setProfile((prev) => (prev ? { ...prev, xp: Number(cachedXp) } : prev));
+        const todayStr = getLocalDateString();
+
+        if (typeof window !== "undefined") {
+          const cachedXp = localStorage.getItem("user_xp_cache");
+          if (cachedXp) {
+            setProfile((prev) => (prev ? { ...prev, xp: Number(cachedXp) } : prev));
+          }
+
+          if (!forceRefresh) {
+            try {
+              const rawCache = sessionStorage.getItem(DASHBOARD_CACHE_KEY);
+              if (rawCache) {
+                const parsed = JSON.parse(rawCache) as {
+                  userId: string;
+                  cachedAt: number;
+                  profile: Profile;
+                  rankLabel: string;
+                };
+
+                const isFresh =
+                  parsed.userId === user.id &&
+                  Date.now() - parsed.cachedAt < DASHBOARD_CACHE_TTL_MS &&
+                  parsed.profile?.last_login?.split("T")[0] === todayStr;
+
+                if (isFresh && parsed.profile) {
+                  setProfile(parsed.profile);
+                  setUserRank(parsed.rankLabel || "-");
+
+                  const lastPopupDate = localStorage.getItem("streak_popup_shown_date");
+                  if (lastPopupDate !== todayStr) {
+                    setShowStreakPopup(true);
+                    localStorage.setItem("streak_popup_shown_date", todayStr);
+                  }
+
+                  setLoading(false);
+                  return;
+                }
+              }
+            } catch {}
+          }
         }
-      }
 
-      const { data: profileData, error: profError } = await supabase
-        .from("profiles")
-        .select("id, name, email, avatar_url, xp, streak, last_login, created_at")
-        .eq("id", user.id)
-        .maybeSingle();
+        const { data: profileData, error: profError } = await supabase
+          .from("profiles")
+          .select("id, name, email, avatar_url, xp, streak, last_login, created_at")
+          .eq("id", user.id)
+          .maybeSingle();
 
-      if (profError) {
-        console.error("Dashboard profile fetch exception:", profError.message);
-      }
-
-      if (!profileData) {
-        if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
-          localStorage.removeItem("user");
-          localStorage.removeItem("isLoggedIn");
-          localStorage.removeItem("user_xp_cache");
-          router.replace("/signup");
+        if (profError) {
+          console.error("Dashboard profile fetch exception:", profError.message);
         }
-        return;
-      }
 
-      let activeProfile: Profile = profileData;
-      const todayStr = getLocalDateString();
-      const lastLoginRaw = profileData.last_login;
-      const lastLoginStr = lastLoginRaw ? lastLoginRaw.split("T")[0] : null;
-      const createdAtLocalStr = profileData.created_at
-        ? getLocalDateString(new Date(profileData.created_at))
-        : null;
-      const isCreatedToday = createdAtLocalStr === todayStr;
+        if (!profileData) {
+          if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
+            localStorage.removeItem("user");
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("user_xp_cache");
+            sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
+            router.replace("/signup");
+          }
+          return;
+        }
 
-      if (lastLoginStr !== todayStr) {
-        if (isCreatedToday || !lastLoginStr) {
-          const { data: updatedProfile } = await supabase
-            .from("profiles")
-            .update({
+        let activeProfile: Profile = profileData;
+        const lastLoginRaw = profileData.last_login;
+        const lastLoginStr = lastLoginRaw ? lastLoginRaw.split("T")[0] : null;
+        const createdAtLocalStr = profileData.created_at
+          ? getLocalDateString(new Date(profileData.created_at))
+          : null;
+        const isCreatedToday = createdAtLocalStr === todayStr;
+
+        if (lastLoginStr !== todayStr) {
+          if (isCreatedToday || !lastLoginStr) {
+            const { data: updatedProfile } = await supabase
+              .from("profiles")
+              .update({
+                streak: profileData.streak || 1,
+                last_login: todayStr,
+              })
+              .eq("id", user.id)
+              .select("id, name, email, avatar_url, xp, streak, last_login, created_at")
+              .maybeSingle();
+
+            activeProfile = updatedProfile || {
+              ...profileData,
               streak: profileData.streak || 1,
               last_login: todayStr,
-            })
-            .eq("id", user.id)
-            .select("id, name, email, avatar_url, xp, streak, last_login, created_at")
-            .maybeSingle();
+            };
+          } else {
+            const newStreak = (Number(profileData.streak) || 1) + 1;
 
-          activeProfile = updatedProfile || {
-            ...profileData,
-            streak: profileData.streak || 1,
-            last_login: todayStr,
-          };
-        } else {
-          const newStreak = (Number(profileData.streak) || 1) + 1;
+            const { data: updatedProfile } = await supabase
+              .from("profiles")
+              .update({
+                streak: newStreak,
+                last_login: todayStr,
+              })
+              .eq("id", user.id)
+              .select("id, name, email, avatar_url, xp, streak, last_login, created_at")
+              .maybeSingle();
 
-          const { data: updatedProfile } = await supabase
-            .from("profiles")
-            .update({
+            activeProfile = updatedProfile || {
+              ...profileData,
               streak: newStreak,
               last_login: todayStr,
-            })
-            .eq("id", user.id)
-            .select("id, name, email, avatar_url, xp, streak, last_login, created_at")
-            .maybeSingle();
-
-          activeProfile = updatedProfile || {
-            ...profileData,
-            streak: newStreak,
-            last_login: todayStr,
-          };
+            };
+          }
         }
+
+        setProfile(activeProfile);
+
+        const lastPopupDate = localStorage.getItem("streak_popup_shown_date");
+        if (lastPopupDate !== todayStr) {
+          setShowStreakPopup(true);
+          localStorage.setItem("streak_popup_shown_date", todayStr);
+        }
+
+        if (typeof window !== "undefined") {
+          localStorage.setItem("user_xp_cache", (activeProfile.xp || 0).toString());
+        }
+
+        const exactRank = await computeExactRank(activeProfile);
+        const rankLabel = `#${exactRank}`;
+        setUserRank(rankLabel);
+
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem(
+              DASHBOARD_CACHE_KEY,
+              JSON.stringify({
+                userId: user.id,
+                cachedAt: Date.now(),
+                profile: activeProfile,
+                rankLabel,
+              })
+            );
+          } catch {}
+        }
+      } catch (err: unknown) {
+        console.error("Dashboard processing error:", err);
+      } finally {
+        setLoading(false);
+        isFetchingRef.current = false;
       }
-
-      setProfile(activeProfile);
-
-      const lastPopupDate = localStorage.getItem("streak_popup_shown_date");
-      if (lastPopupDate !== todayStr) {
-        setShowStreakPopup(true);
-        localStorage.setItem("streak_popup_shown_date", todayStr);
-      }
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("user_xp_cache", (activeProfile.xp || 0).toString());
-      }
-
-      const userXpVal = Number(activeProfile.xp) || 0;
-
-      const { count: higherXpCount } = await supabase
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .gt("xp", userXpVal);
-
-      let sameXpTieCount = 0;
-      if (activeProfile.created_at) {
-        const { count: tieCount } = await supabase
-          .from("profiles")
-          .select("id", { count: "exact", head: true })
-          .eq("xp", userXpVal)
-          .lt("created_at", activeProfile.created_at);
-
-        sameXpTieCount = tieCount || 0;
-      } else {
-        const { count: tieCount } = await supabase
-          .from("profiles")
-          .select("id", { count: "exact", head: true })
-          .eq("xp", userXpVal)
-          .lt("id", activeProfile.id);
-
-        sameXpTieCount = tieCount || 0;
-      }
-
-      const exactRank = (higherXpCount || 0) + sameXpTieCount + 1;
-      setUserRank(`#${exactRank}`);
-    } catch (err: unknown) {
-      console.error("Dashboard processing error:", err);
-    } finally {
-      setLoading(false);
-      isFetchingRef.current = false;
-    }
-  }, [router, isOffline]);
+    },
+    [router, isOffline, computeExactRank]
+  );
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardData(false);
   }, [fetchDashboardData]);
 
   useEffect(() => {
@@ -291,7 +348,15 @@ export default function DashboardPage() {
       const customEvent = e as CustomEvent<number>;
       if (typeof customEvent.detail === "number") {
         const nextXp = Number(customEvent.detail);
-        setProfile((prev) => (prev ? { ...prev, xp: nextXp } : prev));
+        setProfile((prev) => {
+          const updated = prev ? { ...prev, xp: nextXp } : prev;
+          if (updated && typeof window !== "undefined") {
+            try {
+              sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
+            } catch {}
+          }
+          return updated;
+        });
         if (typeof window !== "undefined") {
           localStorage.setItem("user_xp_cache", nextXp.toString());
         }

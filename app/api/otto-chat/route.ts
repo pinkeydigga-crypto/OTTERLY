@@ -10,6 +10,15 @@ const MAX_OUTPUT_TOKENS = 600;
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GEMINI_CHAT_API_KEY = process.env.GEMINI_CHAT_API_KEY || "";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+const supabaseAdmin =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
 
 const GEMINI_FALLBACK_MODELS = [
   "gemini-3.8-flash",
@@ -57,6 +66,17 @@ STRICT LINK RULES:
 4. When the user asks for the name of Practice ("practice ka name", "name of practice", "practice name"): write <a href="/practice" class="text-[#2563EB] font-black underline">Practice Canvas</a> in blue (#2563EB) linking to /practice.
 5. Format links in blue: <a href="PATH" class="text-[#2563EB] font-bold underline">Label</a>.`;
 
+const INSTANT_CACHE: Record<string, string> = {
+  hi: "Hey there! Ready to sketch something fun today? Tell me what you'd like to draw.",
+  hello: "Hello! I'm Otto, your drawing buddy. What are we sketching today?",
+  "practice ka name":
+    'It is called <a href="/practice" class="text-[#2563EB] font-black underline">Practice Canvas</a>. You can draw freely, reset, and download your work there.',
+  "name of practice":
+    'It is called <a href="/practice" class="text-[#2563EB] font-black underline">Practice Canvas</a>. You can draw freely, reset, and download your work there.',
+  "practice name":
+    'It is called <a href="/practice" class="text-[#2563EB] font-black underline">Practice Canvas</a>. You can draw freely, reset, and download your work there.',
+};
+
 const ABUSE_PATTERNS = [
   /\b(fuck|fucker|fucking|shit|bitch|asshole|bastard|dick|cunt|slut|whore)\b/i,
   /\b(chutiya|bhosdike|bhosdi|gaand|gandu|randi|lauda|lund|chut|madarchod|behenchod|bc|mc)\b/i,
@@ -75,13 +95,6 @@ function getTodayLocalDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!url || !serviceKey) return null;
-  return createClient(url, serviceKey, { auth: { persistSession: false } });
-}
-
 function ottoErrorReply(code: "101" | "102" | "103" | "104" | "105" | "106", status = 500) {
   return NextResponse.json(
     {
@@ -94,7 +107,7 @@ function ottoErrorReply(code: "101" | "102" | "103" | "104" | "105" | "106", sta
 
 async function resolveRateKey(
   req: NextRequest,
-  supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>
+  supabase: NonNullable<typeof supabaseAdmin>
 ): Promise<string | null> {
   const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
 
@@ -111,92 +124,12 @@ async function resolveRateKey(
   return null;
 }
 
-async function checkUserQuotaFromSupabase(
-  supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
-  rateKey: string
-): Promise<{ allowed: boolean; message?: string; status?: number }> {
-  const todayStr = getTodayLocalDate();
-  const currentMinuteBucket = Math.floor(Date.now() / 60000);
-
-  const { data: row, error } = await supabase
-    .from("otto_chat_usage")
-    .select("day_date, day_count, minute_bucket, minute_count")
-    .eq("rate_key", rateKey)
-    .maybeSingle();
-
-  if (error) {
-    return {
-      allowed: false,
-      message: "Otto failed to give response, try again later (102)",
-      status: 503,
-    };
-  }
-
-  if (row && row.day_date === todayStr) {
-    const dayCount = Number(row.day_count) || 0;
-    const minuteCount =
-      Number(row.minute_bucket) === currentMinuteBucket ? Number(row.minute_count) || 0 : 0;
-
-    if (dayCount >= MAX_PER_DAY) {
-      return {
-        allowed: false,
-        message:
-          "You've used all 10 chats for today! Take a sweet break and come back tomorrow whenever you're ready 😊",
-        status: 429,
-      };
-    }
-
-    if (minuteCount >= MAX_PER_MINUTE) {
-      return {
-        allowed: false,
-        message: "Give it just a minute and try again 😊",
-        status: 429,
-      };
-    }
-  }
-
-  return { allowed: true };
-}
-
-async function incrementUserQuotaAfterReply(
-  supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
-  rateKey: string
-): Promise<void> {
-  const todayStr = getTodayLocalDate();
-  const currentMinuteBucket = Math.floor(Date.now() / 60000);
-
-  const { data: row } = await supabase
-    .from("otto_chat_usage")
-    .select("day_date, day_count, minute_bucket, minute_count")
-    .eq("rate_key", rateKey)
-    .maybeSingle();
-
-  const sameDay = row?.day_date === todayStr;
-  const nextDayCount = sameDay ? (Number(row?.day_count) || 0) + 1 : 1;
-  const nextMinuteCount =
-    sameDay && Number(row?.minute_bucket) === currentMinuteBucket
-      ? (Number(row?.minute_count) || 0) + 1
-      : 1;
-
-  await supabase.from("otto_chat_usage").upsert(
-    {
-      rate_key: rateKey,
-      day_date: todayStr,
-      day_count: nextDayCount,
-      minute_bucket: currentMinuteBucket,
-      minute_count: nextMinuteCount,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "rate_key" }
-  );
-}
-
 async function askGroq(messages: Array<{ role: string; content: string }>): Promise<string | null> {
   if (!GROQ_API_KEY) return null;
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 9000);
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -227,7 +160,7 @@ async function askGemini(messages: Array<{ role: string; content: string }>): Pr
   for (const model of GEMINI_FALLBACK_MODELS) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       const res = await fetch(
         "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
@@ -284,12 +217,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const supabase = getSupabaseAdmin();
-    if (!supabase) {
+    if (!supabaseAdmin) {
       return ottoErrorReply("101", 503);
     }
 
-    const rateKey = await resolveRateKey(req, supabase);
+    const rateKey = await resolveRateKey(req, supabaseAdmin);
     if (!rateKey) {
       return NextResponse.json(
         { reply: "Please log in again to chat with Otto." },
@@ -297,13 +229,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const quota = await checkUserQuotaFromSupabase(supabase, rateKey);
+    const normalizedQuery = userText.toLowerCase().replace(/[?.!]+$/g, "").trim();
+    if (INSTANT_CACHE[normalizedQuery]) {
+      return NextResponse.json({ reply: INSTANT_CACHE[normalizedQuery] });
+    }
 
-    if (!quota.allowed) {
-      return NextResponse.json(
-        { reply: quota.message, limitReached: true },
-        { status: quota.status || 429 }
-      );
+    const { data: quotaRes, error: rpcErr } = await supabaseAdmin.rpc("reserve_otto_quota", {
+      p_rate_key: rateKey,
+      p_day_date: getTodayLocalDate(),
+      p_minute_bucket: Math.floor(Date.now() / 60000),
+      p_max_day: MAX_PER_DAY,
+      p_max_minute: MAX_PER_MINUTE,
+    });
+
+    if (rpcErr || !quotaRes) {
+      return ottoErrorReply("102", 503);
+    }
+
+    if (!quotaRes.allowed) {
+      const msg =
+        quotaRes.reason === "day"
+          ? "You've used all 10 chats for today! Take a sweet break and come back tomorrow whenever you're ready 😊"
+          : "Give it just a minute and try again 😊";
+      return NextResponse.json({ reply: msg, limitReached: true }, { status: 429 });
     }
 
     const cleanHistory = rawMessages.slice(-MAX_HISTORY).map((m: { role?: string; content?: string }) => ({
@@ -314,10 +262,22 @@ export async function POST(req: NextRequest) {
     const reply = (await askGroq(cleanHistory)) || (await askGemini(cleanHistory));
 
     if (!reply) {
+      if (quotaRes.is_new) {
+        await supabaseAdmin.from("otto_chat_usage").delete().eq("rate_key", rateKey);
+      } else {
+        await supabaseAdmin
+          .from("otto_chat_usage")
+          .update({
+            day_date: quotaRes.prev_day_date,
+            day_count: quotaRes.prev_day_count,
+            minute_bucket: quotaRes.prev_minute_bucket,
+            minute_count: quotaRes.prev_minute_count,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("rate_key", rateKey);
+      }
       return ottoErrorReply("104", 502);
     }
-
-    await incrementUserQuotaAfterReply(supabase, rateKey);
 
     return NextResponse.json({ reply });
   } catch {

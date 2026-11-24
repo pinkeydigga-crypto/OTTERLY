@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -140,13 +140,6 @@ export default function SignupPage() {
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/onboard%20(1).png';
   const introGifUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hloi%20(1).gif';
 
-  // Steps:
-  // 1: Intro ("Hi there! I'm Otto")
-  // 2: Auth choice (Google / Email)
-  // 3: Email + Password form
-  // 4: Onboarding - Avatar (only if profile does not exist)
-  // 5: Onboarding - Skill level
-  // 6: Onboarding - Name & Consent (SUBMIT)
   const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [introDone, setIntroDone] = useState(false);
   const [authUser, setAuthUser] = useState<{ id: string; email: string } | null>(null);
@@ -160,6 +153,9 @@ export default function SignupPage() {
 
   const [typedText, setTypedText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
+
+  const processingAuthUserIdRef = useRef<string | null>(null);
+  const completedAuthUserIdRef = useRef<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -251,13 +247,14 @@ export default function SignupPage() {
       } catch (e) {}
 
       const cleanEmail = (profile?.email || email || '').trim().toLowerCase();
+      const safeEmailParam = encodeURIComponent(cleanEmail);
       const userData = {
         id: profile?.id || userId,
         name: profile?.name || cleanEmail.split('@')[0],
         email: cleanEmail,
         avatar:
           profile?.avatar_url ||
-          `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
+          `https://ui-avatars.com/api/?name=${safeEmailParam}&background=2563EB&color=fff`,
         skill_level: profile?.skill_level || 'beginner',
       };
 
@@ -269,8 +266,6 @@ export default function SignupPage() {
     [router]
   );
 
-  // After authentication succeeds: check profile in DB.
-  // If exists -> direct /dashboard without updating. If missing -> start onboarding (step 4).
   const handleAuthenticatedSignupUser = useCallback(
     async (user: any) => {
       const cleanEmail = (user?.email || '').trim().toLowerCase();
@@ -305,6 +300,32 @@ export default function SignupPage() {
     [findExistingProfile, redirectToDashboardWithProfile]
   );
 
+  const runSignupAuthOnce = useCallback(
+    async (user: any) => {
+      const userId = user?.id;
+      const cleanEmail = (user?.email || '').trim().toLowerCase();
+      if (!userId || !cleanEmail) return;
+
+      if (
+        processingAuthUserIdRef.current === userId ||
+        completedAuthUserIdRef.current === userId
+      ) {
+        return;
+      }
+
+      processingAuthUserIdRef.current = userId;
+      try {
+        await handleAuthenticatedSignupUser(user);
+        completedAuthUserIdRef.current = userId;
+      } finally {
+        if (processingAuthUserIdRef.current === userId) {
+          processingAuthUserIdRef.current = null;
+        }
+      }
+    },
+    [handleAuthenticatedSignupUser]
+  );
+
   useEffect(() => {
     let active = true;
 
@@ -312,7 +333,7 @@ export default function SignupPage() {
       try {
         const user = await getCurrentAuthUser();
         if (!active || !user) return;
-        await handleAuthenticatedSignupUser(user);
+        await runSignupAuthOnce(user);
       } catch (err: any) {
         if (!active) return;
         console.error("Signup session check error:", err);
@@ -322,13 +343,20 @@ export default function SignupPage() {
       }
     }
 
-    checkAuthReturn();
+    void checkAuthReturn();
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!active) return;
+
+      if (event === 'SIGNED_OUT') {
+        processingAuthUserIdRef.current = null;
+        completedAuthUserIdRef.current = null;
+        return;
+      }
+
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user?.email) {
         try {
-          await handleAuthenticatedSignupUser(session.user);
+          await runSignupAuthOnce(session.user);
         } catch (err: any) {
           if (!active) return;
           setIntroDone(true);
@@ -342,7 +370,7 @@ export default function SignupPage() {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, [handleAuthenticatedSignupUser]);
+  }, [runSignupAuthOnce]);
 
   const syncLockoutState = useCallback(() => {
     try {
@@ -492,6 +520,8 @@ export default function SignupPage() {
         return;
       }
 
+      processingAuthUserIdRef.current = user.id;
+      completedAuthUserIdRef.current = user.id;
       await handleAuthenticatedSignupUser(user);
     } catch (err: any) {
       console.error("Email signup error:", err);
@@ -509,7 +539,6 @@ export default function SignupPage() {
     }
   };
 
-  // Create profile + consent safely after onboarding, then redirect to /dashboard
   const handleCompleteOnboarding = async (e: React.FormEvent) => {
     e.preventDefault();
     triggerSoundAndHaptic();

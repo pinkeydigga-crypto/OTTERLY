@@ -4,8 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 export const maxDuration = 60;
 
 const apiKey = process.env.GEMINI_API_KEY || "";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_BASE64_CHARS = Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 200;
 
 const MODELS_TO_TRY = [
   "gemini-3.8-flash",
@@ -14,17 +18,33 @@ const MODELS_TO_TRY = [
   "gemini-1.5-flash",
 ];
 
+const supabaseAdmin =
+  SUPABASE_URL && SUPABASE_SERVICE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+    : null;
+
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 
-function isRateLimited(ip: string): boolean {
+function isRateLimited(key: string): boolean {
   const now = Date.now();
   const windowMs = 60 * 1000;
   const maxRequests = 10;
 
-  const record = rateLimitMap.get(ip);
+  // Periodic cleanup to avoid unbounded memory growth
+  if (rateLimitMap.size > 2000) {
+    for (const [k, v] of rateLimitMap.entries()) {
+      if (now > v.resetTime) {
+        rateLimitMap.delete(k);
+      }
+    }
+  }
+
+  const record = rateLimitMap.get(key);
 
   if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
     return false;
   }
 
@@ -134,7 +154,7 @@ export async function POST(req: Request) {
     const realIp = req.headers.get("x-real-ip");
     const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "127.0.0.1";
 
-    if (isRateLimited(ip)) {
+    if (isRateLimited(`ip:${ip}`)) {
       return NextResponse.json(
         {
           isDrawing: false,
@@ -145,28 +165,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL ||
-      process.env.SUPABASE_URL ||
-      "";
-
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-
-    const body = await req.json().catch(() => null);
-    const todayStr = getTodayLocalDate();
-
-    let supabase = null;
-    if (supabaseUrl && supabaseServiceKey) {
-      try {
-        supabase = createClient(supabaseUrl, supabaseServiceKey, {
-          auth: { persistSession: false },
-        });
-      } catch {
-        supabase = null;
-      }
-    }
-
-    if (!supabase) {
+    if (!supabaseAdmin) {
       return NextResponse.json(
         {
           isDrawing: false,
@@ -201,7 +200,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: authUserData, error: authError } = await supabase.auth.getUser(token);
+    const { data: authUserData, error: authError } = await supabaseAdmin.auth.getUser(token);
     const verifiedUserId = authError ? null : authUserData?.user?.id || null;
 
     if (!verifiedUserId || !isValidUUID(verifiedUserId)) {
@@ -215,15 +214,27 @@ export async function POST(req: Request) {
       );
     }
 
-    const activeUserId = verifiedUserId;
+    if (isRateLimited(`user:${verifiedUserId}`)) {
+      return NextResponse.json(
+        {
+          isDrawing: false,
+          message: "Too many requests. Please wait 1 minute before scanning again. (#100)",
+          errorCode: "#100",
+        },
+        { status: 429 }
+      );
+    }
 
-    const { data: profileData, error: dbQueryError } = await supabase
+    const body = await req.json().catch(() => null);
+    const todayStr = getTodayLocalDate();
+
+    const { data: profileData, error: dbQueryError } = await supabaseAdmin
       .from("profiles")
       .select("last_scanned_at")
-      .eq("id", activeUserId)
+      .eq("id", verifiedUserId)
       .maybeSingle();
 
-    const previousLastScannedAt = profileData?.last_scanned_at ?? null;
+    const previousLastScannedAt: string | null = profileData?.last_scanned_at ?? null;
 
     if (!dbQueryError && previousLastScannedAt) {
       const lastScanDate = new Date(previousLastScannedAt);
@@ -276,8 +287,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const approxBase64Bytes = Math.floor((base64Data.length * 3) / 4);
-    if (approxBase64Bytes > MAX_IMAGE_BYTES) {
+    if (base64Data.length > MAX_BASE64_CHARS) {
       return NextResponse.json(
         { isDrawing: false, message: "Image size too large. Maximum allowed limit is 5MB. (#104)", errorCode: "#104" },
         { status: 400 }
@@ -409,15 +419,18 @@ export async function POST(req: Request) {
 
     if (isDrawingValid) {
       const nowTimestampz = new Date().toISOString();
-      await supabase
+      let updateQuery = supabaseAdmin
         .from("profiles")
         .update({ last_scanned_at: nowTimestampz })
-        .eq("id", activeUserId);
-    } else if (previousLastScannedAt) {
-      await supabase
-        .from("profiles")
-        .update({ last_scanned_at: previousLastScannedAt })
-        .eq("id", activeUserId);
+        .eq("id", verifiedUserId);
+
+      if (previousLastScannedAt) {
+        updateQuery = updateQuery.eq("last_scanned_at", previousLastScannedAt);
+      } else {
+        updateQuery = updateQuery.is("last_scanned_at", null);
+      }
+
+      await updateQuery;
     }
 
     if (!jsonResult.message) {

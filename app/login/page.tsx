@@ -61,6 +61,9 @@ export default function LoginPage() {
   const [typedText, setTypedText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
 
+  const processingAuthUserIdRef = useRef<string | null>(null);
+  const completedAuthUserIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     const fullText = "Welcome Back to Otto!";
     setTypedText('');
@@ -86,13 +89,15 @@ export default function LoginPage() {
       localStorage.removeItem('user');
     } catch (e) {}
 
+    processingAuthUserIdRef.current = null;
+    completedAuthUserIdRef.current = null;
+
     setLoading(false);
     setGoogleLoading(false);
     setShowSignupOption(true);
     setErrorMessage("No account found. Please sign up first.");
   }, []);
 
-  // Steps 3-5 of Login: check profile -> if exists go /dashboard, if missing sign out + signup option
   const completeLoginAfterAuth = useCallback(
     async (user: any) => {
       const cleanEmail = (user?.email || '').trim().toLowerCase();
@@ -112,13 +117,14 @@ export default function LoginPage() {
         localStorage.removeItem('login_attempts');
         localStorage.removeItem('login_lockout_until');
 
+        const safeEmailParam = encodeURIComponent(cleanEmail);
         const userData = {
           id: user.id,
           email: cleanEmail,
           name: profile?.name || cleanEmail.split('@')[0],
           avatar:
             profile?.avatar_url ||
-            `https://ui-avatars.com/api/?name=${cleanEmail}&background=2563EB&color=fff`,
+            `https://ui-avatars.com/api/?name=${safeEmailParam}&background=2563EB&color=fff`,
           skill_level: profile?.skill_level || 'beginner',
         };
 
@@ -132,6 +138,34 @@ export default function LoginPage() {
     [handleMissingProfileSignOut, router]
   );
 
+  const runAuthSyncOnce = useCallback(
+    async (user: any, onStart?: () => void) => {
+      const userId = user?.id;
+      const cleanEmail = (user?.email || '').trim().toLowerCase();
+      if (!userId || !cleanEmail) return;
+
+      if (
+        processingAuthUserIdRef.current === userId ||
+        completedAuthUserIdRef.current === userId
+      ) {
+        return;
+      }
+
+      processingAuthUserIdRef.current = userId;
+      onStart?.();
+
+      try {
+        await completeLoginAfterAuth(user);
+        completedAuthUserIdRef.current = userId;
+      } finally {
+        if (processingAuthUserIdRef.current === userId) {
+          processingAuthUserIdRef.current = null;
+        }
+      }
+    },
+    [completeLoginAfterAuth]
+  );
+
   useEffect(() => {
     let active = true;
 
@@ -139,8 +173,7 @@ export default function LoginPage() {
       try {
         const user = await getCurrentAuthUser();
         if (!active || !user) return;
-        setGoogleLoading(true);
-        await completeLoginAfterAuth(user);
+        await runAuthSyncOnce(user, () => setGoogleLoading(true));
       } catch (err: any) {
         if (!active) return;
         console.error("Google login sync error:", err);
@@ -150,14 +183,20 @@ export default function LoginPage() {
       }
     }
 
-    syncGoogleLoginReturn();
+    void syncGoogleLoginReturn();
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!active) return;
+
+      if (event === 'SIGNED_OUT') {
+        processingAuthUserIdRef.current = null;
+        completedAuthUserIdRef.current = null;
+        return;
+      }
+
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user?.email) {
         try {
-          setGoogleLoading(true);
-          await completeLoginAfterAuth(session.user);
+          await runAuthSyncOnce(session.user, () => setGoogleLoading(true));
         } catch (err: any) {
           if (!active) return;
           setGoogleLoading(false);
@@ -171,7 +210,7 @@ export default function LoginPage() {
       active = false;
       listener.subscription.unsubscribe();
     };
-  }, [completeLoginAfterAuth]);
+  }, [runAuthSyncOnce]);
 
   const lastClickTimeRef = useRef<number>(0);
 
@@ -275,6 +314,8 @@ export default function LoginPage() {
       if (authError) throw authError;
 
       if (authData.user) {
+        processingAuthUserIdRef.current = authData.user.id;
+        completedAuthUserIdRef.current = authData.user.id;
         await completeLoginAfterAuth(authData.user);
       }
     } catch (err: any) {
