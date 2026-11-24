@@ -153,7 +153,6 @@ export default function ScanPage() {
           if (profileData) {
             setProfile(profileData);
 
-            // Strict Midnight Lock Check on Load & Refresh
             if (profileData.last_scanned_at) {
               const lastScan = new Date(profileData.last_scanned_at);
               const now = new Date();
@@ -185,7 +184,7 @@ export default function ScanPage() {
             });
           }
         }
-      } catch (err) {
+      } catch {
       } finally {
         setAuthLoading(false);
       }
@@ -290,7 +289,7 @@ export default function ScanPage() {
 
   const handleAnalyze = async () => {
     triggerHaptic();
-    if (!selectedImage) return;
+    if (!selectedImage || isAnalyzing) return;
     setIsAnalyzing(true);
     setErrorMessage(null);
 
@@ -304,8 +303,6 @@ export default function ScanPage() {
       router.replace("/login");
       return;
     }
-
-    const activeUserId = session.user?.id || profile?.id;
 
     try {
       const res = await fetch("/api/analyze", {
@@ -347,12 +344,6 @@ export default function ScanPage() {
       }
 
       const nowIso = new Date().toISOString();
-      if (activeUserId) {
-        await supabase
-          .from("profiles")
-          .update({ last_scanned_at: nowIso })
-          .eq("id", activeUserId);
-      }
       setProfile((prev) => (prev ? { ...prev, last_scanned_at: nowIso } : prev));
 
       const nextMidnight = new Date();
@@ -361,7 +352,7 @@ export default function ScanPage() {
       setNextAllowedTimeStr(nextMidnight.toISOString());
 
       setAnalysis(data);
-    } catch (err: unknown) {
+    } catch {
       setErrorMessage("Unable to connect to Otto AI server. Please try again.");
     } finally {
       setIsAnalyzing(false);

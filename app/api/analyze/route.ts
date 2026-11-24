@@ -95,11 +95,13 @@ function normalizeAiResult(raw: Record<string, unknown>): Record<string, unknown
       : "Advanced";
 
   const toStringArray = (val: unknown) =>
-    Array.isArray(val) ? val.filter((x): x is string => typeof x === "string").slice(0, 6) : [];
+    Array.isArray(val)
+      ? val.filter((x): x is string => typeof x === "string").map((s) => s.slice(0, 500)).slice(0, 6)
+      : [];
 
   return {
-    ...raw,
     isDrawing: true,
+    artCategory: typeof raw.artCategory === "string" ? raw.artCategory.slice(0, 120) : "Artwork",
     score,
     skillLevel,
     strengths: toStringArray(raw.strengths),
@@ -221,8 +223,10 @@ export async function POST(req: Request) {
       .eq("id", activeUserId)
       .maybeSingle();
 
-    if (!dbQueryError && profileData && profileData.last_scanned_at) {
-      const lastScanDate = new Date(profileData.last_scanned_at);
+    const previousLastScannedAt = profileData?.last_scanned_at ?? null;
+
+    if (!dbQueryError && previousLastScannedAt) {
+      const lastScanDate = new Date(previousLastScannedAt);
       const lastYear = lastScanDate.getFullYear();
       const lastMonth = String(lastScanDate.getMonth() + 1).padStart(2, "0");
       const lastDay = String(lastScanDate.getDate()).padStart(2, "0");
@@ -408,6 +412,11 @@ export async function POST(req: Request) {
       await supabase
         .from("profiles")
         .update({ last_scanned_at: nowTimestampz })
+        .eq("id", activeUserId);
+    } else if (previousLastScannedAt) {
+      await supabase
+        .from("profiles")
+        .update({ last_scanned_at: previousLastScannedAt })
         .eq("id", activeUserId);
     }
 
