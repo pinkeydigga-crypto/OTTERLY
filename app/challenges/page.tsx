@@ -1039,7 +1039,6 @@ const CLOTH_FOLD_TEXTURE_STEPS: TutorialStep[] = [
 ];
 
 const LOCAL_CHALLENGES: LocalChallenge[] = [
-  // --- BEGINNER ---
   {
     id: "classic-flower-beginner",
     title: "Challenge: Classic Flower Drawing",
@@ -1110,8 +1109,6 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/tie4.jpeg",
     steps: TIE_STEPS
   },
-
-  // --- INTERMEDIATE ---
   {
     id: "anime-boy-intermediate",
     title: "Challenge: Anime Boy",
@@ -1212,8 +1209,6 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair4.jpeg",
     steps: CHAIR_STEPS
   },
-
-  // --- ADVANCED ---
   {
     id: "loomis-head-challenge",
     title: "Challenge: The Loomis Head",
@@ -1644,9 +1639,12 @@ export default function ChallengesPage() {
     triggerHaptic();
     if (claimingId === challenge.id) return;
 
-    setClaimingId(challenge.id);
+    const verifiedChallenge = LOCAL_CHALLENGES.find((c) => c.id === challenge.id);
+    if (!verifiedChallenge) return;
+
+    setClaimingId(verifiedChallenge.id);
     const previousXp = userXp;
-    const safeXpToAdd = Math.max(0, Math.min(Number(challenge.xp) || 0, MAX_CHALLENGE_XP));
+    const safeXpToAdd = Math.max(0, Math.min(Number(verifiedChallenge.xp) || 0, MAX_CHALLENGE_XP));
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1665,7 +1663,7 @@ export default function ChallengesPage() {
       }
 
       const { data: newTotalXp, error: rpcError } = await supabase.rpc('complete_challenge_and_add_xp', {
-        p_challenge_id: challenge.id,
+        p_challenge_id: verifiedChallenge.id,
         p_xp_to_add: safeXpToAdd
       });
 
@@ -1690,7 +1688,7 @@ export default function ChallengesPage() {
       if (typeof window !== "undefined") {
         localStorage.setItem("user_xp_cache", updatedXp.toString());
       }
-      setCompletedChallenges((prev) => Array.from(new Set([...prev, challenge.id])));
+      setCompletedChallenges((prev) => Array.from(new Set([...prev, verifiedChallenge.id])));
       window.dispatchEvent(new CustomEvent('xpUpdated', { detail: updatedXp }));
 
       setShowClaimModal(false);
@@ -1794,7 +1792,7 @@ export default function ChallengesPage() {
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
       sizeClass: "w-[30px] h-[30px]"
     },
-   {
+    {
       path: "/tools",
       label: "Tools",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/settingnav.png",

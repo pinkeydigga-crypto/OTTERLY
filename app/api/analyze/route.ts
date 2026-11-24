@@ -36,15 +36,81 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
-function isValidImageHeader(buffer: Buffer): boolean {
-  if (buffer.length < 4) return false;
-  const hex = buffer.subarray(0, 4).toString("hex").toUpperCase();
+function detectImageMime(buffer: Buffer): "image/jpeg" | "image/png" | "image/webp" | null {
+  if (buffer.length < 12) return null;
 
-  const isJpeg = hex.startsWith("FFD8FF");
-  const isPng = hex.startsWith("89504E47");
-  const isWebp = hex.startsWith("52494646");
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return "image/jpeg";
+  }
 
-  return isJpeg || isPng || isWebp;
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  ) {
+    return "image/png";
+  }
+
+  const riff = buffer.subarray(0, 4).toString("ascii");
+  const webp = buffer.subarray(8, 12).toString("ascii");
+  if (riff === "RIFF" && webp === "WEBP") {
+    return "image/webp";
+  }
+
+  return null;
+}
+
+function normalizeAiResult(raw: Record<string, unknown>): Record<string, unknown> | null {
+  if (!raw || typeof raw !== "object") return null;
+
+  const isDrawing =
+    raw.isDrawing === true ||
+    raw.isDrawing === "true" ||
+    String(raw.isDrawing).toLowerCase() === "true";
+
+  if (!isDrawing) {
+    return {
+      isDrawing: false,
+      message:
+        typeof raw.message === "string" && raw.message.trim()
+          ? raw.message.trim().slice(0, 300)
+          : "Please upload a valid artwork, sketch, or drawing. Otto AI only analyzes art. (#106)",
+    };
+  }
+
+  const rawScore = Number(raw.score);
+  const score = Number.isFinite(rawScore)
+    ? Math.max(0, Math.min(100, Math.round(rawScore)))
+    : 50;
+
+  const allowedSkills = new Set(["Beginner", "Intermediate", "Advanced"]);
+  const skillLevel =
+    typeof raw.skillLevel === "string" && allowedSkills.has(raw.skillLevel)
+      ? raw.skillLevel
+      : score <= 50
+      ? "Beginner"
+      : score <= 75
+      ? "Intermediate"
+      : "Advanced";
+
+  const toStringArray = (val: unknown) =>
+    Array.isArray(val) ? val.filter((x): x is string => typeof x === "string").slice(0, 6) : [];
+
+  return {
+    ...raw,
+    isDrawing: true,
+    score,
+    skillLevel,
+    strengths: toStringArray(raw.strengths),
+    areasToImprove: toStringArray(raw.areasToImprove),
+    actionableImprovements: toStringArray(raw.actionableImprovements),
+    practiceRecommendation:
+      typeof raw.practiceRecommendation === "string" ? raw.practiceRecommendation.slice(0, 1000) : "",
+    motivationalFeedback:
+      typeof raw.motivationalFeedback === "string" ? raw.motivationalFeedback.slice(0, 600) : "",
+    message: typeof raw.message === "string" ? raw.message.slice(0, 300) : "",
+  };
 }
 
 const isValidUUID = (id: string) =>
@@ -94,28 +160,23 @@ export async function POST(req: Request) {
           auth: { persistSession: false },
         });
       } catch {
-        // Safe fallback without leaking internal details
+        supabase = null;
       }
     }
 
-    // Prefer verified user from Bearer token if provided; fallback to body.userId for simple flow compatibility
-    let verifiedUserId: string | null = null;
+    if (!supabase) {
+      return NextResponse.json(
+        {
+          isDrawing: false,
+          message: "Something went wrong. Please try again later. (#102)",
+          errorCode: "#102",
+        },
+        { status: 500 }
+      );
+    }
+
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
-
-    if (authHeader && authHeader.toLowerCase().startsWith("bearer ") && supabase) {
-      const token = authHeader.slice(7).trim();
-      if (token) {
-        const { data: authUserData } = await supabase.auth.getUser(token);
-        if (authUserData?.user?.id) {
-          verifiedUserId = authUserData.user.id;
-        }
-      }
-    }
-
-    const fallbackBodyUserId = body?.userId ? String(body.userId).trim() : null;
-    const activeUserId = verifiedUserId || (fallbackBodyUserId && isValidUUID(fallbackBodyUserId) ? fallbackBodyUserId : null);
-
-    if (!activeUserId || !isValidUUID(activeUserId)) {
+    if (!authHeader || !authHeader.toLowerCase().startsWith("bearer ")) {
       return NextResponse.json(
         {
           isDrawing: false,
@@ -126,31 +187,57 @@ export async function POST(req: Request) {
       );
     }
 
-    if (supabase) {
-      const { data: profileData, error: dbQueryError } = await supabase
-        .from("profiles")
-        .select("last_scanned_at")
-        .eq("id", activeUserId)
-        .maybeSingle();
+    const token = authHeader.slice(7).trim();
+    if (!token) {
+      return NextResponse.json(
+        {
+          isDrawing: false,
+          message: "User authentication failed. Please login to scan. (#109)",
+          errorCode: "#109",
+        },
+        { status: 401 }
+      );
+    }
 
-      if (!dbQueryError && profileData && profileData.last_scanned_at) {
-        const lastScanDate = new Date(profileData.last_scanned_at);
-        const lastYear = lastScanDate.getFullYear();
-        const lastMonth = String(lastScanDate.getMonth() + 1).padStart(2, "0");
-        const lastDay = String(lastScanDate.getDate()).padStart(2, "0");
-        const dbScanDateStr = `${lastYear}-${lastMonth}-${lastDay}`;
+    const { data: authUserData, error: authError } = await supabase.auth.getUser(token);
+    const verifiedUserId = authError ? null : authUserData?.user?.id || null;
 
-        if (dbScanDateStr === todayStr) {
-          return NextResponse.json(
-            {
-              isDrawing: false,
-              lockActive: true,
-              message: "Your scan limit is out. Come back tomorrow!",
-              errorCode: "#101",
-            },
-            { status: 423 }
-          );
-        }
+    if (!verifiedUserId || !isValidUUID(verifiedUserId)) {
+      return NextResponse.json(
+        {
+          isDrawing: false,
+          message: "User authentication failed. Please login to scan. (#109)",
+          errorCode: "#109",
+        },
+        { status: 401 }
+      );
+    }
+
+    const activeUserId = verifiedUserId;
+
+    const { data: profileData, error: dbQueryError } = await supabase
+      .from("profiles")
+      .select("last_scanned_at")
+      .eq("id", activeUserId)
+      .maybeSingle();
+
+    if (!dbQueryError && profileData && profileData.last_scanned_at) {
+      const lastScanDate = new Date(profileData.last_scanned_at);
+      const lastYear = lastScanDate.getFullYear();
+      const lastMonth = String(lastScanDate.getMonth() + 1).padStart(2, "0");
+      const lastDay = String(lastScanDate.getDate()).padStart(2, "0");
+      const dbScanDateStr = `${lastYear}-${lastMonth}-${lastDay}`;
+
+      if (dbScanDateStr === todayStr) {
+        return NextResponse.json(
+          {
+            isDrawing: false,
+            lockActive: true,
+            message: "Your scan limit is out. Come back tomorrow!",
+            errorCode: "#101",
+          },
+          { status: 423 }
+        );
       }
     }
 
@@ -169,23 +256,22 @@ export async function POST(req: Request) {
     }
 
     const imageStr = body.image;
-    let mimeType = "image/jpeg";
+    let declaredMime = "image/jpeg";
     let base64Data = imageStr;
 
     if (imageStr.includes(";base64,")) {
       const parts = imageStr.split(";base64,");
-      mimeType = parts[0].replace("data:", "").toLowerCase().trim();
+      declaredMime = parts[0].replace("data:", "").toLowerCase().trim();
       base64Data = parts[1] || "";
     }
 
-    if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
+    if (!ALLOWED_MIME_TYPES.includes(declaredMime)) {
       return NextResponse.json(
         { isDrawing: false, message: "Format not supported. Please upload JPG, PNG, or WEBP. (#105)", errorCode: "#105" },
         { status: 400 }
       );
     }
 
-    // Strict size check on decoded binary + base64 length
     const approxBase64Bytes = Math.floor((base64Data.length * 3) / 4);
     if (approxBase64Bytes > MAX_IMAGE_BYTES) {
       return NextResponse.json(
@@ -202,7 +288,8 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!isValidImageHeader(buffer)) {
+    const detectedMime = detectImageMime(buffer);
+    if (!detectedMime) {
       return NextResponse.json(
         { isDrawing: false, message: "Corrupted or invalid image file. (#105)", errorCode: "#105" },
         { status: 400 }
@@ -214,11 +301,11 @@ export async function POST(req: Request) {
       Analyze the uploaded artwork in detail using rich, descriptive, and professional yet simple English. Make the points descriptive and detailed.
 
       SCORING CRITERIA:
-      - 0-30: Rough/scribbled.
-      - 31-50: Beginner level.
-      - 51-70: Intermediate attempt.
-      - 71-88: Skilled artwork.
-      - 89-100: Exceptional / Masterpiece.
+- 0-30: Rough/scribbled.
+- 31-50: Beginner level.
+- 51-70: Intermediate attempt.
+- 71-88: Skilled artwork.
+- 89-100: Exceptional / Masterpiece.
 
       VALIDATION RULE:
       If not related to art/drawing/design:
@@ -258,17 +345,20 @@ export async function POST(req: Request) {
           const timeoutId = setTimeout(() => controller.abort(), 15000);
 
           const apiResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`,
             {
               method: "POST",
               signal: controller.signal,
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": apiKey,
+              },
               body: JSON.stringify({
                 contents: [
                   {
                     parts: [
                       { text: promptText },
-                      { inlineData: { mimeType: mimeType, data: base64Data } },
+                      { inlineData: { mimeType: detectedMime, data: base64Data } },
                     ],
                   },
                 ],
@@ -285,8 +375,12 @@ export async function POST(req: Request) {
             const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
             if (rawText) {
               const cleanJsonText = rawText.replace(/```json\n?|\n?```/g, "").trim();
-              jsonResult = JSON.parse(cleanJsonText);
-              break modelLoop;
+              const parsed = JSON.parse(cleanJsonText);
+              const normalized = normalizeAiResult(parsed);
+              if (normalized) {
+                jsonResult = normalized;
+                break modelLoop;
+              }
             }
           } else {
             if (attempt === 1) await sleep(500);
@@ -309,7 +403,7 @@ export async function POST(req: Request) {
       jsonResult.isDrawing === "true" ||
       String(jsonResult.isDrawing).toLowerCase() === "true";
 
-    if (isDrawingValid && supabase) {
+    if (isDrawingValid) {
       const nowTimestampz = new Date().toISOString();
       await supabase
         .from("profiles")
@@ -322,11 +416,10 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(jsonResult, { status: 200 });
-
   } catch {
     return NextResponse.json(
       { isDrawing: false, message: "Something went wrong. Please try again. (#500)", errorCode: "#500" },
       { status: 500 }
     );
   }
-} 
+}

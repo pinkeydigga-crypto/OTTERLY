@@ -294,20 +294,38 @@ export default function ScanPage() {
     setIsAnalyzing(true);
     setErrorMessage(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
-    const activeUserId = profile?.id || user?.id;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session || !session.access_token) {
+      setErrorMessage("Please login again to scan.");
+      setIsAnalyzing(false);
+      router.replace("/login");
+      return;
+    }
+
+    const activeUserId = session.user?.id || profile?.id;
 
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({
           image: selectedImage,
-          userId: activeUserId
         }),
       });
 
       const data: AIAnalysisResult = await res.json();
+
+      if (res.status === 401) {
+        setErrorMessage(data.message || "Please login again to scan.");
+        router.replace("/login");
+        return;
+      }
 
       if (res.status === 423 || data.lockActive) {
         setErrorMessage(data.message || "Your scan limit is out. Come back tomorrow!");
@@ -324,12 +342,10 @@ export default function ScanPage() {
       }
 
       if (data.isDrawing === false) {
-        // Invalid artwork: Do NOT lock, let user upload a valid drawing
         setErrorMessage(data.message || "Please upload a valid artwork image.");
         return;
       }
 
-      // SUCCESSFUL RESULT: Lock only upon receiving a valid analysis result
       const nowIso = new Date().toISOString();
       if (activeUserId) {
         await supabase
@@ -411,7 +427,7 @@ export default function ScanPage() {
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
       sizeClass: "w-[30px] h-[30px]"
     },
-   {
+    {
       path: "/tools",
       label: "Tools",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/settingnav.png",
@@ -613,7 +629,6 @@ export default function ScanPage() {
             </div>
 
             <div className="w-full relative">
-              {/* Midnight Lock Screen Overlay (Active if scanned today) */}
               {isLockedToday && countdown && (
                 <div className="absolute inset-0 bg-white/95 backdrop-blur-sm z-30 rounded-[2rem] p-8 flex flex-col items-center justify-center space-y-6 border-3 border-amber-300 border-dashed text-center">
                   <div className="w-20 h-20 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center border-2 border-amber-200">
