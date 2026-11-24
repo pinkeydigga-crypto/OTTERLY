@@ -51,6 +51,24 @@ export default function OttoChat() {
   const isSendLocked = lockUntil !== null && remainingMs > 0;
 
   useEffect(() => {
+    const reloadOnOffline = () => {
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
+    };
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      window.location.reload();
+      return;
+    }
+
+    window.addEventListener("offline", reloadOnOffline);
+    return () => {
+      window.removeEventListener("offline", reloadOnOffline);
+    };
+  }, []);
+
+  useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -106,6 +124,10 @@ export default function OttoChat() {
   };
 
   const requestOttoReply = async (conversation: ChatMessage[]): Promise<OttoApiResponse> => {
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      window.location.reload();
+    }
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -132,6 +154,11 @@ export default function OttoChat() {
   };
 
   const sendMessage = async (presetText?: string) => {
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      window.location.reload();
+      return;
+    }
+
     const cleanText = (presetText ?? input).trim();
     if (!cleanText || sending || isSendLocked) return;
 
@@ -162,6 +189,10 @@ export default function OttoChat() {
         setLockUntil(Date.now() + DAY_LIMIT_LOCK_MS);
       }
     } catch {
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        window.location.reload();
+        return;
+      }
       setMessages((prev) => [
         ...prev,
         {
@@ -175,6 +206,11 @@ export default function OttoChat() {
   };
 
   const handleRegenerate = async (assistantIndex: number) => {
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      window.location.reload();
+      return;
+    }
+
     if (sending || isSendLocked) return;
 
     const priorMessages = messages.slice(0, assistantIndex);
@@ -192,6 +228,10 @@ export default function OttoChat() {
         setLockUntil(Date.now() + DAY_LIMIT_LOCK_MS);
       }
     } catch {
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        window.location.reload();
+        return;
+      }
       setMessages([
         ...priorMessages,
         {

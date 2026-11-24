@@ -805,7 +805,7 @@ export default function DashboardPage() {
               </p>
               <div className="pt-1">
                 <Link
-                  href="/tools"
+                  href="/generator"
                   onClick={triggerHaptic}
                   className="inline-flex items-center gap-1.5 bg-purple-600 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-b-4 border-purple-800 hover:bg-purple-700 active:border-b-0 active:translate-y-1 transition-all shadow-md"
                 >

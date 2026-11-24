@@ -69,12 +69,6 @@ function getTodayLocalDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function getClientIp(req: NextRequest): string {
-  const fwd = req.headers.get("x-forwarded-for");
-  const realIp = req.headers.get("x-real-ip");
-  return fwd ? fwd.split(",")[0].trim() : realIp || "unknown";
-}
-
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -95,8 +89,7 @@ function ottoErrorReply(code: "101" | "102" | "103" | "104" | "105" | "106", sta
 async function resolveRateKey(
   req: NextRequest,
   supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>
-): Promise<string> {
-  const ip = getClientIp(req);
+): Promise<string | null> {
   const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
 
   if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
@@ -104,12 +97,12 @@ async function resolveRateKey(
     if (token) {
       const { data } = await supabase.auth.getUser(token);
       if (data?.user?.id) {
-        return `user:${data.user.id}|ip:${ip}`;
+        return `user:${data.user.id}`;
       }
     }
   }
 
-  return `ip:${ip}`;
+  return null;
 }
 
 async function checkUserQuotaFromSupabase(
@@ -283,6 +276,13 @@ export async function POST(req: NextRequest) {
     }
 
     const rateKey = await resolveRateKey(req, supabase);
+    if (!rateKey) {
+      return NextResponse.json(
+        { reply: "Please log in again to chat with Otto." },
+        { status: 401 }
+      );
+    }
+
     const quota = await checkUserQuotaFromSupabase(supabase, rateKey);
 
     // 10+ chats reached -> return automated message immediately without calling Groq or Gemini

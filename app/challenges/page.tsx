@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   ArrowLeft, CheckCircle2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, PanelLeft, X, ChevronRight,
-  Sparkles, Check, ShieldAlert, Palette, Grid, Zap, RefreshCw, Star, Volume2, VolumeX, MoreHorizontal
+  Sparkles, Check, ShieldAlert, Palette, Grid, Zap, RefreshCw, Star, Volume2, VolumeX
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
@@ -723,6 +723,91 @@ const WATERDROP_STEPS: TutorialStep[] = [
   }
 ];
 
+const SHADING_ROSE_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for petal proportions", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready for realistic rose shading!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch Rose Outline and Petal Proportions",
+    instruction: "Draw the tight center spiral, overlapping inner and outer petals, curved stem with thorns, and both leaves with light lines.",
+    tips: ["Keep guidelines light so shading blends cleanly", "Balance the sizes of the outer petals and leaves"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/rose1.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Add Mid-Tone Shading and Leaf Veins",
+    instruction: "Shade softly inside petal folds and along leaf veins following the natural curve of each petal.",
+    tips: ["Keep pencil strokes smooth and curved", "Leave lighter areas untouched for highlights"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/rose2.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Deepen Contrast and 3D Depth",
+    instruction: "Darken shadows around the center bud, under overlapping petals, and along the stem and leaves for strong 3D volume.",
+    tips: ["Build dark values gradually in layers", "Keep highlights crisp for realistic depth"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/rose3.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice shading your rose on the digital canvas below.",
+    tips: ["Start with the center bud and petal curves", "Layer shadows smoothly for 3D depth"],
+    imageUrl: ""
+  }
+];
+
+const CHAIR_STEPS: TutorialStep[] = [
+  {
+    step: 1,
+    title: "Step 1: Get Your Pencil Ready",
+    instruction: "",
+    tips: ["Use a light pencil for perspective lines", "Keep an eraser handy"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif",
+    typewriterText: "Get ready to draw a 3D chair!"
+  },
+  {
+    step: 2,
+    title: "Step 2: Sketch Chair Frame and Guidelines",
+    instruction: "Lightly sketch the seat plane, backrest posts, cross rail, and four angled legs with construction lines.",
+    tips: ["Keep initial sketch lines light", "Check leg angles and seat perspective"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair4.jpeg"
+  },
+  {
+    step: 3,
+    title: "Step 3: Refine Seat, Backrest and Support Bars",
+    instruction: "Define the seat thickness, backrest panel, side stretcher bars, and leg edges cleanly.",
+    tips: ["Keep wooden edges straight and neat", "Clean up extra construction marks gently"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair3.jpeg"
+  },
+  {
+    step: 4,
+    title: "Step 4: Add Outline Depth and Light Shadow Guide",
+    instruction: "Strengthen key structural contours and lightly outline the cast shadow under the chair.",
+    tips: ["Keep outer edges crisp", "Lightly map where the shadow falls"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair2.jpeg"
+  },
+  {
+    step: 5,
+    title: "Step 5: Shade Wood Surfaces and Cast Shadow",
+    instruction: "Shade the chair legs, backrest, and seat edge with soft directional strokes, and blend the ground shadow underneath.",
+    tips: ["Keep top surfaces lighter than shaded sides", "Blend the ground shadow smoothly for 3D depth"],
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair1.jpeg"
+  },
+  {
+    step: 6,
+    title: "Step 6: Practice on Digital Canvas",
+    instruction: "Awesome work! Now practice drawing your chair on the digital canvas below.",
+    tips: ["Start with the seat and leg guides", "Add smooth shading and shadow"],
+    imageUrl: ""
+  }
+];
+
 const LOOMIS_STEPS: TutorialStep[] = [
   {
     step: 1,
@@ -1107,6 +1192,26 @@ const LOCAL_CHALLENGES: LocalChallenge[] = [
     previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/waterdrop3.jpeg",
     steps: WATERDROP_STEPS
   },
+  {
+    id: "shading-rose-intermediate",
+    title: "Challenge: Shading Rose",
+    description: "Sketch rose outline and petal proportions, layer mid-tones and leaf veins, and finish with deep contrast and 3D depth step by step.",
+    difficulty: "intermediate",
+    xp: 90,
+    stepsCount: 3,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/rose3.jpeg",
+    steps: SHADING_ROSE_STEPS
+  },
+  {
+    id: "chair-drawing-intermediate",
+    title: "Challenge: Chair Drawing",
+    description: "Sketch the chair frame and guidelines, refine the seat, backrest, and support bars, and finish with shading and ground shadow step by step.",
+    difficulty: "intermediate",
+    xp: 80,
+    stepsCount: 4,
+    previewImage: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair4.jpeg",
+    steps: CHAIR_STEPS
+  },
 
   // --- ADVANCED ---
   {
@@ -1365,70 +1470,14 @@ export default function ChallengesPage() {
     } catch {}
   };
 
-  const speakStep1Typewriter = useCallback((typewriterText: string) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
-    window.speechSynthesis.cancel();
-    if (isMuted || !typewriterText) return;
-
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-    }
-
-    const executeSpeech = () => {
-      const formattedText = typewriterText
-        .replace(/,/g, ", ")
-        .replace(/\./g, "... ");
-
-      const utterance = new SpeechSynthesisUtterance(formattedText);
-      utterance.rate = 0.94;
-      utterance.pitch = 0.95;
-      utterance.volume = 1.0;
-
-      const voices = window.speechSynthesis.getVoices();
-      const maleVoice = voices.find(v =>
-        (v.name.includes('Google UK English Male') ||
-         v.name.includes('Google US English Male') ||
-         v.name.includes('David') ||
-         v.name.includes('George') ||
-         v.name.includes('Male')) && v.lang.includes('en')
-      ) || voices.find(v => v.lang.includes('en'));
-
-      if (maleVoice) {
-        utterance.voice = maleVoice;
-      }
-
-      window.speechSynthesis.speak(utterance);
-    };
-
-    const voicesCheck = window.speechSynthesis.getVoices();
-    if (voicesCheck.length > 0) {
-      setTimeout(executeSpeech, 50);
-    } else {
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.onvoiceschanged = null;
-        executeSpeech();
-      };
-      setTimeout(executeSpeech, 300);
-    }
-  }, [isMuted]);
-
   const toggleMute = () => {
     triggerHaptic();
     setIsMuted(prev => {
       const nextMute = !prev;
       if (nextMute) {
         stopSweetBgMusic();
-        if (typeof window !== "undefined" && "speechSynthesis" in window) {
-          window.speechSynthesis.cancel();
-        }
       } else {
         startSweetBgMusic();
-        const challenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
-        const stepObj = challenge.steps[currentStep];
-        if (currentStep === 0 && stepObj?.typewriterText) {
-          speakStep1Typewriter(stepObj.typewriterText);
-        }
       }
       return nextMute;
     });
@@ -1481,23 +1530,6 @@ export default function ChallengesPage() {
       }
     });
   }, [claimMascotUrl]);
-
-  useEffect(() => {
-    if (activeView === 'challenge-flow') {
-      const challenge = LOCAL_CHALLENGES.find(c => c.id === activeChallengeId) || LOCAL_CHALLENGES[0];
-      const stepObj = challenge.steps[currentStep];
-      if (currentStep === 0 && stepObj?.typewriterText) {
-        speakStep1Typewriter(stepObj.typewriterText);
-      } else if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    }
-    return () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, [activeView, activeChallengeId, currentStep, speakStep1Typewriter]);
 
   const handleSelectLevel = (level: "beginner" | "intermediate" | "advanced") => {
     triggerHaptic();
@@ -1584,9 +1616,6 @@ export default function ChallengesPage() {
   const handleReviewChallenge = async () => {
     triggerHaptic();
     stopSweetBgMusic();
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user || (await supabase.auth.getUser()).data.user;
@@ -1607,9 +1636,6 @@ export default function ChallengesPage() {
   const handleOpenClaimModal = () => {
     triggerHaptic();
     stopSweetBgMusic();
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
     playCelebrationSound();
     setShowClaimModal(true);
   };
@@ -2115,9 +2141,6 @@ export default function ChallengesPage() {
                 onClick={() => {
                   triggerHaptic();
                   stopSweetBgMusic();
-                  if (typeof window !== "undefined" && "speechSynthesis" in window) {
-                    window.speechSynthesis.cancel();
-                  }
                   setActiveView('hub');
                 }}
                 className="text-xs font-black text-slate-500 hover:text-slate-800 bg-slate-100 px-3 py-1.5 rounded-xl transition cursor-pointer"
@@ -2219,7 +2242,7 @@ export default function ChallengesPage() {
                     ? "bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100"
                     : "bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
                 }`}
-                title={isMuted ? "Unmute Voice & Music" : "Mute Voice & Music"}
+                title={isMuted ? "Unmute Music" : "Mute Music"}
               >
                 {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
               </button>

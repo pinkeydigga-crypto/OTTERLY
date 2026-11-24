@@ -13,7 +13,6 @@ import {
   Camera, 
   RotateCcw,
   BookOpen,
-  Layers,
   Zap,
   Smile,
   Shuffle
@@ -1069,9 +1068,6 @@ export default function IdeaGeneratorPage() {
       <main className="w-full max-w-3xl mx-auto px-4 py-4 flex-1 flex flex-col items-center text-center space-y-5">
         
         <div className="space-y-1.5">
-          <span className="inline-flex items-center gap-1.5 bg-blue-100 text-[#2563EB] text-[11px] font-black uppercase px-3.5 py-1 rounded-full tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" /> Creative Drawing Ideas
-          </span>
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-[#0F172A]">
             What will you draw today?
           </h1>
@@ -1100,22 +1096,14 @@ export default function IdeaGeneratorPage() {
           })}
         </div>
 
-        <div className="w-full bg-blue-50 border border-blue-200 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-          <div className="text-left">
-            <p className="text-xs font-black text-[#2563EB] uppercase tracking-wider">Selected Category</p>
-            <p className="text-sm sm:text-base font-black text-[#0F172A]">
-              {CATEGORIES_DATA[selectedCategory]?.name}
-            </p>
-          </div>
-          <button
-            onClick={() => handleGenerate(selectedCategory)}
-            disabled={loading}
-            className="w-full sm:w-auto px-6 py-3 bg-[#2563EB] hover:bg-blue-700 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-xl shadow-[0px_4px_0px_#1D4ED8] active:shadow-none transition-all flex items-center justify-center gap-2"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>{loading ? "Generating..." : "Generate Challenge"}</span>
-          </button>
-        </div>
+        <button
+          onClick={() => handleGenerate(selectedCategory)}
+          disabled={loading}
+          className="w-full sm:w-auto px-7 py-3.5 bg-[#2563EB] hover:bg-blue-700 text-white font-black text-xs sm:text-sm uppercase tracking-wider rounded-xl shadow-[0px_4px_0px_#1D4ED8] active:shadow-none transition-all flex items-center justify-center gap-2"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>{loading ? "Generating..." : "Generate Challenge"}</span>
+        </button>
 
         <div className="w-full bg-white rounded-3xl p-5 sm:p-8 border-2 border-slate-200/95 shadow-[0_10px_35px_rgba(0,0,0,0.04)] text-left relative overflow-hidden">
           
