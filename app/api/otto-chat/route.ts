@@ -29,8 +29,8 @@ TYPO & CONTEXT UNDERSTANDING:
 - Treat beginner self-doubt ("I don't know anything", "muje kuch nhi ata yar") and normal friendly conversation warmly—do not mark them as off-topic.
 
 EMOJI & HOOK RULES:
-- Do NOT put an emoji in every reply. When no emoji is needed, use 0 emojis—most replies should have no emoji at all so it feels natural and not overdone.
-- Do NOT default to 😊 every time you use an emoji. Only occasionally—when it genuinely fits the mood—use up to 2 varied, natural emojis (like 🎨, ✏️, 👍, 🌿, or 😊), never ✨.
+- Do NOT put an emoji in every reply. Only use emojis when they genuinely fit—when no emoji is needed, use 0 emojis (most replies can have no emoji at all).
+- Do NOT default to smile emojis like 😊 every time. Vary emojis naturally based on what fits the moment—including heart emojis like ❤️ or 💙 when being warm/sweet, or drawing/mood emojis like 🎨, ✏️, 👍 when relevant (never ✨), with a MAXIMUM of 2 emojis per reply.
 - Do NOT repeat "I'll be waiting for you" in every reply. Vary endings naturally or leave no hook when none is needed.
 
 TONE, LENGTH & FORMATTING:
@@ -75,32 +75,6 @@ function getTodayLocalDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function getClientIp(req: NextRequest): string {
-  // Prefer trusted proxy/edge headers first; only fallback to x-forwarded-for / x-real-ip
-  const vercelFwd = req.headers.get("x-vercel-forwarded-for");
-  if (vercelFwd) {
-    const first = vercelFwd.split(",")[0]?.trim();
-    if (first) return first;
-  }
-
-  const cfIp = req.headers.get("cf-connecting-ip")?.trim();
-  if (cfIp) return cfIp;
-
-  const realIp = req.headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
-
-  const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) {
-    const parts = fwd
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (parts.length > 0) return parts[0];
-  }
-
-  return "unknown";
-}
-
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -121,7 +95,7 @@ function ottoErrorReply(code: "101" | "102" | "103" | "104" | "105" | "106", sta
 async function resolveRateKey(
   req: NextRequest,
   supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>
-): Promise<string> {
+): Promise<string | null> {
   const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
 
   if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
@@ -134,26 +108,23 @@ async function resolveRateKey(
     }
   }
 
-  return `ip:${getClientIp(req)}`;
+  return null;
 }
 
-async function reserveQuotaAtomic(
+async function checkUserQuotaFromSupabase(
   supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
-  rateKey: string,
-  todayStr: string,
-  minuteBucket: number
+  rateKey: string
 ): Promise<{ allowed: boolean; message?: string; status?: number }> {
-  const { data, error } = await supabase
-    .rpc("reserve_otto_chat_quota", {
-      p_rate_key: rateKey,
-      p_day_date: todayStr,
-      p_minute_bucket: minuteBucket,
-      p_max_per_day: MAX_PER_DAY,
-      p_max_per_minute: MAX_PER_MINUTE,
-    })
-    .single<{ allowed: boolean; reason: string }>();
+  const todayStr = getTodayLocalDate();
+  const currentMinuteBucket = Math.floor(Date.now() / 60000);
 
-  if (error || !data) {
+  const { data: row, error } = await supabase
+    .from("otto_chat_usage")
+    .select("day_date, day_count, minute_bucket, minute_count")
+    .eq("rate_key", rateKey)
+    .maybeSingle();
+
+  if (error) {
     return {
       allowed: false,
       message: "Otto failed to give response, try again later (102)",
@@ -161,8 +132,12 @@ async function reserveQuotaAtomic(
     };
   }
 
-  if (!data.allowed) {
-    if (data.reason === "day_limit") {
+  if (row && row.day_date === todayStr) {
+    const dayCount = Number(row.day_count) || 0;
+    const minuteCount =
+      Number(row.minute_bucket) === currentMinuteBucket ? Number(row.minute_count) || 0 : 0;
+
+    if (dayCount >= MAX_PER_DAY) {
       return {
         allowed: false,
         message:
@@ -171,29 +146,49 @@ async function reserveQuotaAtomic(
       };
     }
 
-    return {
-      allowed: false,
-      message: "Give it just a minute and try again 😊",
-      status: 429,
-    };
+    if (minuteCount >= MAX_PER_MINUTE) {
+      return {
+        allowed: false,
+        message: "Give it just a minute and try again 😊",
+        status: 429,
+      };
+    }
   }
 
   return { allowed: true };
 }
 
-async function refundQuotaOnFailure(
+async function incrementUserQuotaAfterReply(
   supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
-  rateKey: string,
-  todayStr: string,
-  minuteBucket: number
+  rateKey: string
 ): Promise<void> {
-  try {
-    await supabase.rpc("refund_otto_chat_quota", {
-      p_rate_key: rateKey,
-      p_day_date: todayStr,
-      p_minute_bucket: minuteBucket,
-    });
-  } catch {}
+  const todayStr = getTodayLocalDate();
+  const currentMinuteBucket = Math.floor(Date.now() / 60000);
+
+  const { data: row } = await supabase
+    .from("otto_chat_usage")
+    .select("day_date, day_count, minute_bucket, minute_count")
+    .eq("rate_key", rateKey)
+    .maybeSingle();
+
+  const sameDay = row?.day_date === todayStr;
+  const nextDayCount = sameDay ? (Number(row?.day_count) || 0) + 1 : 1;
+  const nextMinuteCount =
+    sameDay && Number(row?.minute_bucket) === currentMinuteBucket
+      ? (Number(row?.minute_count) || 0) + 1
+      : 1;
+
+  await supabase.from("otto_chat_usage").upsert(
+    {
+      rate_key: rateKey,
+      day_date: todayStr,
+      day_count: nextDayCount,
+      minute_bucket: currentMinuteBucket,
+      minute_count: nextMinuteCount,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "rate_key" }
+  );
 }
 
 async function askGroq(messages: Array<{ role: string; content: string }>): Promise<string | null> {
@@ -295,16 +290,19 @@ export async function POST(req: NextRequest) {
     }
 
     const rateKey = await resolveRateKey(req, supabase);
-    const todayStr = getTodayLocalDate();
-    const minuteBucket = Math.floor(Date.now() / 60000);
-
-    // Atomically reserve 1 chat credit before calling AI so concurrent bursts cannot bypass limits
-    const reservation = await reserveQuotaAtomic(supabase, rateKey, todayStr, minuteBucket);
-
-    if (!reservation.allowed) {
+    if (!rateKey) {
       return NextResponse.json(
-        { reply: reservation.message, limitReached: true },
-        { status: reservation.status || 429 }
+        { reply: "Please log in again to chat with Otto." },
+        { status: 401 }
+      );
+    }
+
+    const quota = await checkUserQuotaFromSupabase(supabase, rateKey);
+
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { reply: quota.message, limitReached: true },
+        { status: quota.status || 429 }
       );
     }
 
@@ -316,9 +314,10 @@ export async function POST(req: NextRequest) {
     const reply = (await askGroq(cleanHistory)) || (await askGemini(cleanHistory));
 
     if (!reply) {
-      await refundQuotaOnFailure(supabase, rateKey, todayStr, minuteBucket);
       return ottoErrorReply("104", 502);
     }
+
+    await incrementUserQuotaAfterReply(supabase, rateKey);
 
     return NextResponse.json({ reply });
   } catch {
