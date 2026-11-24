@@ -2,24 +2,48 @@ import { supabase } from '@/lib/supabase';
 
 export interface ErrorLogPayload {
   pageFeature: string;
-  error: any;
+  error: unknown;
   userId?: string | null;
-  requestInfo?: Record<string, any>;
+  requestInfo?: Record<string, unknown>;
 }
 
-const sanitizeData = (data: any): any => {
-  if (!data || typeof data !== 'object') return data;
+const SENSITIVE_KEYS = [
+  'password',
+  'token',
+  'apikey',
+  'api_key',
+  'secret',
+  'cookie',
+  'authorization',
+];
 
-  const sensitiveKeys = ['password', 'token', 'apikey', 'secret', 'cookie', 'authorization'];
-  const sanitized = Array.isArray(data) ? [...data] : { ...data };
+const redactStringSecrets = (value: string): string => {
+  return value
+    .replace(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi, 'Bearer [REDACTED_SECRET]')
+    .slice(0, 2000);
+};
 
-  for (const key in sanitized) {
-    if (sensitiveKeys.some((s) => key.toLowerCase().includes(s))) {
+const sanitizeData = (data: unknown, depth = 0): unknown => {
+  if (depth > 4 || data === null || data === undefined) return data;
+  if (typeof data === 'string') return redactStringSecrets(data);
+  if (typeof data !== 'object') return data;
+
+  if (Array.isArray(data)) {
+    return data.slice(0, 20).map((item) => sanitizeData(item, depth + 1));
+  }
+
+  const record = data as Record<string, unknown>;
+  const sanitized: Record<string, unknown> = {};
+
+  for (const key of Object.keys(record)) {
+    const lowerKey = key.toLowerCase();
+    if (SENSITIVE_KEYS.some((s) => lowerKey.includes(s))) {
       sanitized[key] = '[REDACTED_SECRET]';
-    } else if (typeof sanitized[key] === 'object') {
-      sanitized[key] = sanitizeData(sanitized[key]);
+    } else {
+      sanitized[key] = sanitizeData(record[key], depth + 1);
     }
   }
+
   return sanitized;
 };
 
@@ -32,28 +56,50 @@ export const logErrorSecurely = async ({
   const randomHex = Math.random().toString(36).substring(2, 6).toUpperCase();
   const errorCode = `ERR-${randomHex}`;
 
-  const sanitizedRequestInfo = sanitizeData(requestInfo);
+  const errObj =
+    error && typeof error === 'object'
+      ? (error as {
+          message?: string;
+          stack?: string;
+          code?: string;
+          details?: string;
+          hint?: string;
+        })
+      : null;
+
+  const rawMessage = errObj?.message || String(error || 'Unknown error');
 
   const errorPayload = {
     error_code: errorCode,
     timestamp: new Date().toISOString(),
-    page_feature: pageFeature,
+    page_feature: String(pageFeature || 'unknown').slice(0, 100),
     user_id: userId,
-    actual_error_message: error?.message || String(error),
-    stack_trace: error?.stack || null,
-    database_error_details: error?.code ? { code: error.code, details: error.details, hint: error.hint } : null,
-    request_info: sanitizedRequestInfo,
+    actual_error_message: redactStringSecrets(rawMessage).slice(0, 1000),
+    stack_trace: errObj?.stack ? redactStringSecrets(errObj.stack).slice(0, 4000) : null,
+    database_error_details: errObj?.code
+      ? {
+          code: errObj.code,
+          details: errObj.details ?? null,
+          hint: errObj.hint ?? null,
+        }
+      : null,
+    request_info: sanitizeData(requestInfo),
   };
 
   try {
     if (typeof window !== 'undefined' && !navigator.onLine) {
-      console.warn("Offline mode: Skipping DB error log insert.");
       return errorCode;
     }
 
-    await supabase.from('system_error_logs').insert([errorPayload]);
+    const { error: insertErr } = await supabase
+      .from('system_error_logs')
+      .insert([errorPayload]);
+
+    if (insertErr) {
+      console.error('[error-logger] insert failed:', insertErr.message);
+    }
   } catch (dbErr) {
-    console.error("Internal fallback log fail:", dbErr);
+    console.error('[error-logger] exception:', dbErr);
   }
 
   return errorCode;

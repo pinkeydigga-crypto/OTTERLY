@@ -23,6 +23,7 @@ export default function AdminDebugLogsPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   const [searchCode, setSearchCode] = useState("");
+  const [lastSearchedCode, setLastSearchedCode] = useState("");
   const [logDetails, setLogDetails] = useState<ErrorLogRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
@@ -31,38 +32,41 @@ export default function AdminDebugLogsPage() {
   useEffect(() => {
     let active = true;
 
+    const checkUser = (email?: string | null, hasUser = false, hasError = false) => {
+      if (!active) return;
+      const normalized = (email || "").trim().toLowerCase();
+      const allowed =
+        !hasError &&
+        hasUser &&
+        ADMIN_EMAILS.length > 0 &&
+        ADMIN_EMAILS.includes(normalized);
+      setIsAuthorized(allowed);
+      setAuthChecking(false);
+    };
+
     async function verifyAdminAccess() {
       try {
         const {
           data: { user },
           error,
         } = await supabase.auth.getUser();
-
-        if (!active) return;
-
-        const userEmail = (user?.email || "").toLowerCase();
-        const allowed =
-          !error &&
-          Boolean(user) &&
-          ADMIN_EMAILS.length > 0 &&
-          ADMIN_EMAILS.includes(userEmail);
-
-        setIsAuthorized(allowed);
+        checkUser(user?.email, Boolean(user), Boolean(error));
       } catch {
-        if (active) {
-          setIsAuthorized(false);
-        }
-      } finally {
-        if (active) {
-          setAuthChecking(false);
-        }
+        checkUser(null, false, true);
       }
     }
 
-    verifyAdminAccess();
+    void verifyAdminAccess();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      checkUser(session?.user?.email, Boolean(session?.user), false);
+    });
 
     return () => {
       active = false;
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -80,6 +84,7 @@ export default function AdminDebugLogsPage() {
     const cleanedCode = searchCode.trim().toUpperCase();
     if (!cleanedCode) return;
 
+    setLastSearchedCode(cleanedCode);
     setLoading(true);
 
     try {
@@ -87,7 +92,7 @@ export default function AdminDebugLogsPage() {
         .from("system_error_logs")
         .select("*")
         .eq("error_code", cleanedCode)
-        .single();
+        .maybeSingle();
 
       if (error || !data) {
         setNotFound(true);
@@ -155,7 +160,7 @@ export default function AdminDebugLogsPage() {
 
         {notFound && (
           <div className="p-4 bg-red-900/30 border border-red-500 text-red-300 rounded-lg">
-            No internal error record found for code: <strong>{searchCode}</strong>
+            No internal error record found for code: <strong>{lastSearchedCode}</strong>
           </div>
         )}
 

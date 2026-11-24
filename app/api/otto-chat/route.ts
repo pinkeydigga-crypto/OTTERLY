@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { logErrorSecurely } from "@/lib/errorlogger";
 
 export const maxDuration = 30;
 
@@ -95,33 +96,31 @@ function getTodayLocalDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function ottoErrorReply(code: "101" | "102" | "103" | "104" | "105" | "106", status = 500) {
+async function ottoErrorReply(
+  stepCode: string,
+  status = 500,
+  err?: unknown,
+  userId?: string | null,
+  meta?: Record<string, unknown>
+) {
+  let trackedCode = stepCode;
+  if (err !== undefined) {
+    const loggedCode = await logErrorSecurely({
+      pageFeature: "api/otto-chat",
+      error: err,
+      userId: userId || null,
+      requestInfo: { stepCode, ...meta },
+    });
+    trackedCode = `${stepCode} (${loggedCode})`;
+  }
+
   return NextResponse.json(
     {
-      reply: `Otto failed to give response, try again later (${code})`,
-      errorCode: code,
+      reply: `Otto failed to give response, try again later [${trackedCode}]`,
+      errorCode: trackedCode,
     },
     { status }
   );
-}
-
-async function resolveRateKey(
-  req: NextRequest,
-  supabase: NonNullable<typeof supabaseAdmin>
-): Promise<string | null> {
-  const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
-
-  if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
-    const token = authHeader.slice(7).trim();
-    if (token) {
-      const { data } = await supabase.auth.getUser(token);
-      if (data?.user?.id) {
-        return `user:${data.user.id}`;
-      }
-    }
-  }
-
-  return null;
 }
 
 async function askGroq(messages: Array<{ role: string; content: string }>): Promise<string | null> {
@@ -193,10 +192,12 @@ async function askGemini(messages: Array<{ role: string; content: string }>): Pr
 }
 
 export async function POST(req: NextRequest) {
+  let userId: string | null = null;
+
   try {
     const body = await req.json().catch(() => null);
     if (!body) {
-      return ottoErrorReply("106", 400);
+      return ottoErrorReply("CHAT_BAD_JSON", 400);
     }
 
     const rawMessages = Array.isArray(body?.messages) ? body.messages : [];
@@ -218,16 +219,33 @@ export async function POST(req: NextRequest) {
     }
 
     if (!supabaseAdmin) {
-      return ottoErrorReply("101", 503);
+      return await ottoErrorReply(
+        "CHAT_NO_SUPABASE_ENV",
+        503,
+        new Error("Missing Supabase URL or Service Role Key")
+      );
     }
 
-    const rateKey = await resolveRateKey(req, supabaseAdmin);
-    if (!rateKey) {
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    const token = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : "";
+
+    if (!token) {
       return NextResponse.json(
-        { reply: "Please log in again to chat with Otto." },
+        { reply: "Please log in again to chat with Otto.", errorCode: "CHAT_NO_TOKEN" },
         { status: 401 }
       );
     }
+
+    const { data: authData, error: authErr } = await supabaseAdmin.auth.getUser(token);
+    if (authErr || !authData?.user?.id) {
+      return NextResponse.json(
+        { reply: "Please log in again to chat with Otto.", errorCode: "CHAT_INVALID_SESSION" },
+        { status: 401 }
+      );
+    }
+
+    userId = authData.user.id;
+    const rateKey = `user:${userId}`;
 
     const normalizedQuery = userText.toLowerCase().replace(/[?.!]+$/g, "").trim();
     if (INSTANT_CACHE[normalizedQuery]) {
@@ -243,7 +261,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (rpcErr || !quotaRes) {
-      return ottoErrorReply("102", 503);
+      return await ottoErrorReply(
+        "CHAT_QUOTA_RPC_FAIL",
+        503,
+        rpcErr || new Error("Null RPC response"),
+        userId
+      );
     }
 
     if (!quotaRes.allowed) {
@@ -251,7 +274,14 @@ export async function POST(req: NextRequest) {
         quotaRes.reason === "day"
           ? "You've used all 10 chats for today! Take a sweet break and come back tomorrow whenever you're ready 😊"
           : "Give it just a minute and try again 😊";
-      return NextResponse.json({ reply: msg, limitReached: true }, { status: 429 });
+      return NextResponse.json(
+        {
+          reply: msg,
+          limitReached: true,
+          errorCode: quotaRes.reason === "day" ? "CHAT_DAY_LIMIT" : "CHAT_MINUTE_LIMIT",
+        },
+        { status: 429 }
+      );
     }
 
     const cleanHistory = rawMessages.slice(-MAX_HISTORY).map((m: { role?: string; content?: string }) => ({
@@ -276,11 +306,17 @@ export async function POST(req: NextRequest) {
           })
           .eq("rate_key", rateKey);
       }
-      return ottoErrorReply("104", 502);
+
+      return await ottoErrorReply(
+        "CHAT_ALL_MODELS_FAILED",
+        502,
+        new Error("Both Groq and Gemini fallback models failed"),
+        userId
+      );
     }
 
     return NextResponse.json({ reply });
-  } catch {
-    return ottoErrorReply("105", 500);
+  } catch (err) {
+    return await ottoErrorReply("CHAT_UNHANDLED", 500, err, userId);
   }
 }
