@@ -1768,12 +1768,12 @@ export default function ChallengesPage() {
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
       sizeClass: "w-[30px] h-[30px]"
     },
-    {
+   {
       path: "/tools",
       label: "Tools",
-      isCustomIcon: true,
-      sizeClass: "w-[26px] h-[26px]"
-    }
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/settingnav.png",
+      sizeClass: "w-[26px] h-[26px]",
+    },
   ];
 
   return (
@@ -2281,15 +2281,11 @@ export default function ChallengesPage() {
                       isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[48px] h-[36px]" : "w-[38px] h-[38px]"
                     }`}>
                       <div className="relative flex items-center justify-center w-full h-full">
-                        {item.isCustomIcon ? (
-                          <MoreHorizontal className="w-6 h-6 text-slate-700 drop-shadow-sm select-none" />
-                        ) : (
-                          <img
-                            alt={item.label}
-                            className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
-                            src={item.iconUrl}
-                          />
-                        )}
+                        <img
+                          alt={item.label}
+                          className={`${item.sizeClass} object-contain rounded-lg drop-shadow-sm select-none`}
+                          src={item.iconUrl}
+                        />
                       </div>
                     </div>
                   </Link>

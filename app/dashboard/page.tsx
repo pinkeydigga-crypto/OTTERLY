@@ -24,7 +24,9 @@ import {
   ArrowRight,
   Sparkles,
   MoreHorizontal,
-  X
+  X,
+  Grid,
+  Lightbulb
 } from "lucide-react";
 
 interface Profile {
@@ -411,7 +413,7 @@ export default function DashboardPage() {
     {
       path: "/tools",
       label: "Tools",
-      isCustomIcon: true,
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/settingnav.png",
       sizeClass: "w-[26px] h-[26px]",
     },
   ];
@@ -734,55 +736,88 @@ export default function DashboardPage() {
           <XpWheel />
         </section>
 
-        <div className="bg-[#2563EB] text-white p-6 sm:p-9 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-row items-center justify-between gap-4">
-          <div className="space-y-3 max-w-[65%] sm:max-w-lg z-10">
-            <h2 className="text-xl sm:text-3xl font-black leading-tight text-white">
-              Scan & Analyze Your Artwork
-            </h2>
-            <p className="text-xs sm:text-sm font-semibold text-blue-100 leading-relaxed">
-              Upload your drawing to get instant AI-powered feedback, score, and tips to improve!
-            </p>
-            <div className="pt-1">
-              <Link
-                href="/scan"
-                onClick={triggerHaptic}
-                className="inline-flex items-center gap-1.5 bg-white text-[#2563EB] px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-slate-200 border-b-4 border-b-slate-300 hover:bg-slate-50 active:border-b-2 active:translate-y-[2px] transition-all"
-              >
-                Start Scanning <ChevronRight className="w-4 h-4 stroke-[3]" />
-              </Link>
-            </div>
-          </div>
-          <div className="w-24 h-24 sm:w-36 sm:h-36 bg-white/10 rounded-3xl flex items-center justify-center border-2 border-white/20 shrink-0 z-10 overflow-hidden">
-            <Scan className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
-          </div>
-        </div>
-
-        <div className="bg-[#F0F6FF] border-2 border-blue-200/80 text-slate-900 p-6 sm:p-9 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-row items-center justify-between gap-4">
-          <div className="space-y-3 max-w-[62%] sm:max-w-lg z-10">
-            <h2 className="text-xl sm:text-3xl font-black leading-tight text-[#0F172A]">
-              Practice Drawing Canvas
-            </h2>
-            <p className="text-xs sm:text-sm font-semibold text-slate-600 leading-relaxed">
-              Warm up your strokes, test shading techniques, and sketch freely on the practice canvas every day!
-            </p>
-            <div className="pt-1">
-              <Link
-                href="/practice"
-                onClick={triggerHaptic}
-                className="inline-flex items-center gap-1.5 bg-[#2563EB] text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-700 active:border-b-0 active:translate-y-1 transition-all shadow-md"
-              >
-                Open Practice <Palette className="w-4 h-4 stroke-[2.5]" />
-              </Link>
-            </div>
-          </div>
-          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-blue-100/80 rounded-3xl shrink-0 z-10 flex items-center justify-center border border-blue-200 overflow-hidden p-1.5">
+        <section className="space-y-4">
+          <div className="relative w-full min-h-[120px] sm:min-h-[150px] rounded-[2rem] bg-[#EBF3FF]/80 border border-blue-100/90 overflow-hidden flex items-center justify-center p-3 sm:p-4">
             <img
-              src={PRACTICE_CARD_IMAGE_URL}
-              alt="Practice Drawing Canvas"
-              className="w-full h-full object-contain"
+              src="https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/tools.png"
+              alt="Tools"
+              className="max-h-28 sm:max-h-36 w-auto max-w-full object-contain -rotate-2 select-none pointer-events-none"
             />
           </div>
-        </div>
+
+          <div className="bg-[#F0F6FF] border-2 border-blue-200/80 text-slate-900 p-6 sm:p-9 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-row items-center justify-between gap-4">
+            <div className="space-y-3 max-w-[62%] sm:max-w-lg z-10">
+              <h3 className="text-xl sm:text-3xl font-black leading-tight text-[#0F172A]">
+                Practice Drawing Canvas
+              </h3>
+              <p className="text-xs sm:text-sm font-semibold text-slate-600 leading-relaxed">
+                Warm up your strokes, test shading techniques, and sketch freely on the practice canvas every day!
+              </p>
+              <div className="pt-1">
+                <Link
+                  href="/practice"
+                  onClick={triggerHaptic}
+                  className="inline-flex items-center gap-1.5 bg-[#2563EB] text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-700 active:border-b-0 active:translate-y-1 transition-all shadow-md"
+                >
+                  Open Practice <Palette className="w-4 h-4 stroke-[2.5]" />
+                </Link>
+              </div>
+            </div>
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-blue-100/80 rounded-3xl shrink-0 z-10 flex items-center justify-center border border-blue-200 overflow-hidden p-1.5">
+              <img
+                src={PRACTICE_CARD_IMAGE_URL}
+                alt="Practice Drawing Canvas"
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+
+          <div className="bg-[#2563EB] text-white p-6 sm:p-9 rounded-[2.5rem] shadow-xl relative overflow-hidden flex flex-row items-center justify-between gap-4">
+            <div className="space-y-3 max-w-[65%] sm:max-w-lg z-10">
+              <h3 className="text-xl sm:text-3xl font-black leading-tight text-white">
+                Grid Maker
+              </h3>
+              <p className="text-xs sm:text-sm font-semibold text-blue-100 leading-relaxed">
+                Create custom reference grids to keep your proportions, angles, and symmetry spot-on.
+              </p>
+              <div className="pt-1">
+                <Link
+                  href="/grid-maker"
+                  onClick={triggerHaptic}
+                  className="inline-flex items-center gap-1.5 bg-white text-[#2563EB] px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-slate-200 border-b-4 border-b-slate-300 hover:bg-slate-50 active:border-b-2 active:translate-y-[2px] transition-all"
+                >
+                  Open Grid Maker <ChevronRight className="w-4 h-4 stroke-[3]" />
+                </Link>
+              </div>
+            </div>
+            <div className="w-24 h-24 sm:w-36 sm:h-36 bg-white/10 rounded-3xl flex items-center justify-center border-2 border-white/20 shrink-0 z-10 overflow-hidden">
+              <Grid className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
+            </div>
+          </div>
+
+          <div className="bg-[#F3E8FF] border-2 border-purple-200/90 text-slate-900 p-6 sm:p-9 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-row items-center justify-between gap-4">
+            <div className="space-y-3 max-w-[65%] sm:max-w-lg z-10">
+              <h3 className="text-xl sm:text-3xl font-black leading-tight text-[#1E1B4B]">
+                Idea Generator
+              </h3>
+              <p className="text-xs sm:text-sm font-semibold text-purple-900/75 leading-relaxed">
+                Stuck on what to sketch next? Generate fresh drawing prompts and creative ideas in seconds.
+              </p>
+              <div className="pt-1">
+                <Link
+                  href="/tools"
+                  onClick={triggerHaptic}
+                  className="inline-flex items-center gap-1.5 bg-purple-600 text-white px-5 py-2.5 sm:px-6 sm:py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-b-4 border-purple-800 hover:bg-purple-700 active:border-b-0 active:translate-y-1 transition-all shadow-md"
+                >
+                  Generate Ideas <ChevronRight className="w-4 h-4 stroke-[3]" />
+                </Link>
+              </div>
+            </div>
+            <div className="w-24 h-24 sm:w-36 sm:h-36 bg-purple-200/70 rounded-3xl flex items-center justify-center border-2 border-purple-300/80 shrink-0 z-10 overflow-hidden">
+              <Lightbulb className="w-12 h-12 sm:w-16 sm:h-16 text-purple-700" />
+            </div>
+          </div>
+        </section>
       </main>
 
       {!showStreakPopup && !isMobileSidebarOpen && (
@@ -808,15 +843,11 @@ export default function DashboardPage() {
                       }`}
                     >
                       <div className="relative flex items-center justify-center w-full h-full">
-                        {item.isCustomIcon ? (
-                          <MoreHorizontal className="w-6 h-6 text-slate-700 drop-shadow-sm select-none" />
-                        ) : (
-                          <img
-                            alt={item.label}
-                            className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
-                            src={item.iconUrl}
-                          />
-                        )}
+                        <img
+                          alt={item.label}
+                          className={`${item.sizeClass} object-contain rounded-lg drop-shadow-sm select-none`}
+                          src={item.iconUrl}
+                        />
                       </div>
                     </div>
                   </Link>

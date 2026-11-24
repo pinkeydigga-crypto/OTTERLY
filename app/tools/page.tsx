@@ -110,7 +110,13 @@ export default function ToolsPage() {
     { name: "Settings", path: "/settings", icon: Settings }
   ];
 
-  const mobileGamifiedNav = [
+  const mobileGamifiedNav: Array<{
+    path: string;
+    label: string;
+    iconUrl: string;
+    sizeClass: string;
+    isCustomIcon?: boolean;
+  }> = [
     {
       path: "/dashboard",
       label: "Home",
@@ -144,14 +150,14 @@ export default function ToolsPage() {
     {
       path: "/tools",
       label: "Tools",
-      isCustomIcon: true,
-      sizeClass: "w-[26px] h-[26px]"
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/settingnav.png",
+      sizeClass: "w-[26px] h-[26px]",
+      isCustomIcon: false
     }
   ];
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-24 md:pb-0 font-sans overflow-x-hidden relative">
-      
       <header className="md:hidden sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -164,7 +170,7 @@ export default function ToolsPage() {
           >
             <PanelLeft className="w-5 h-5" />
           </button>
-          
+
           <Image
             src={logoUrl}
             alt="Otterleo Logo"
@@ -299,72 +305,11 @@ export default function ToolsPage() {
 
       <main className="flex-1 p-4 sm:p-8 max-w-5xl mx-auto space-y-6 overflow-y-auto w-full pb-16">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-[#0B192C] tracking-tight">Artist Tools & Account</h1>
-          <p className="text-xs sm:text-sm font-semibold text-slate-500">Powerful utilities and account management settings.</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#0B192C] tracking-tight">Settings and Profile</h1>
+          <p className="text-xs sm:text-sm font-semibold text-slate-500">Manage your profile and account settings.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-          
-          <div className="bg-[#F0F6FF] border-2 border-blue-200/80 text-slate-900 p-6 sm:p-8 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-col justify-between">
-            <div className="absolute top-0 right-0 overflow-hidden w-28 h-28 pointer-events-none z-30">
-              <div className="absolute transform rotate-45 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest py-1 right-[-35px] top-[22px] w-[120px] text-center shadow-md">
-                NEW
-              </div>
-            </div>
-
-            <div className="space-y-4 z-10">
-              <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center border border-blue-200 text-blue-600">
-                <Grid className="w-7 h-7" />
-              </div>
-              <div className="space-y-1.5">
-                <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">Grid Maker</h2>
-                <p className="text-xs sm:text-sm font-semibold text-slate-600 leading-relaxed">
-                  Overlay precise grid lines onto your reference photos to master proportions and make accurate drawings effortlessly!
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-6 z-10">
-              <Link
-                href="/grid-maker"
-                onClick={triggerHaptic}
-                className="inline-flex items-center gap-1.5 bg-[#2563EB] text-white px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-700 active:border-b-0 active:translate-y-1 transition-all shadow-md"
-              >
-                Open Grid Maker <ChevronRight className="w-4 h-4 stroke-[3]" />
-              </Link>
-            </div>
-          </div>
-
-          <div className="bg-[#F0F6FF] border-2 border-blue-200/80 text-slate-900 p-6 sm:p-8 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-col justify-between">
-            <div className="absolute top-0 right-0 overflow-hidden w-28 h-28 pointer-events-none z-30">
-              <div className="absolute transform rotate-45 bg-[#2563EB] text-white text-[10px] font-black uppercase tracking-widest py-1 right-[-35px] top-[22px] w-[120px] text-center shadow-md">
-                NEW
-              </div>
-            </div>
-
-            <div className="space-y-4 z-10">
-              <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center border border-blue-200 text-blue-600">
-                <Sparkles className="w-7 h-7" />
-              </div>
-              <div className="space-y-1.5">
-                <h2 className="text-xl sm:text-2xl font-black text-[#0F172A]">Idea Generator</h2>
-                <p className="text-xs sm:text-sm font-semibold text-slate-600 leading-relaxed">
-                  Never run out of inspiration! Generate creative drawing prompts and unique concepts instantly for your next artwork.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-6 z-10">
-              <Link
-                href="/generator"
-                onClick={triggerHaptic}
-                className="inline-flex items-center gap-1.5 bg-[#2563EB] text-white px-5 py-3 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider border-b-4 border-blue-800 hover:bg-blue-700 active:border-b-0 active:translate-y-1 transition-all shadow-md"
-              >
-                Open Generator <ChevronRight className="w-4 h-4 stroke-[3]" />
-              </Link>
-            </div>
-          </div>
-
           <div className="bg-[#F0F6FF] border-2 border-blue-200/80 text-slate-900 p-6 sm:p-8 rounded-[2.5rem] shadow-md relative overflow-hidden flex flex-col justify-between">
             <div className="space-y-4 z-10">
               <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center border border-blue-200 text-blue-600">
@@ -412,8 +357,24 @@ export default function ToolsPage() {
               </Link>
             </div>
           </div>
-
         </div>
+
+        <p className="text-xs sm:text-sm font-semibold text-slate-500 pt-2">
+          Contact:{" "}
+          <a
+            href="mailto:otterleosupport@gmail.com"
+            className="text-[#2563EB] hover:underline font-bold"
+          >
+            otterleosupport@gmail.com
+          </a>{" "}
+          |{" "}
+          <a
+            href="mailto:harjasdigga007@gmail.com"
+            className="text-[#2563EB] hover:underline font-bold"
+          >
+            harjasdigga007@gmail.com
+          </a>
+        </p>
       </main>
 
       {!isMobileSidebarOpen && (
@@ -431,9 +392,11 @@ export default function ToolsPage() {
                     aria-label={item.label}
                     className="group relative w-full h-full flex flex-col items-center justify-center focus:outline-none select-none cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-150 pointer-events-auto"
                   >
-                    <div className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
-                      isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[48px] h-[36px]" : "w-[38px] h-[38px]"
-                    }`}>
+                    <div
+                      className={`relative flex flex-col items-center justify-center rounded-full transition-all duration-200 ${
+                        isActive ? "bg-sky-100/70 border border-[#03A9F4]/70 shadow-xs w-[48px] h-[36px]" : "w-[38px] h-[38px]"
+                      }`}
+                    >
                       <div className="relative flex items-center justify-center w-full h-full">
                         {item.isCustomIcon ? (
                           <MoreHorizontal className="w-6 h-6 text-slate-700 drop-shadow-sm select-none" />
@@ -442,7 +405,6 @@ export default function ToolsPage() {
                             alt={item.label}
                             className={`${item.sizeClass} object-contain drop-shadow-sm select-none`}
                             src={item.iconUrl}
-                            crossOrigin="anonymous"
                           />
                         )}
                       </div>
@@ -454,7 +416,6 @@ export default function ToolsPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

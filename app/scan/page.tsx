@@ -372,7 +372,15 @@ export default function ScanPage() {
     { name: "Settings", path: "/settings", icon: Settings },
   ];
 
-  const mobileGamifiedNav = [
+  interface MobileGamifiedNavItem {
+    path: string;
+    label: string;
+    iconUrl: string;
+    sizeClass: string;
+    isCustomIcon?: boolean;
+  }
+
+  const mobileGamifiedNav: MobileGamifiedNavItem[] = [
     {
       path: "/dashboard",
       label: "Home",
@@ -403,12 +411,12 @@ export default function ScanPage() {
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
       sizeClass: "w-[30px] h-[30px]"
     },
-    {
+   {
       path: "/tools",
       label: "Tools",
-      isCustomIcon: true,
-      sizeClass: "w-[26px] h-[26px]"
-    }
+      iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/settingnav.png",
+      sizeClass: "w-[26px] h-[26px]",
+    },
   ];
 
   const userXp = Number(profile?.xp) || 0;
