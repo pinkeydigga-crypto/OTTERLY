@@ -11,6 +11,12 @@ const MAX_OUTPUT_TOKENS = 600;
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
 const GEMINI_CHAT_API_KEY = process.env.GEMINI_CHAT_API_KEY || "";
 
+const GEMINI_FALLBACK_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash-lite",
+] as const;
+
 const OTTO_SYSTEM_PROMPT = `You are Otto, Otterleo's sweet, warm, and encouraging drawing mentor.
 
 LANGUAGE ADAPTATION:
@@ -23,8 +29,8 @@ TYPO & CONTEXT UNDERSTANDING:
 - Treat beginner self-doubt ("I don't know anything", "muje kuch nhi ata yar") and normal friendly conversation warmly—do not mark them as off-topic.
 
 EMOJI & HOOK RULES:
-- Do NOT put an emoji in every reply. Only use emojis when they genuinely fit—when no emoji is needed, use 0 emojis (most replies can have no emoji at all).
-- Do NOT default to smile emojis like 😊 every time. Vary emojis naturally based on what fits the moment—including heart emojis like ❤️ or 💙 when being warm/sweet, or drawing/mood emojis like 🎨, ✏️, 👍 when relevant (never ✨), with a MAXIMUM of 2 emojis per reply.
+- Do NOT put an emoji in every reply. When no emoji is needed, use 0 emojis—most replies should have no emoji at all so it feels natural and not overdone.
+- Do NOT default to 😊 every time you use an emoji. Only occasionally—when it genuinely fits the mood—use up to 2 varied, natural emojis (like 🎨, ✏️, 👍, 🌿, or 😊), never ✨.
 - Do NOT repeat "I'll be waiting for you" in every reply. Vary endings naturally or leave no hook when none is needed.
 
 TONE, LENGTH & FORMATTING:
@@ -69,6 +75,32 @@ function getTodayLocalDate(): string {
   return `${year}-${month}-${day}`;
 }
 
+function getClientIp(req: NextRequest): string {
+  // Prefer trusted proxy/edge headers first; only fallback to x-forwarded-for / x-real-ip
+  const vercelFwd = req.headers.get("x-vercel-forwarded-for");
+  if (vercelFwd) {
+    const first = vercelFwd.split(",")[0]?.trim();
+    if (first) return first;
+  }
+
+  const cfIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+
+  const fwd = req.headers.get("x-forwarded-for");
+  if (fwd) {
+    const parts = fwd
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length > 0) return parts[0];
+  }
+
+  return "unknown";
+}
+
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -89,7 +121,7 @@ function ottoErrorReply(code: "101" | "102" | "103" | "104" | "105" | "106", sta
 async function resolveRateKey(
   req: NextRequest,
   supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>
-): Promise<string | null> {
+): Promise<string> {
   const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
 
   if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
@@ -102,23 +134,26 @@ async function resolveRateKey(
     }
   }
 
-  return null;
+  return `ip:${getClientIp(req)}`;
 }
 
-async function checkUserQuotaFromSupabase(
+async function reserveQuotaAtomic(
   supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
-  rateKey: string
+  rateKey: string,
+  todayStr: string,
+  minuteBucket: number
 ): Promise<{ allowed: boolean; message?: string; status?: number }> {
-  const todayStr = getTodayLocalDate();
-  const currentMinuteBucket = Math.floor(Date.now() / 60000);
+  const { data, error } = await supabase
+    .rpc("reserve_otto_chat_quota", {
+      p_rate_key: rateKey,
+      p_day_date: todayStr,
+      p_minute_bucket: minuteBucket,
+      p_max_per_day: MAX_PER_DAY,
+      p_max_per_minute: MAX_PER_MINUTE,
+    })
+    .single<{ allowed: boolean; reason: string }>();
 
-  const { data: row, error } = await supabase
-    .from("otto_chat_usage")
-    .select("day_date, day_count, minute_bucket, minute_count")
-    .eq("rate_key", rateKey)
-    .maybeSingle();
-
-  if (error) {
+  if (error || !data) {
     return {
       allowed: false,
       message: "Otto failed to give response, try again later (102)",
@@ -126,12 +161,8 @@ async function checkUserQuotaFromSupabase(
     };
   }
 
-  if (row && row.day_date === todayStr) {
-    const dayCount = Number(row.day_count) || 0;
-    const minuteCount =
-      Number(row.minute_bucket) === currentMinuteBucket ? Number(row.minute_count) || 0 : 0;
-
-    if (dayCount >= MAX_PER_DAY) {
+  if (!data.allowed) {
+    if (data.reason === "day_limit") {
       return {
         allowed: false,
         message:
@@ -140,49 +171,29 @@ async function checkUserQuotaFromSupabase(
       };
     }
 
-    if (minuteCount >= MAX_PER_MINUTE) {
-      return {
-        allowed: false,
-        message: "Give it just a minute and try again 😊",
-        status: 429,
-      };
-    }
+    return {
+      allowed: false,
+      message: "Give it just a minute and try again 😊",
+      status: 429,
+    };
   }
 
   return { allowed: true };
 }
 
-async function incrementUserQuotaAfterReply(
+async function refundQuotaOnFailure(
   supabase: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
-  rateKey: string
+  rateKey: string,
+  todayStr: string,
+  minuteBucket: number
 ): Promise<void> {
-  const todayStr = getTodayLocalDate();
-  const currentMinuteBucket = Math.floor(Date.now() / 60000);
-
-  const { data: row } = await supabase
-    .from("otto_chat_usage")
-    .select("day_date, day_count, minute_bucket, minute_count")
-    .eq("rate_key", rateKey)
-    .maybeSingle();
-
-  const sameDay = row?.day_date === todayStr;
-  const nextDayCount = sameDay ? (Number(row?.day_count) || 0) + 1 : 1;
-  const nextMinuteCount =
-    sameDay && Number(row?.minute_bucket) === currentMinuteBucket
-      ? (Number(row?.minute_count) || 0) + 1
-      : 1;
-
-  await supabase.from("otto_chat_usage").upsert(
-    {
-      rate_key: rateKey,
-      day_date: todayStr,
-      day_count: nextDayCount,
-      minute_bucket: currentMinuteBucket,
-      minute_count: nextMinuteCount,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "rate_key" }
-  );
+  try {
+    await supabase.rpc("refund_otto_chat_quota", {
+      p_rate_key: rateKey,
+      p_day_date: todayStr,
+      p_minute_bucket: minuteBucket,
+    });
+  } catch {}
 }
 
 async function askGroq(messages: Array<{ role: string; content: string }>): Promise<string | null> {
@@ -218,31 +229,39 @@ async function askGroq(messages: Array<{ role: string; content: string }>): Prom
 async function askGemini(messages: Array<{ role: string; content: string }>): Promise<string | null> {
   if (!GEMINI_CHAT_API_KEY) return null;
 
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+  for (const model of GEMINI_FALLBACK_MODELS) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${GEMINI_CHAT_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gemini-2.5-flash",
-        messages: [{ role: "system", content: OTTO_SYSTEM_PROMPT }, ...messages],
-        temperature: 0.65,
-        max_tokens: MAX_OUTPUT_TOKENS,
-      }),
-    }).finally(() => clearTimeout(timeoutId));
+      const res = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${GEMINI_CHAT_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: "system", content: OTTO_SYSTEM_PROMPT }, ...messages],
+            temperature: 0.65,
+            max_tokens: MAX_OUTPUT_TOKENS,
+          }),
+        }
+      ).finally(() => clearTimeout(timeoutId));
 
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.choices?.[0]?.message?.content?.trim() || null;
-  } catch {
-    return null;
+      if (!res.ok) continue;
+      const data = await res.json();
+      const content = data?.choices?.[0]?.message?.content?.trim();
+      if (content) return content;
+    } catch {
+      continue;
+    }
   }
+
+  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -276,20 +295,16 @@ export async function POST(req: NextRequest) {
     }
 
     const rateKey = await resolveRateKey(req, supabase);
-    if (!rateKey) {
-      return NextResponse.json(
-        { reply: "Please log in again to chat with Otto." },
-        { status: 401 }
-      );
-    }
+    const todayStr = getTodayLocalDate();
+    const minuteBucket = Math.floor(Date.now() / 60000);
 
-    const quota = await checkUserQuotaFromSupabase(supabase, rateKey);
+    // Atomically reserve 1 chat credit before calling AI so concurrent bursts cannot bypass limits
+    const reservation = await reserveQuotaAtomic(supabase, rateKey, todayStr, minuteBucket);
 
-    // 10+ chats reached -> return automated message immediately without calling Groq or Gemini
-    if (!quota.allowed) {
+    if (!reservation.allowed) {
       return NextResponse.json(
-        { reply: quota.message, limitReached: true },
-        { status: quota.status || 429 }
+        { reply: reservation.message, limitReached: true },
+        { status: reservation.status || 429 }
       );
     }
 
@@ -301,11 +316,9 @@ export async function POST(req: NextRequest) {
     const reply = (await askGroq(cleanHistory)) || (await askGemini(cleanHistory));
 
     if (!reply) {
+      await refundQuotaOnFailure(supabase, rateKey, todayStr, minuteBucket);
       return ottoErrorReply("104", 502);
     }
-
-    // Increment count by +1 from whatever value is currently in Supabase after reply succeeds
-    await incrementUserQuotaAfterReply(supabase, rateKey);
 
     return NextResponse.json({ reply });
   } catch {
