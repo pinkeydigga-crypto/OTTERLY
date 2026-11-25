@@ -144,32 +144,20 @@ export default function DashboardPage() {
     }
   }, [showStreakPopup, playCelebrationSound]);
 
-  const computeExactRank = useCallback(async (targetProfile: Profile) => {
+  const computeExactRank = useCallback(async (targetProfile: Profile): Promise<number | null> => {
     const userXpVal = Number(targetProfile.xp) || 0;
+    if (userXpVal <= 0) return null;
 
-    const higherPromise = supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .gt("xp", userXpVal);
+    const { data, error } = await supabase.rpc("get_user_rank", {
+      p_user_id: targetProfile.id,
+    });
 
-    const tiePromise = targetProfile.created_at
-      ? supabase
-          .from("profiles")
-          .select("id", { count: "exact", head: true })
-          .eq("xp", userXpVal)
-          .lt("created_at", targetProfile.created_at)
-      : supabase
-          .from("profiles")
-          .select("id", { count: "exact", head: true })
-          .eq("xp", userXpVal)
-          .lt("id", targetProfile.id);
+    if (error) {
+      console.error("Exact rank RPC error:", error.message);
+      return null;
+    }
 
-    const [{ count: higherXpCount }, { count: tieCount }] = await Promise.all([
-      higherPromise,
-      tiePromise,
-    ]);
-
-    return (higherXpCount || 0) + (tieCount || 0) + 1;
+    return typeof data === "number" ? data : null;
   }, []);
 
   const fetchDashboardData = useCallback(
@@ -313,7 +301,7 @@ export default function DashboardPage() {
         }
 
         const exactRank = await computeExactRank(activeProfile);
-        const rankLabel = `#${exactRank}`;
+        const rankLabel = exactRank ? `#${exactRank}` : "-";
         setUserRank(rankLabel);
 
         if (typeof window !== "undefined") {

@@ -11,7 +11,6 @@ import {
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
 import { useOfflineGuard } from "@/hooks/useOfflineGuard";
-import PracticeCanvas from "@/components/PracticeCanvas";
 import LoadingScreen from "@/components/LoadingScreen";
 
 const MAX_CHALLENGE_XP = 200;
@@ -97,13 +96,6 @@ const CUBE_STEPS: TutorialStep[] = [
     instruction: "Shade the right side face softly and draw a dark shadow on the ground beside the cube for a 3D look.",
     tips: ["Keep the top face lightest", "Blend the side shading smoothly"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cube3.jpeg"
-  },
-  {
-    step: 5,
-    title: "Step 5: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice drawing your shaded cube on the digital canvas below.",
-    tips: ["Start with a clean square", "Have fun shading"],
-    imageUrl: ""
   }
 ];
 
@@ -143,13 +135,6 @@ const FLOWER_STEPS: TutorialStep[] = [
     instruction: "Shade softly inside the petals and leaves with your pencil to make it look real.",
     tips: ["Blend pencil lines gently", "Make borders darker"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/FLOWER4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Great job! Now practice drawing your flower on the digital canvas below.",
-    tips: ["Take your time", "Have fun drawing"],
-    imageUrl: ""
   }
 ];
 
@@ -189,13 +174,6 @@ const FISH_STEPS: TutorialStep[] = [
     instruction: "Shade softly along the top back and fins, then draw two round bubbles near the face.",
     tips: ["Keep pencil shading soft", "Make neat round bubbles"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/fish4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome! Now practice drawing your cute fish on the digital canvas below.",
-    tips: ["Use brush tool smoothly", "Have fun drawing"],
-    imageUrl: ""
   }
 ];
 
@@ -235,13 +213,6 @@ const CAR_STEPS: TutorialStep[] = [
     instruction: "Add small shine lines on the windows, shade the tires and body lightly, and draw a ground shadow below.",
     tips: ["Keep window highlights clean", "Blend the ground shadow softly"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/car4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Great job! Now practice drawing your car on the digital canvas below.",
-    tips: ["Start with the outer car shape", "Have fun drawing"],
-    imageUrl: ""
   }
 ];
 
@@ -274,13 +245,6 @@ const LEAF_STEPS: TutorialStep[] = [
     instruction: "Shade softly across the leaf and along the stem to bring out the veins and natural texture.",
     tips: ["Keep pencil shading light and smooth", "Let the veins stand out cleanly"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LEAF3.jpeg"
-  },
-  {
-    step: 5,
-    title: "Step 5: Practice on Digital Canvas",
-    instruction: "Great job! Now practice drawing your leaf on the digital canvas below.",
-    tips: ["Start with the outline and center vein", "Have fun drawing"],
-    imageUrl: ""
   }
 ];
 
@@ -313,13 +277,6 @@ const BUTTERFLY_STEPS: TutorialStep[] = [
     instruction: "Draw a small circle at the top of the body for the head and add two curved antennae.",
     tips: ["Keep both antennae balanced", "Clean up extra guide lines gently"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/butterfly3.jpeg"
-  },
-  {
-    step: 5,
-    title: "Step 5: Practice on Digital Canvas",
-    instruction: "Awesome job! Now practice drawing your butterfly on the digital canvas below.",
-    tips: ["Start with the center line and wing shapes", "Have fun drawing"],
-    imageUrl: ""
   }
 ];
 
@@ -359,13 +316,6 @@ const TIE_STEPS: TutorialStep[] = [
     instruction: "Shade alternating stripes and add soft shading along the collar and knot for a clean 3D look.",
     tips: ["Keep alternating stripes lighter for contrast", "Blend pencil strokes smoothly"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/tie4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Great job! Now practice drawing your tie on the digital canvas below.",
-    tips: ["Start with the knot and tapered body", "Have fun shading"],
-    imageUrl: ""
   }
 ];
 
@@ -405,13 +355,6 @@ const ANIME_BOY_STEPS: TutorialStep[] = [
     instruction: "Draw the irises, pupils, and eye shine highlights, and refine the spiky hair and collar lines cleanly.",
     tips: ["Leave bright shine spots in the eyes", "Clean up extra guide lines gently"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animemale4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome job! Now practice drawing your anime boy on the digital canvas below.",
-    tips: ["Start with the center guide and jaw", "Have fun drawing"],
-    imageUrl: ""
   }
 ];
 
@@ -451,13 +394,6 @@ const ANIME_GIRL_STEPS: TutorialStep[] = [
     instruction: "Add expressive anime eyes with shine highlights, thin eyebrows, a tiny nose mark, and a soft mouth, then erase extra guides.",
     tips: ["Leave bright shine spots inside both eyes", "Keep facial features centered cleanly"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/animegirl4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice drawing your anime girl on the digital canvas below.",
-    tips: ["Start with the cross guide and face outline", "Have fun drawing"],
-    imageUrl: ""
   }
 ];
 
@@ -497,13 +433,6 @@ const EYE_STEPS: TutorialStep[] = [
     instruction: "Shade around the eye edges softly to give it a real 3D depth look.",
     tips: ["Blend shades smoothly", "Keep highlights clean"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/eye4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Wonderful! Practice drawing the realistic eye on the canvas below.",
-    tips: ["Take your time on details", "Have fun"],
-    imageUrl: ""
   }
 ];
 
@@ -541,15 +470,8 @@ const NOSE_STEPS: TutorialStep[] = [
     step: 5,
     title: "Step 5: High Contrast and Highlights",
     instruction: "Deepen the shadows around the tip and edges, leaving a clean white highlight spot for a 3D look.",
-    tips: ["High contrast creates realism", "Get ready to practice on canvas next"],
+    tips: ["High contrast creates realism", "Finish up your challenge when ready"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/NOSE4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome! Now practice drawing your realistic nose on the digital canvas below.",
-    tips: ["Use the brush tool smoothly", "Have fun drawing"],
-    imageUrl: ""
   }
 ];
 
@@ -587,7 +509,7 @@ const LIP_STEPS: TutorialStep[] = [
     step: 5,
     title: "Step 5: Add Shine and Highlights",
     instruction: "Make lip corners dark and use your eraser to make a bright shine spot on the bottom lip.",
-    tips: ["High contrast gives a glossy look", "Test your skills on canvas next"],
+    tips: ["High contrast gives a glossy look", "Keep highlights clean and soft"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/lips%204.jpeg"
   }
 ];
@@ -628,13 +550,6 @@ const TWO_POINT_BUILDING_STEPS: TutorialStep[] = [
     instruction: "Add the top roof overhang ledge, refine all structural edges cleanly, and erase extra guide lines.",
     tips: ["Keep main building outlines crisp and neat", "Check alignment toward both vanishing points"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/building4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice your 2-point perspective building on the digital canvas below.",
-    tips: ["Start with the horizon line and center edge", "Follow both vanishing points carefully"],
-    imageUrl: ""
   }
 ];
 
@@ -674,13 +589,6 @@ const HEADPHONES_STEPS: TutorialStep[] = [
     instruction: "Shade softly along the earcups, band edges, and brackets while keeping light highlights for a sleek 3D look.",
     tips: ["Blend shading smoothly", "Keep highlight bands clean"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/headphones4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice drawing cool headphones on the digital canvas below.",
-    tips: ["Start with the arch and earcups", "Have fun shading"],
-    imageUrl: ""
   }
 ];
 
@@ -713,13 +621,6 @@ const WATERDROP_STEPS: TutorialStep[] = [
     instruction: "Deepen the upper-left shadow, add a pinpoint highlight dot, brighten the bottom-right rim, and blend a soft shadow below.",
     tips: ["Strong contrast makes water look realistic", "Blend the ground cast shadow smoothly"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/waterdrop3.jpeg"
-  },
-  {
-    step: 5,
-    title: "Step 5: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice realistic water drop shading on the digital canvas below.",
-    tips: ["Start with a clean teardrop outline", "Layer shading and highlights carefully"],
-    imageUrl: ""
   }
 ];
 
@@ -752,13 +653,6 @@ const SHADING_ROSE_STEPS: TutorialStep[] = [
     instruction: "Darken shadows around the center bud, under overlapping petals, and along the stem and leaves for strong 3D volume.",
     tips: ["Build dark values gradually in layers", "Keep highlights crisp for realistic depth"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/rose3.jpeg"
-  },
-  {
-    step: 5,
-    title: "Step 5: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice shading your rose on the digital canvas below.",
-    tips: ["Start with the center bud and petal curves", "Layer shadows smoothly for 3D depth"],
-    imageUrl: ""
   }
 ];
 
@@ -798,13 +692,6 @@ const CHAIR_STEPS: TutorialStep[] = [
     instruction: "Shade the chair legs, backrest, and seat edge with soft directional strokes, and blend the ground shadow underneath.",
     tips: ["Keep top surfaces lighter than shaded sides", "Blend the ground shadow smoothly for 3D depth"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair1.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice drawing your chair on the digital canvas below.",
-    tips: ["Start with the seat and leg guides", "Add smooth shading and shadow"],
-    imageUrl: ""
   }
 ];
 
@@ -844,13 +731,6 @@ const LOOMIS_STEPS: TutorialStep[] = [
     instruction: "Sketch the eyebrow, eye, lips, and detailed ear inside your guide lines, then softly clean up extra marks.",
     tips: ["Refine shapes step by step", "Keep main outlines clear"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/loomis4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice the Loomis head construction on the digital canvas below.",
-    tips: ["Start with light guide strokes", "Have fun practicing"],
-    imageUrl: ""
   }
 ];
 
@@ -890,13 +770,6 @@ const HAIR_STEPS: TutorialStep[] = [
     instruction: "Darken the roots and under-layers for strong contrast, then add thin loose flyaway hairs around the edges.",
     tips: ["High contrast creates silky realism", "Add light flyaway strands for a natural finish"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hair4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Great job! Now practice drawing realistic hair flow and highlights on the digital canvas below.",
-    tips: ["Use smooth curved strokes", "Have fun creating texture"],
-    imageUrl: ""
   }
 ];
 
@@ -936,13 +809,6 @@ const HAND_STEPS: TutorialStep[] = [
     instruction: "Darken deep crevices between fingers and under the hand, then blend the cast shadow smoothly on the surface.",
     tips: ["Build strong contrast for realism", "Blend shadows evenly without harsh edges"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hand4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice realistic hand shading on the digital canvas below.",
-    tips: ["Start with light outline strokes", "Layer shading gradually"],
-    imageUrl: ""
   }
 ];
 
@@ -982,13 +848,6 @@ const GLASS_BOTTLE_STEPS: TutorialStep[] = [
     instruction: "Darken the neck shadows, inner reflections, and thick glass rim, then blend a soft shadow on the ground.",
     tips: ["Strong contrast makes glass look transparent and glossy", "Keep highlight strips sharp and clean"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/botttlee4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice glass bottle shading on the digital canvas below.",
-    tips: ["Start with balanced bottle proportions", "Layer mid-tones and highlights carefully"],
-    imageUrl: ""
   }
 ];
 
@@ -1028,13 +887,6 @@ const CLOTH_FOLD_TEXTURE_STEPS: TutorialStep[] = [
     instruction: "Darken deep fold creases and under-edges, refine the woven cloth texture, and blend a soft cast shadow beneath the fabric.",
     tips: ["Strong contrast in creases makes folds look three-dimensional", "Blend the ground shadow smoothly under the hem"],
     imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/cloth4.jpeg"
-  },
-  {
-    step: 6,
-    title: "Step 6: Practice on Digital Canvas",
-    instruction: "Awesome work! Now practice cloth fold texture on the digital canvas below.",
-    tips: ["Start with the main drape and fold lines", "Layer crease shadows and fabric texture step by step"],
-    imageUrl: ""
   }
 ];
 
@@ -1375,7 +1227,7 @@ export default function ChallengesPage() {
         mainOsc.frequency.setValueAtTime(freq, now);
 
         mainGain.gain.setValueAtTime(0.0001, now);
-        mainGain.gain.linearRampToValueAtTime(0.028, now + 0.02);
+        mainGain.gain.linearRampToValueAtTime(0.036, now + 0.02);
         mainGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
 
         mainOsc.connect(mainGain);
@@ -1389,7 +1241,7 @@ export default function ChallengesPage() {
         tapOsc.frequency.setValueAtTime(pulse, now + 0.24);
 
         tapGain.gain.setValueAtTime(0.0001, now + 0.24);
-        tapGain.gain.linearRampToValueAtTime(0.016, now + 0.255);
+        tapGain.gain.linearRampToValueAtTime(0.022, now + 0.255);
         tapGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.44);
 
         tapOsc.connect(tapGain);
@@ -2156,17 +2008,7 @@ export default function ChallengesPage() {
               )}
             </div>
 
-            {isLastStep ? (
-              <div className="space-y-3">
-                <div className="text-center bg-indigo-50 border border-indigo-200 py-2 px-3 rounded-xl">
-                  <p className="text-xs font-black text-indigo-700 uppercase tracking-wide flex items-center justify-center gap-1.5">
-                    <Palette className="w-3.5 h-3.5" />
-                    You can also practice it on digital canvas
-                  </p>
-                </div>
-                <PracticeCanvas />
-              </div>
-            ) : activeStepList[currentStep].typewriterText ? (
+            {activeStepList[currentStep].typewriterText ? (
               <div key={currentStep} className="w-full flex flex-col sm:flex-row-reverse items-center justify-center gap-3 sm:gap-5 py-2 px-1">
 
                 <div className="w-48 h-48 sm:w-56 sm:h-56 shrink-0 flex items-center justify-center relative">

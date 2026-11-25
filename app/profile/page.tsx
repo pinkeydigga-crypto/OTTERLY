@@ -26,6 +26,99 @@ const AVATARS = [
   { id: 8, name: "Lorelei Boy 2", url: "https://api.dicebear.com/7.x/lorelei/svg?seed=LoreleiBoy2&backgroundColor=f1f5f9" },
 ];
 
+const ALLOWED_SKILL_LEVELS = ["beginner", "intermediate", "advanced"] as const;
+type SkillLevel = (typeof ALLOWED_SKILL_LEVELS)[number];
+
+const BLOCKED_TERMS = [
+  "xxx",
+  "porn",
+  "sex",
+  "sexy",
+  "nude",
+  "nudes",
+  "pussy",
+  "dick",
+  "cock",
+  "boob",
+  "boobs",
+  "tits",
+  "asshole",
+  "bitch",
+  "slut",
+  "whore",
+  "fuck",
+  "fuk",
+  "fcuk",
+  "mummy",
+  "mommy",
+  "daddy",
+  "diddy",
+  "chutiya",
+  "madarchod",
+  "behenchod",
+  "bhosdike",
+  "randi",
+  "gaandu",
+];
+
+function normalizeForModeration(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/0/g, "o")
+    .replace(/1|!/g, "i")
+    .replace(/3/g, "e")
+    .replace(/4|@/g, "a")
+    .replace(/5|\$/g, "s")
+    .replace(/7/g, "t")
+    .replace(/[^a-z\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function validateDisplayName(rawName: string): { valid: boolean; error?: string; cleanName: string } {
+  const cleanName = rawName.replace(/\s+/g, " ").trim();
+
+  if (cleanName.length < 2) {
+    return { valid: false, error: "Name must be at least 2 characters long.", cleanName };
+  }
+  if (cleanName.length > 30) {
+    return { valid: false, error: "Name cannot exceed 30 characters.", cleanName };
+  }
+  if (!/^[A-Za-z\s.'-]+$/.test(cleanName)) {
+    return {
+      valid: false,
+      error: "Name can only contain letters, spaces, apostrophes, dots, or hyphens.",
+      cleanName,
+    };
+  }
+
+  const normalized = normalizeForModeration(cleanName);
+  const compact = normalized.replace(/\s+/g, "");
+  const tokens = normalized.split(" ").filter(Boolean);
+
+  for (const term of BLOCKED_TERMS) {
+    const cleanTerm = term.toLowerCase();
+    const hasTokenMatch = tokens.includes(cleanTerm);
+    const hasCompactMatch = cleanTerm.length >= 4 && compact.includes(cleanTerm);
+
+    if (hasTokenMatch || hasCompactMatch) {
+      return {
+        valid: false,
+        error: "Please choose a respectful, appropriate name.",
+        cleanName,
+      };
+    }
+  }
+
+  return { valid: true, cleanName };
+}
+
+function clearAppStorage() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("user");
+  sessionStorage.clear();
+}
+
 interface Profile {
   id: string;
   name: string;
@@ -46,7 +139,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
 
   const [name, setName] = useState("");
-  const [skillLevel, setSkillLevel] = useState("beginner");
+  const [skillLevel, setSkillLevel] = useState<SkillLevel>("beginner");
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -76,7 +169,7 @@ export default function ProfilePage() {
 
       if (authError || !user) {
         if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
-          localStorage.clear();
+          clearAppStorage();
           router.replace("/login");
         }
         return;
@@ -90,17 +183,25 @@ export default function ProfilePage() {
 
       if (error || !data) {
         if (!isOffline && typeof window !== "undefined" && navigator.onLine) {
-          localStorage.clear();
+          clearAppStorage();
           router.replace("/login");
         }
         return;
       }
 
-      const userAvatar = data.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${data.id}`;
+      const allowedUrls = new Set(AVATARS.map((a) => a.url));
+      const fallbackAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${data.id}`;
+      const userAvatar = data.avatar_url && allowedUrls.has(data.avatar_url)
+        ? data.avatar_url
+        : fallbackAvatar;
+
+      const safeLevel: SkillLevel = ALLOWED_SKILL_LEVELS.includes(data.skill_level as SkillLevel)
+        ? (data.skill_level as SkillLevel)
+        : "beginner";
 
       setProfile({ ...data, avatar_url: userAvatar });
       setName(data.name || "");
-      setSkillLevel(data.skill_level || "beginner");
+      setSkillLevel(safeLevel);
       setSelectedAvatar(userAvatar);
     } catch (err: unknown) {
       console.error("Profile fetch error:", err);
@@ -122,46 +223,69 @@ export default function ProfilePage() {
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
 
-    if (!user || user.id !== profile?.id) {
+    if (!user || !profile || user.id !== profile.id) {
       setMessage({ type: "error", text: "Unauthorized action detected!" });
       return;
     }
 
+    const nameCheck = validateDisplayName(name);
+    if (!nameCheck.valid) {
+      setMessage({ type: "error", text: nameCheck.error || "Invalid name." });
+      return;
+    }
+
+    const validAvatar = AVATARS.some((a) => a.url === selectedAvatar)
+      ? selectedAvatar
+      : AVATARS[0].url;
+
+    const validSkill: SkillLevel = ALLOWED_SKILL_LEVELS.includes(skillLevel)
+      ? skillLevel
+      : "beginner";
+
     setSaving(true);
     setMessage(null);
-
-    const trimmedName = name.trim();
 
     try {
       const { error } = await supabase
         .from("profiles")
         .update({
-          name: trimmedName,
-          avatar_url: selectedAvatar,
-          skill_level: skillLevel,
+          name: nameCheck.cleanName,
+          avatar_url: validAvatar,
+          skill_level: validSkill,
         })
         .eq("id", user.id);
 
       if (error) throw error;
 
+      setName(nameCheck.cleanName);
+      setSelectedAvatar(validAvatar);
       setProfile((prev) =>
-        prev ? { ...prev, name: trimmedName, avatar_url: selectedAvatar, skill_level: skillLevel } : null
+        prev
+          ? { ...prev, name: nameCheck.cleanName, avatar_url: validAvatar, skill_level: validSkill }
+          : null
       );
 
       const localUserData = localStorage.getItem("user");
       if (localUserData) {
-        const parsed = JSON.parse(localUserData);
-        localStorage.setItem(
-          "user",
-          JSON.stringify({ ...parsed, name: trimmedName, avatar: selectedAvatar, skill_level: skillLevel })
-        );
+        try {
+          const parsed = JSON.parse(localUserData);
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              ...parsed,
+              name: nameCheck.cleanName,
+              avatar: validAvatar,
+              skill_level: validSkill,
+            })
+          );
+        } catch {}
       }
 
       setMessage({ type: "success", text: "Profile updated successfully!" });
       setCooldown(5);
     } catch (err: unknown) {
-      const errMsg = err instanceof Error ? err.message : "Failed to update profile.";
-      setMessage({ type: "error", text: errMsg });
+      console.error("Profile update error:", err);
+      setMessage({ type: "error", text: "Failed to update profile. Please try again." });
     } finally {
       setSaving(false);
     }
@@ -187,19 +311,16 @@ export default function ProfilePage() {
       });
 
       if (!apiRes.ok) {
-        const errData = await apiRes.json().catch(() => ({}));
-        throw new Error(errData?.error || `Delete request failed (${apiRes.status})`);
+        throw new Error("Failed to delete account");
       }
 
       await supabase.auth.signOut();
-      localStorage.clear();
-      sessionStorage.clear();
+      clearAppStorage();
 
       router.replace("/login");
     } catch (err: unknown) {
       console.error("Delete Account Error:", err);
-      const errMsg = err instanceof Error ? err.message : "Failed to delete account.";
-      setMessage({ type: "error", text: errMsg });
+      setMessage({ type: "error", text: "Failed to delete account. Please try again." });
       setShowDeleteModal(false);
     } finally {
       setDeleting(false);
@@ -209,7 +330,7 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     triggerHaptic();
     await supabase.auth.signOut();
-    localStorage.clear();
+    clearAppStorage();
     router.replace("/login");
   };
 
@@ -325,8 +446,12 @@ export default function ProfilePage() {
             <input
               type="text"
               required
+              maxLength={30}
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (message?.type === "error") setMessage(null);
+              }}
               placeholder="Your Full Name"
               className="w-full px-4 py-3 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-bold text-[#0F172A]"
             />
@@ -338,7 +463,7 @@ export default function ProfilePage() {
             </label>
             <select
               value={skillLevel}
-              onChange={(e) => setSkillLevel(e.target.value)}
+              onChange={(e) => setSkillLevel(e.target.value as SkillLevel)}
               className="w-full px-4 py-3 rounded-2xl bg-[#F8FAFC] border-2 border-slate-200 focus:outline-none focus:border-[#2563EB] text-sm font-bold text-[#0F172A] capitalize cursor-pointer"
             >
               <option value="beginner">Beginner</option>
@@ -365,7 +490,7 @@ export default function ProfilePage() {
             className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#2563EB] text-white font-black text-sm uppercase tracking-wider border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4" />
-            <span>{saving ? "SAVING..." : "SAVE CHANGES"}</span>
+            <span>{saving ? "SAVING..." : cooldown > 0 ? `WAIT ${cooldown}S` : "SAVE CHANGES"}</span>
           </button>
         </form>
 

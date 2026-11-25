@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   ArrowLeft, Share2, X, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
-  Star, Palette, Grid, ShieldAlert, RefreshCw, Globe, Sparkles, MoreHorizontal
+  Palette, Grid, ShieldAlert, RefreshCw, Sparkles
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -22,13 +22,26 @@ interface ProfileUser {
   created_at?: string;
 }
 
+interface LeaderboardRpcRow {
+  id: string;
+  name: string | null;
+  avatar_url: string | null;
+  streak: number | null;
+  xp: number | string | null;
+  created_at?: string;
+}
+
 const PAGE_SIZE = 50;
-const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+const AUTO_REFRESH_MS = 5 * 60 * 1000;
+
+const SHARE_TEMPLATE_URL =
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/rank1.jpeg";
 
 export default function LeaderboardPage() {
   const isOffline = useOfflineGuard();
 
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [templateImgFailed, setTemplateImgFailed] = useState(false);
   const [showNoXpShareNotice, setShowNoXpShareNotice] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -53,7 +66,7 @@ export default function LeaderboardPage() {
     }
   };
 
-  const mapProfileRow = (p: any, rank: number): ProfileUser => {
+  const mapProfileRow = (p: LeaderboardRpcRow, rank: number): ProfileUser => {
     const userStreak = p.streak ?? 0;
     const totalXP = Number(p.xp ?? 0);
 
@@ -73,35 +86,33 @@ export default function LeaderboardPage() {
       const xpDiff = b.xp_points - a.xp_points;
       if (xpDiff !== 0) return xpDiff;
 
+      const streakDiff = (b.streak || 0) - (a.streak || 0);
+      if (streakDiff !== 0) return streakDiff;
+
       const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
       const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return timeA - timeB;
+      if (timeA !== timeB) return timeA - timeB;
+
+      return a.id.localeCompare(b.id);
     });
   };
 
   const computeActualRank = async (
     authUserId: string,
-    myXp: number,
-    myCreatedAt?: string
+    myXp: number
   ): Promise<number> => {
-    const { count: higherXpCount } = await supabase
-      .from("profiles")
-      .select("id", { count: "exact", head: true })
-      .gt("xp", myXp);
+    if (myXp <= 0) return 0;
 
-    let tieBreakerCount = 0;
-    if (myCreatedAt) {
-      const { count: equalXpEarlierCount } = await supabase
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("xp", myXp)
-        .lt("created_at", myCreatedAt)
-        .neq("id", authUserId);
+    const { data, error } = await supabase.rpc("get_user_rank", {
+      p_user_id: authUserId,
+    });
 
-      tieBreakerCount = equalXpEarlierCount ?? 0;
+    if (error) {
+      console.error("Actual rank RPC error:", error.message);
+      return 0;
     }
 
-    return (higherXpCount ?? 0) + tieBreakerCount + 1;
+    return typeof data === "number" ? data : 0;
   };
 
   const fetchLeaderboardAndUser = useCallback(async (isBackgroundRefresh = false) => {
@@ -129,13 +140,10 @@ export default function LeaderboardPage() {
 
       setIsVerified(true);
 
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("id, name, avatar_url, streak, xp, created_at")
-        .gt("xp", 0)
-        .order("xp", { ascending: false })
-        .order("created_at", { ascending: true })
-        .limit(PAGE_SIZE);
+      const { data: profiles, error } = await supabase.rpc("get_leaderboard", {
+        p_limit: PAGE_SIZE,
+        p_offset: 0,
+      });
 
       if (error) {
         console.error("Leaderboard fetch error details:", error.message || error);
@@ -144,15 +152,16 @@ export default function LeaderboardPage() {
         return;
       }
 
-      const activeProfiles = (profiles || []).filter((p: any) => Number(p.xp ?? 0) > 0);
-      const rawMapped = activeProfiles.map((p: any) => mapProfileRow(p, 0));
+      const rows = (profiles || []) as LeaderboardRpcRow[];
+      const activeProfiles = rows.filter((p) => Number(p.xp ?? 0) > 0);
+      const rawMapped = activeProfiles.map((p) => mapProfileRow(p, 0));
       const sortedTop = sortProfiles(rawMapped).map((item, index) => ({
         ...item,
         rank: index + 1,
       }));
 
       setLeaderboardData(sortedTop);
-      setHasMore((profiles || []).length === PAGE_SIZE);
+      setHasMore(rows.length === PAGE_SIZE);
 
       const userInTop50 = sortedTop.find((u) => u.id === user.id);
       if (userInTop50) {
@@ -166,13 +175,14 @@ export default function LeaderboardPage() {
           .maybeSingle();
 
         if (userProfile) {
-          const p = userProfile as any;
+          const p = userProfile as LeaderboardRpcRow;
           const myXP = Number(p.xp ?? 0);
 
           if (myXP > 0) {
-            const actualRank = await computeActualRank(user.id, myXP, p.created_at);
+            const actualRank = await computeActualRank(user.id, myXP);
             setCurrentUser({
-              ...mapProfileRow(p, actualRank),
+              ...mapProfileRow(p, actualRank || undefined as unknown as number),
+              rank: actualRank || undefined,
               full_name: p.name || "You",
             });
             setShowNoXpShareNotice(false);
@@ -209,11 +219,12 @@ export default function LeaderboardPage() {
 
   const handleShareRankClick = () => {
     triggerHaptic();
-    if (!currentUser || currentUser.xp_points <= 0 || !currentUser.rank) {
+    if (!currentUser || currentUser.xp_points <= 0) {
       setShowNoXpShareNotice(true);
       return;
     }
     setShowNoXpShareNotice(false);
+    setTemplateImgFailed(false);
     setIsShareModalOpen(true);
   };
 
@@ -224,32 +235,29 @@ export default function LeaderboardPage() {
 
     try {
       const startIndex = leaderboardData.length;
-      const endIndex = startIndex + PAGE_SIZE - 1;
 
-      const { data: nextProfiles, error } = await supabase
-        .from("profiles")
-        .select("id, name, avatar_url, streak, xp, created_at")
-        .gt("xp", 0)
-        .order("xp", { ascending: false })
-        .order("created_at", { ascending: true })
-        .range(startIndex, endIndex);
+      const { data: nextProfiles, error } = await supabase.rpc("get_leaderboard", {
+        p_limit: PAGE_SIZE,
+        p_offset: startIndex,
+      });
 
       if (error) {
         console.error("Load more fetch error:", error.message || error);
         return;
       }
 
-      const nextRows = (nextProfiles || []).filter((p: any) => Number(p.xp ?? 0) > 0);
-      if ((nextProfiles || []).length < PAGE_SIZE) {
+      const rows = (nextProfiles || []) as LeaderboardRpcRow[];
+      const nextRows = rows.filter((p) => Number(p.xp ?? 0) > 0);
+      if (rows.length < PAGE_SIZE) {
         setHasMore(false);
       }
 
       setLeaderboardData((prev) => {
         const existingIds = new Set(prev.map((item) => item.id));
-        const uniqueNewRows = nextRows.filter((row: any) => !existingIds.has(row.id));
+        const uniqueNewRows = nextRows.filter((row) => !existingIds.has(row.id));
         const combined = [
           ...prev,
-          ...uniqueNewRows.map((p: any) => mapProfileRow(p, 0)),
+          ...uniqueNewRows.map((p) => mapProfileRow(p, 0)),
         ];
 
         return sortProfiles(combined).map((item, idx) => ({
@@ -291,7 +299,6 @@ export default function LeaderboardPage() {
   const rank2 = leaderboardData.length > 1 ? leaderboardData[1] : null;
   const rank3 = leaderboardData.length > 2 ? leaderboardData[2] : null;
 
-  const isUserEligibleForShare = Boolean(currentUser && currentUser.xp_points > 0 && currentUser.rank);
   const isCurrentUserInLoadedList = currentUser
     ? leaderboardData.some((u) => u.id === currentUser.id)
     : false;
@@ -340,7 +347,7 @@ export default function LeaderboardPage() {
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Glossy%20Golden%20Crown%20Icon%20(2)%20(1).png",
       sizeClass: "w-[30px] h-[30px]"
     },
-   {
+    {
       path: "/tools",
       label: "Tools",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/settingnav.png",
@@ -788,7 +795,7 @@ export default function LeaderboardPage() {
                 </div>
               )}
 
-              {isUserEligibleForShare && currentUser && !isCurrentUserInLoadedList && (
+              {currentUser && currentUser.xp_points > 0 && currentUser.rank && !isCurrentUserInLoadedList && (
                 <div className="pt-2">
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/80 border-2 border-blue-200 shadow-2xs transition-all">
                     <div className="flex items-center gap-3 min-w-0">
@@ -857,148 +864,51 @@ export default function LeaderboardPage() {
         </div>
       )}
 
-      {isShareModalOpen && isUserEligibleForShare && currentUser && modalRank > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-[420px] p-4 sm:p-6 shadow-2xl relative border-2 border-slate-100 my-auto">
+      {isShareModalOpen && currentUser && currentUser.xp_points > 0 && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-5 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-[2.2rem] w-full max-w-[460px] p-3 sm:p-4 shadow-2xl relative border-2 border-slate-100 my-auto">
+            {/* Cross modal box ke bahar top-right corner par */}
             <button
+              type="button"
               onClick={() => {
                 triggerHaptic();
                 setIsShareModalOpen(false);
               }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-slate-100 z-10 cursor-pointer"
+              className="absolute -top-3 -right-3 bg-white text-slate-700 hover:text-slate-950 w-9 h-9 rounded-full flex items-center justify-center hover:bg-slate-100 z-30 shadow-lg border-2 border-slate-200 cursor-pointer"
+              aria-label="Close rank card"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 stroke-[2.5]" />
             </button>
 
             <div
               ref={cardRef}
-              className="w-full relative overflow-hidden flex flex-col justify-between p-6 sm:p-7 select-none rounded-[2rem] mb-4 font-badge border border-slate-100 bg-white shadow-md aspect-square min-h-[380px]"
+              className="w-full relative overflow-hidden select-none rounded-[1.6rem] mb-2.5 font-badge border border-amber-300/80 bg-[#f8fbff] shadow-lg aspect-[3/2]"
             >
-              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[2rem]">
-                <div
-                  className="absolute -top-[10%] -right-[10%] w-[130%] h-[130%]"
-                  style={{
-                    background: `
-                      linear-gradient(
-                        135deg,
-                        transparent 0%,
-                        transparent 35%,
-                        rgba(239, 246, 255, 0.4) 35%,
-                        rgba(239, 246, 255, 0.4) 48%,
-                        rgba(219, 234, 254, 0.45) 48%,
-                        rgba(219, 234, 254, 0.45) 62%,
-                        rgba(191, 219, 254, 0.5) 62%,
-                        rgba(191, 219, 254, 0.5) 78%,
-                        rgba(147, 197, 253, 0.55) 78%,
-                        rgba(147, 197, 253, 0.55) 100%
-                      )
-                    `
-                  }}
+              {!templateImgFailed && (
+                <img
+                  src={SHARE_TEMPLATE_URL}
+                  alt="Otterleo Rank Template"
+                  onError={() => setTemplateImgFailed(true)}
+                  className="w-full h-full object-cover block select-none pointer-events-none"
                 />
+              )}
+
+              {/* Wreath ke beech sirf bold Rank Number */}
+              <div className="absolute inset-x-0 top-[30%] flex items-center justify-center z-10 pointer-events-none">
+                <span className="font-badge text-5xl sm:text-6xl font-black leading-none text-[#1e3a8a] tracking-tight">
+                  {modalRank > 0 ? `#${modalRank}` : "TOP"}
+                </span>
               </div>
 
-              <div className="relative z-10 flex items-center justify-between w-full">
-                <div className="flex items-center gap-2">
-                  <img
-                    src={logoUrl}
-                    alt="Otterleo"
-                    className="h-10 sm:h-11 w-auto object-contain"
-                  />
-                </div>
-              </div>
-
-              <div className="relative z-10 flex flex-col items-center justify-center my-auto py-1">
-                <h2 className="text-sm sm:text-base font-extrabold text-[#334155] mb-1 tracking-tight">
-                  Global Rank
-                </h2>
-
-                <div className="flex items-center justify-center gap-2 sm:gap-3 my-0.5">
-                  <svg className="w-10 h-20 sm:w-11 sm:h-22 text-[#93c5fd]" viewBox="0 0 50 100" fill="currentColor">
-                    <path d="M 38 92 C 20 75 14 42 32 10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                    <path d="M 32 10 C 29 4 33 2 34 8 C 35 12 33 13 32 10 Z" />
-                    <path d="M 28 20 C 20 15 22 8 28 14 C 30 17 29 20 28 20 Z" />
-                    <path d="M 33 22 C 38 15 42 18 36 24 C 34 25 32 24 33 22 Z" />
-                    <path d="M 23 35 C 13 31 15 22 23 28 C 25 31 24 34 23 35 Z" />
-                    <path d="M 30 38 C 38 30 42 34 35 41 C 32 42 30 40 30 38 Z" />
-                    <path d="M 21 52 C 10 49 11 39 20 45 C 23 48 22 51 21 52 Z" />
-                    <path d="M 28 55 C 37 48 41 52 33 58 C 30 59 28 57 28 55 Z" />
-                    <path d="M 22 70 C 11 68 12 58 21 63 C 24 66 23 69 22 70 Z" />
-                    <path d="M 29 72 C 38 66 41 71 34 76 C 31 77 29 74 29 72 Z" />
-                  </svg>
-
-                  <span className="font-handwritten text-7xl sm:text-8xl font-black leading-none text-[#1e3a8a] tracking-tight">
-                    {modalRank}
-                  </span>
-
-                  <svg className="w-10 h-20 sm:w-11 sm:h-22 text-[#93c5fd] transform scale-x-[-1]" viewBox="0 0 50 100" fill="currentColor">
-                    <path d="M 38 92 C 20 75 14 42 32 10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                    <path d="M 32 10 C 29 4 33 2 34 8 C 35 12 33 13 32 10 Z" />
-                    <path d="M 28 20 C 20 15 22 8 28 14 C 30 17 29 20 28 20 Z" />
-                    <path d="M 33 22 C 38 15 42 18 36 24 C 34 25 32 24 33 22 Z" />
-                    <path d="M 23 35 C 13 31 15 22 23 28 C 25 31 24 34 23 35 Z" />
-                    <path d="M 30 38 C 38 30 42 34 35 41 C 32 42 30 40 30 38 Z" />
-                    <path d="M 21 52 C 10 49 11 39 20 45 C 23 48 22 51 21 52 Z" />
-                    <path d="M 28 55 C 37 48 41 52 33 58 C 30 59 28 57 28 55 Z" />
-                    <path d="M 22 70 C 11 68 12 58 21 63 C 24 66 23 69 22 70 Z" />
-                    <path d="M 29 72 C 38 66 41 71 34 76 C 31 77 29 74 29 72 Z" />
-                  </svg>
-                </div>
-
-                <div className="mt-1 px-5 py-1 bg-[#fef3c7] rounded-full border border-[#fde68a]">
-                  <span className="text-xs sm:text-sm font-extrabold text-[#78350f] tracking-tight uppercase">
-                    {modalRank <= 3 ? "LEGENDARY" : "RISING STAR"}
-                  </span>
-                </div>
-
-                <p className="text-xs font-bold text-[#64748b] mt-2 tracking-tight">
-                  You&apos;re in the top {modalRank}!
-                </p>
-              </div>
-
-              <div className="relative z-10 w-full bg-[#f0f6ff]/90 border border-blue-100/80 rounded-2xl p-3 flex items-center justify-around my-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-blue-100/60 flex items-center justify-center">
-                    <Star className="w-3.5 h-3.5 fill-[#1e3a8a] text-[#1e3a8a]" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[9px] font-extrabold uppercase text-slate-400 leading-none mb-0.5 tracking-tight">XP</p>
-                    <p className="text-xs font-extrabold text-slate-900 tracking-tight">{currentUser.xp_points} XP</p>
-                  </div>
-                </div>
-
-                <div className="h-5 w-px bg-blue-200/60" />
-
-                <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-blue-100/60 flex items-center justify-center">
-                    <Flame className="w-3.5 h-3.5 fill-[#1e3a8a] text-[#1e3a8a]" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-[9px] font-extrabold uppercase text-slate-400 leading-none mb-0.5 tracking-tight">STREAK</p>
-                    <p className="text-xs font-extrabold text-slate-900 tracking-tight">{currentUser.streak} Days</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative z-10 w-full flex items-center justify-between pt-1">
-                <div className="flex items-center gap-2">
-                  <img
-                    src={currentUser.avatar_url}
-                    alt={currentUser.full_name}
-                    className="w-6 h-6 rounded-full object-cover border border-blue-300 shadow-2xs"
-                  />
-                  <span className="text-xs font-bold text-[#1e3a8a] tracking-tight">
-                    @{currentUser.full_name?.toLowerCase().replace(/\s+/g, '') || "user"}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1 text-[10px] font-bold text-[#3b82f6] tracking-tight">
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>Top 2% Worldwide</span>
-                </div>
+              {/* Blue patti ke curved center par sirf Name */}
+              <div className="absolute inset-x-0 top-[60.5%] flex items-center justify-center px-12 z-10 pointer-events-none">
+                <span className="text-white font-black text-xs sm:text-sm tracking-wide truncate max-w-[56%] drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
+                  {currentUser.full_name}
+                </span>
               </div>
             </div>
 
-            <div className="text-center pt-1 pb-2 space-y-1">
+            <div className="text-center pt-0.5 pb-1 space-y-0.5">
               <p className="text-xs font-bold text-slate-600">
                 You can take a screenshot to share with friends!
               </p>
