@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   ArrowLeft, Share2, X, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, Flame, PanelLeft,
-  Palette, Grid, ShieldAlert, RefreshCw, Sparkles
+  Palette, Grid, ShieldAlert, Sparkles
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -48,7 +48,6 @@ export default function LeaderboardPage() {
   const [leaderboardData, setLeaderboardData] = useState<ProfileUser[]>([]);
   const [currentUser, setCurrentUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isRefreshingRank, setIsRefreshingRank] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
@@ -205,17 +204,6 @@ export default function LeaderboardPage() {
       setLoading(false);
     }
   }, [isOffline]);
-
-  const handleManualRefresh = async () => {
-    if (isRefreshingRank || loading) return;
-    triggerHaptic();
-    setIsRefreshingRank(true);
-    try {
-      await fetchLeaderboardAndUser(true);
-    } finally {
-      setIsRefreshingRank(false);
-    }
-  };
 
   const handleShareRankClick = () => {
     triggerHaptic();
@@ -579,27 +567,14 @@ export default function LeaderboardPage() {
           </Link>
 
           {currentUser && (
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleShareRankClick}
-                className="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs sm:text-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-xs shrink-0 cursor-pointer"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Share Rank Card</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleManualRefresh}
-                disabled={isRefreshingRank}
-                aria-label="Refresh rank"
-                title="Refresh rank"
-                className="p-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-2xl border-2 border-slate-200/90 active:scale-95 transition-all shadow-xs shrink-0 cursor-pointer disabled:opacity-60"
-              >
-                <RefreshCw className={`w-4 h-4 ${isRefreshingRank ? "animate-spin text-[#2563eb]" : ""}`} />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleShareRankClick}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] hover:bg-blue-600 text-white rounded-2xl font-black text-xs sm:text-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1 transition-all shadow-xs shrink-0 cursor-pointer"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Share Rank Card</span>
+            </button>
           )}
         </div>
 
@@ -867,7 +842,6 @@ export default function LeaderboardPage() {
       {isShareModalOpen && currentUser && currentUser.xp_points > 0 && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-5 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-[2.2rem] w-full max-w-[460px] p-3 sm:p-4 shadow-2xl relative border-2 border-slate-100 my-auto">
-            {/* Cross modal box ke bahar top-right corner par */}
             <button
               type="button"
               onClick={() => {
@@ -893,14 +867,12 @@ export default function LeaderboardPage() {
                 />
               )}
 
-              {/* Wreath ke beech sirf bold Rank Number */}
               <div className="absolute inset-x-0 top-[30%] flex items-center justify-center z-10 pointer-events-none">
                 <span className="font-badge text-5xl sm:text-6xl font-black leading-none text-[#1e3a8a] tracking-tight">
                   {modalRank > 0 ? `#${modalRank}` : "TOP"}
                 </span>
               </div>
 
-              {/* Blue patti ke curved center par sirf Name */}
               <div className="absolute inset-x-0 top-[60.5%] flex items-center justify-center px-12 z-10 pointer-events-none">
                 <span className="text-white font-black text-xs sm:text-sm tracking-wide truncate max-w-[56%] drop-shadow-[0_1px_2px_rgba(0,0,0,0.45)]">
                   {currentUser.full_name}
