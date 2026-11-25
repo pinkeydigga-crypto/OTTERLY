@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import OfflinePopup from "@/components/offlinepopup";
 import GlobalHaptics from "@/components/GlobalHaptics";
-
+import SiteSchema from "@/components/SiteSchema";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -14,10 +14,11 @@ const nunito = Nunito({
 });
 
 const FAVICON_PATH = "/favicon.png";
-const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
+const LOGO_URL =
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
 const SITE_URL = "https://www.otterleo.in";
 
-// 🚀 Fixed viewport & forced light color-scheme to prevent dark mode background inversion on mobile phones
+// Fixed viewport & forced light color-scheme to prevent dark mode background inversion on mobile phones
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -31,7 +32,8 @@ export const metadata: Metadata = {
     default: "Otterleo - Learn to Draw with AI Feedback & Challenges",
     template: "%s | Otterleo",
   },
-  description: "Learn to draw with AI-powered feedback, gamified daily challenges, and instant sketch analysis. Master drawing step-by-step with Otto, your AI drawing coach.",
+  description:
+    "Learn to draw with AI-powered feedback, gamified daily challenges, and instant sketch analysis. Master drawing step-by-step with Otto, your AI drawing coach.",
   keywords: [
     "Otterleo",
     "Otterleo AI",
@@ -41,29 +43,28 @@ export const metadata: Metadata = {
     "Drawing Practice",
     "Learn Drawing with AI",
     "Sketching Feedback",
-    "Learn drawing the fun way"
+    "Learn drawing the fun way",
   ],
   alternates: {
-    canonical: './',
+    canonical: "./",
   },
   icons: {
     icon: [
-      { url: FAVICON_PATH, sizes: '48x48', type: 'image/png' },
-      { url: FAVICON_PATH, sizes: '96x96', type: 'image/png' },
-      { url: FAVICON_PATH, sizes: '192x192', type: 'image/png' },
-      { url: FAVICON_PATH, sizes: '512x512', type: 'image/png' },
+      { url: FAVICON_PATH, sizes: "48x48", type: "image/png" },
+      { url: FAVICON_PATH, sizes: "96x96", type: "image/png" },
+      { url: FAVICON_PATH, sizes: "192x192", type: "image/png" },
+      { url: FAVICON_PATH, sizes: "512x512", type: "image/png" },
     ],
     shortcut: [FAVICON_PATH],
-    apple: [
-      { url: FAVICON_PATH, sizes: '180x180', type: 'image/png' }
-    ],
+    apple: [{ url: FAVICON_PATH, sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
     title: {
       default: "Otterleo - Learn to Draw",
       template: "%s | Otterleo",
     },
-    description: "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
+    description:
+      "Improve your drawing skills daily with instant AI feedback and gamified challenges.",
     url: SITE_URL,
     siteName: "Otterleo AI",
     images: [
@@ -83,7 +84,8 @@ export const metadata: Metadata = {
       default: "Otterleo - Learn to Draw with AI",
       template: "%s | Otterleo",
     },
-    description: "Improve your drawing skills daily in fun way through interactive challenges, step-by-step tutorials, and gamified online courses.",
+    description:
+      "Improve your drawing skills daily in fun way through interactive challenges, step-by-step tutorials, and gamified online courses.",
     images: [LOGO_URL],
   },
   robots: {
@@ -92,54 +94,32 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": `${SITE_URL}/#website`,
-        "url": SITE_URL,
-        "name": "Otterleo",
-        "description": "Learn drawing the fun way with AI-powered feedback.",
-        "inLanguage": "en-US",
-        "publisher": {
-          "@id": `${SITE_URL}/#organization`
-        }
-      },
-      {
-        "@type": "Organization",
-        "@id": `${SITE_URL}/#organization`,
-        "name": "Otterleo AI",
-        "url": SITE_URL,
-        "logo": {
-          "@type": "ImageObject",
-          "url": `${SITE_URL}${FAVICON_PATH}`
-        },
-        "image": `${SITE_URL}${FAVICON_PATH}`
-      }
-    ]
-  };
-
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" className={`${nunito.variable} h-full antialiased`} style={{ colorScheme: 'light' }}>
+    <html
+      lang="en"
+      className={`${nunito.variable} h-full antialiased`}
+      style={{ colorScheme: "light" }}
+    >
       <head>
         <meta name="color-scheme" content="light" />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <SiteSchema />
       </head>
-      <body className={`${nunito.className} min-h-full flex flex-col font-sans overflow-x-hidden w-full relative bg-[#F6FAFF] text-slate-900`}>
+      <body
+        className={`${nunito.className} min-h-full flex flex-col font-sans overflow-x-hidden w-full relative bg-[#F6FAFF] text-slate-900`}
+      >
         <GlobalHaptics />
-       
         {children}
         <OfflinePopup />
         <Analytics />

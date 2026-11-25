@@ -6,18 +6,16 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
-        // Search Engine Crawlers (Google, Bing, DuckDuckGo)
         userAgent: '*',
         allow: '/',
         disallow: [
           '/dashboard/',
           '/settings/',
           '/api/',
-          '/_next/data/', // Only block raw data, allow static assets
+          '/_next/data/',
         ],
       },
       {
-        // AI Crawlers & LLM Engines (Perplexity, ChatGPT, Claude, Apple, Google Gemini/Extended)
         userAgent: [
           'GPTBot',
           'ChatGPT-User',
@@ -30,13 +28,7 @@ export default function robots(): MetadataRoute.Robots {
           'CCBot',
           'cohere-ai',
         ],
-        allow: [
-          '/',
-          '/about',
-          '/blog',
-          '/terms',
-          '/achievements',
-        ],
+        allow: '/',
         disallow: [
           '/dashboard/',
           '/settings/',
@@ -45,5 +37,6 @@ export default function robots(): MetadataRoute.Robots {
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
   };
 }

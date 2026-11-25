@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { ArrowLeft, User, Home, Camera, Sparkles, CheckCircle2, BookOpen, Layers } from 'lucide-react';
 
 const SITE_URL = "https://www.otterleo.in";
-const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
 const MASCOT_GIF_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/VID-20260918-WA00101-ezgif.com-video-to-gif-converter_transparent.gif";
 const FOUNDER_IMAGE_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/harjas.jpg";
 const INSTAGRAM_URL = "https://www.instagram.com/harjas_gallery";

@@ -28,7 +28,7 @@ export default function LearningPathPage() {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
 
   // Haptic feedback for touch interactions
   const triggerHaptic = () => {
