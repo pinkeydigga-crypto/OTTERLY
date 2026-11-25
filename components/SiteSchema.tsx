@@ -3,7 +3,7 @@ import React from "react";
 const SITE_URL = "https://www.otterleo.in";
 const FAVICON_PATH = "/favicon.png";
 const LOGO_URL =
-  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 const FOUNDER_IMAGE_URL =
   "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/harjas.jpg";
 const INSTAGRAM_URL = "https://www.instagram.com/harjas_gallery";

@@ -36,7 +36,7 @@ export default function PracticePage() {
   const [rateLimitError, setRateLimitError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState<number>(0);
 
-  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
+  const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
   const mascotImageUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/DRAW%20OTTO.png";
 
   const triggerHaptic = () => {

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ArrowLeft, ShieldCheck, Mail, Phone, Sparkles } from "lucide-react";
 
 const SITE_URL = "https://Otterleo.in";
-const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
+const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

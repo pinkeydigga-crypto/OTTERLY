@@ -343,7 +343,7 @@ export default function PracticeCanvas() {
 
         <div className="absolute bottom-4 right-4 z-10 pointer-events-none opacity-90 flex items-center gap-2 bg-white/95 backdrop-blur-xs px-3 py-1.5 rounded-2xl border border-slate-200 shadow-sm">
           <img
-            src="https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png"
+            src="https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png"
             alt="Otterleo Logo"
             className="h-5 w-auto object-contain"
           />

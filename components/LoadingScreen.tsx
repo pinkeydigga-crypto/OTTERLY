@@ -8,7 +8,7 @@ export default function LoadingScreen() {
   const [imgError, setImgError] = useState(false);
 
   const logoUrl =
-    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
+    "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
 
   useEffect(() => {
     const timer = setTimeout(() => {
