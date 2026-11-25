@@ -18,7 +18,6 @@ const LOGO_URL =
   "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/logo.png";
 const SITE_URL = "https://www.otterleo.in";
 
-// Fixed viewport & forced light color-scheme to prevent dark mode background inversion on mobile phones
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -45,6 +44,11 @@ export const metadata: Metadata = {
     "Sketching Feedback",
     "Learn drawing the fun way",
   ],
+  verification: {
+    other: {
+      "msvalidate.01": "761E9CA74E5F04E508D1CBB4F71C4AE2",
+    },
+  },
   alternates: {
     canonical: "./",
   },
