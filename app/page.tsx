@@ -6,9 +6,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-const SITE_URL = "https://www.otterleo.in";
-const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
-const MASCOT_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png";
+const LOGO_URL =
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
+const MASCOT_URL =
+  "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/OTTO_LANDING_PAGE__1_-removebg-preview.png";
 
 export default function HomePage() {
   const router = useRouter();
@@ -19,7 +20,9 @@ export default function HomePage() {
     const checkUserSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        const isLoggedInLocal = typeof window !== 'undefined' && localStorage.getItem('isLoggedIn') === 'true';
+        const isLoggedInLocal =
+          typeof window !== 'undefined' &&
+          localStorage.getItem('isLoggedIn') === 'true';
 
         if (session || isLoggedInLocal) {
           router.replace('/dashboard');
@@ -34,11 +37,13 @@ export default function HomePage() {
 
     checkUserSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        router.replace('/dashboard');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session) {
+          router.replace('/dashboard');
+        }
       }
-    });
+    );
 
     return () => {
       subscription.unsubscribe();
@@ -48,80 +53,20 @@ export default function HomePage() {
   if (checkingAuth) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const schemaData = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "SoftwareApplication",
-        "@id": `${SITE_URL}/#application`,
-        "name": "Otterleo",
-        "alternateName": "Otterleo Drawing and Sketching Learning Platform",
-        "url": SITE_URL,
-        "image": LOGO_URL,
-        "operatingSystem": "All (Web Browser)",
-        "applicationCategory": "EducationalApplication",
-        "description": "Otterleo is the ultimate drawing and sketching learning platform. Master how to draw through challenges, grid tools, AI feedback, and sketching for beginners.",
-        "author": {
-          "@type": "Person",
-          "name": "Harjas Digga",
-          "alternateName": "Harjass Digga"
-        },
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD",
-          "availability": "https://schema.org/InStock"
-        },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": "4.9",
-          "ratingCount": "150"
-        }
-      },
-      {
-        "@type": "Organization",
-        "@id": `${SITE_URL}/#organization`,
-        "name": "Otterleo",
-        "url": SITE_URL,
-        "logo": LOGO_URL,
-        "founder": {
-          "@type": "Person",
-          "name": "Harjas Digga",
-          "alternateName": "Harjass Digga"
-        },
-        "sameAs": [
-          `${SITE_URL}/about`
-        ]
-      },
-      {
-        "@type": "WebSite",
-        "@id": `${SITE_URL}/#website`,
-        "url": SITE_URL,
-        "name": "Otterleo - Learn Drawing & Sketching Online",
-        "description": "Free online drawing and sketching platform with easy sketches, tutorials, grid maker, and AI feedback.",
-        "publisher": { "@id": `${SITE_URL}/#organization` }
-      }
-    ]
-  };
-
   return (
-    <div 
+    <div
       style={{
-        background: 'radial-gradient(circle at top, #F1F5F9 0%, #F8FAFC 50%, #FFFFFF 100%)',
+        background:
+          'radial-gradient(circle at top, #F1F5F9 0%, #F8FAFC 50%, #FFFFFF 100%)',
         minHeight: '100vh',
       }}
       className="relative selection:bg-[#FFD45A] selection:text-[#0F172A] antialiased flex flex-col justify-between text-[#0F172A] overflow-x-hidden overflow-y-auto w-full"
     >
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
-      />
-
       <style>{`
         @keyframes slideInWithShadow {
           0% {
@@ -187,35 +132,32 @@ export default function HomePage() {
 
       {/* Main Hero Section */}
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center my-auto z-10 pb-6">
-
         {/* Left Column */}
         <div className="lg:col-span-7 space-y-4 sm:space-y-6 text-left w-full">
           <h1 className="font-sans text-5xl sm:text-7xl font-black text-[#0F172A] leading-[1.08] tracking-tight flex flex-col items-start">
-            <span className="inline-block animate-slide-left-1">
-              Learn.
-            </span>
-            <span className="inline-block animate-slide-left-2">
-              Practice.
-            </span>
+            <span className="inline-block animate-slide-left-1">Learn.</span>
+            <span className="inline-block animate-slide-left-2">Practice.</span>
             <span className="text-[#2563EB] inline-block animate-slide-left-3">
               Create.
             </span>
           </h1>
 
           <p className="font-sans text-base sm:text-xl text-[#334155] font-extrabold max-w-lg leading-relaxed">
-            Learn <strong>drawing and sketching</strong> through fun challenges, step-by-step tutorials, and smart tools to improve your art every day.
+            Learn <strong>drawing and sketching</strong> through fun challenges,
+            step-by-step tutorials, and smart tools to improve your art every
+            day.
           </p>
         </div>
 
         {/* Right Column */}
         <div className="lg:col-span-5 relative pt-12 w-full max-w-md mx-auto lg:max-w-none">
-
           {/* Speech Bubble */}
           <div className="absolute -top-3 right-20 sm:right-24 z-30">
             <div className="relative px-3 py-1 sm:px-3.5 sm:py-1 rounded-full text-xs sm:text-sm font-extrabold text-[#0F172A] font-sans bg-[#F0F7FF] border-[1.8px] border-[#60A5FA] shadow-sm">
-              Hi, I&apos;m <span className="text-[#2563EB] font-black">Otto</span>
-              <div className="otto-bubble-tail"></div>
-              <div className="otto-bubble-tail-inner"></div>
+              Hi, I&apos;m{' '}
+              <span className="text-[#2563EB] font-black">Otto</span>
+              <div className="otto-bubble-tail" />
+              <div className="otto-bubble-tail-inner" />
             </div>
           </div>
 
@@ -233,16 +175,15 @@ export default function HomePage() {
 
           {/* Card */}
           <div className="bg-white rounded-3xl sm:rounded-[2rem] p-5 sm:p-8 border-2 border-slate-200/95 shadow-[0_12px_40px_rgba(0,0,0,0.06)] relative z-10 space-y-4 sm:space-y-5 pt-10 sm:pt-12 w-full">
-            
-            <Link 
-              href="/signup" 
+            <Link
+              href="/signup"
               className="font-sans block w-full text-center py-3.5 sm:py-4 rounded-2xl font-black text-base sm:text-lg text-white uppercase tracking-wider transition-transform active:scale-[0.98] bg-[#2563EB] shadow-[0px_6px_0px_#1D4ED8] active:shadow-none"
             >
               GET STARTED
             </Link>
 
-            <Link 
-              href="/login" 
+            <Link
+              href="/login"
               className="font-sans block w-full text-center py-3.5 sm:py-4 rounded-2xl font-black text-xs sm:text-base uppercase tracking-wider transition-transform active:scale-[0.98] bg-white text-[#2563EB] border-[2.5px] border-[#CBD5E1] shadow-[0px_6px_0px_#94A3B8] active:shadow-none"
             >
               I ALREADY HAVE AN ACCOUNT
@@ -261,14 +202,17 @@ export default function HomePage() {
                 <Link href="/privacy" className="underline hover:text-[#2563EB]">
                   Privacy Policy
                 </Link>{' '}
-                &{' '}
-                <Link href="/cookie-policy" className="underline hover:text-[#2563EB]">
+                &amp;{' '}
+                <Link
+                  href="/cookie-policy"
+                  className="underline hover:text-[#2563EB]"
+                >
                   Cookie Policy
-                </Link>.
+                </Link>
+                .
               </p>
             </div>
           </div>
-
         </div>
       </main>
 
@@ -283,23 +227,28 @@ export default function HomePage() {
             Terms
           </Link>
           <span>•</span>
-          <Link href="/privacy" className="hover:text-slate-600 transition-colors">
+          <Link
+            href="/privacy"
+            className="hover:text-slate-600 transition-colors"
+          >
             Privacy
           </Link>
           <span>•</span>
-          <Link href="/cookie-policy" className="hover:text-slate-600 transition-colors">
+          <Link
+            href="/cookie-policy"
+            className="hover:text-slate-600 transition-colors"
+          >
             Cookie Policy
           </Link>
           <span>•</span>
-          <Link 
-            href="/blog" 
+          <Link
+            href="/blog"
             className="hover:text-slate-600 transition-colors font-bold text-[#2563EB]"
           >
             Blog
           </Link>
         </div>
       </footer>
-
     </div>
   );
 }
