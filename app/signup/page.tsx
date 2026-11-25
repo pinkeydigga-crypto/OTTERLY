@@ -721,7 +721,7 @@ export default function SignupPage() {
                 {typedText.includes("I'm Otto") ? (
                   <>
                     {typedText.split("I'm Otto")[0]}
-                    <span className="text-[#2563EB]">I'm Otto</span>
+                    <span className="text-[#2563EB]">I&apos;m Otto</span>
                   </>
                 ) : (
                   typedText
@@ -1103,7 +1103,7 @@ export default function SignupPage() {
                   <label htmlFor="consent" className="text-[11px] font-medium text-[#0F172A]/70 leading-tight cursor-pointer">
                     I consent to the collection and processing of my personal data in accordance with our{' '}
                     <Link href="/terms" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
-                      Terms & Conditions
+                      Terms &amp; Conditions
                     </Link>{' '}
                     and{' '}
                     <Link href="/privacy" onClick={triggerSoundAndHaptic} className="text-[#2563EB] font-bold hover:underline">
