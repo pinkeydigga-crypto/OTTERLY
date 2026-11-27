@@ -163,6 +163,26 @@ export default function DashboardPage() {
     return typeof data === "number" ? data : null;
   }, []);
 
+  // Day 1 popup nahi dikhana; Day 2+ (streak > 1) par dikhana hai
+  const applyOnboardingOrStreakState = useCallback((activeProfile: Profile) => {
+    if (typeof window === "undefined") return;
+
+    const streakVal = Number(activeProfile.streak) || 1;
+    const tourDone = localStorage.getItem(NAV_TOUR_STORAGE_KEY) === "true";
+
+    if (streakVal <= 1) {
+      setShowStreakPopup(false);
+      if (!tourDone) {
+        setShowNavTour(true);
+      } else {
+        setShowNavTour(false);
+      }
+    } else {
+      setShowNavTour(false);
+      setShowStreakPopup(true);
+    }
+  }, []);
+
   const fetchDashboardData = useCallback(
     async (forceRefresh = false) => {
       if (isFetchingRef.current) return;
@@ -209,13 +229,7 @@ export default function DashboardPage() {
                 if (isFresh && parsed.profile) {
                   setProfile(parsed.profile);
                   setUserRank(parsed.rankLabel || "-");
-
-                  const lastPopupDate = localStorage.getItem("streak_popup_shown_date");
-                  if (lastPopupDate !== todayStr) {
-                    setShowStreakPopup(true);
-                    localStorage.setItem("streak_popup_shown_date", todayStr);
-                  }
-
+                  applyOnboardingOrStreakState(parsed.profile);
                   setLoading(false);
                   return;
                 }
@@ -292,12 +306,7 @@ export default function DashboardPage() {
         }
 
         setProfile(activeProfile);
-
-        const lastPopupDate = localStorage.getItem("streak_popup_shown_date");
-        if (lastPopupDate !== todayStr) {
-          setShowStreakPopup(true);
-          localStorage.setItem("streak_popup_shown_date", todayStr);
-        }
+        applyOnboardingOrStreakState(activeProfile);
 
         if (typeof window !== "undefined") {
           localStorage.setItem("user_xp_cache", (activeProfile.xp || 0).toString());
@@ -327,24 +336,12 @@ export default function DashboardPage() {
         isFetchingRef.current = false;
       }
     },
-    [router, isOffline, computeExactRank]
+    [router, isOffline, computeExactRank, applyOnboardingOrStreakState]
   );
 
   useEffect(() => {
     fetchDashboardData(false);
   }, [fetchDashboardData]);
-
-  // Show walkthrough only once for first-time visitors after initial load/streak popup
-  useEffect(() => {
-    if (loading || showStreakPopup || typeof window === "undefined") return;
-    const alreadyDone = localStorage.getItem(NAV_TOUR_STORAGE_KEY) === "true";
-    if (!alreadyDone) {
-      const timer = setTimeout(() => {
-        setShowNavTour(true);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, showStreakPopup]);
 
   useEffect(() => {
     const handleXpUpdated = (e: Event) => {
@@ -496,7 +493,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#F6FAFF] flex flex-col md:flex-row tracking-tight pb-24 md:pb-0 font-sans overflow-x-hidden relative">
-      {showStreakPopup && (
+      {showStreakPopup && userStreak > 1 && (
         <div className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] max-w-sm w-full overflow-hidden shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 border border-slate-100">
             <div className="relative bg-[#0D47A1] pt-6 pb-4 px-6 flex items-center justify-between overflow-hidden shadow-inner">
@@ -534,9 +531,7 @@ export default function DashboardPage() {
                   You&apos;re building a habit!
                 </h2>
                 <p className="text-xs font-bold text-slate-500">
-                  {userStreak === 1
-                    ? "Your art learning journey starts"
-                    : `Come back tomorrow to reach Day ${userStreak + 1}.`}
+                  Come back tomorrow to reach Day {userStreak + 1}.
                 </p>
               </div>
               <button
@@ -895,9 +890,17 @@ export default function DashboardPage() {
       </main>
 
       {!showStreakPopup && !isMobileSidebarOpen && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[410px] sm:mx-auto z-[399] transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden">
+        <div
+          className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[410px] sm:mx-auto transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden ${
+            showNavTour ? "z-[10001]" : "z-[399]"
+          }`}
+        >
           <div className="w-full rounded-full border transition-colors duration-300 pointer-events-auto backdrop-blur-2xl shadow-2xl overflow-hidden bg-[#F0F6FF]/95 border-blue-100/80 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
-            <nav className="w-full max-w-md mx-auto h-[56px] grid grid-cols-6 items-stretch justify-items-center relative px-2">
+            <nav
+              className={`w-full max-w-md mx-auto h-[56px] grid grid-cols-6 items-stretch justify-items-center relative px-2 ${
+                showNavTour ? "pointer-events-none" : ""
+              }`}
+            >
               {mobileGamifiedNav.map((item) => {
                 const isActive = item.path === "/dashboard";
 
