@@ -9,6 +9,7 @@ import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import LoadingScreen from "@/components/LoadingScreen";
 import XpWheel from "@/components/xpwheel";
 import DashboardTour from "@/components/DashboardTour";
+import ConfettiBurst from "@/components/ConfettiBurst";
 import {
   LayoutDashboard,
   Swords,
@@ -49,6 +50,7 @@ const PRACTICE_CARD_IMAGE_URL =
 const DASHBOARD_CACHE_KEY = "otterleo_dashboard_cache_v1";
 const DASHBOARD_CACHE_TTL_MS = 90 * 1000;
 const NAV_TOUR_STORAGE_KEY = "otterleo_nav_tour_done_v1";
+const STREAK_POPUP_DATE_KEY = "streak_popup_shown_date";
 
 const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
@@ -77,6 +79,7 @@ export default function DashboardPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showStreakPopup, setShowStreakPopup] = useState(false);
   const [showNavTour, setShowNavTour] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -163,8 +166,8 @@ export default function DashboardPage() {
     return typeof data === "number" ? data : null;
   }, []);
 
-  // Day 1 popup nahi dikhana; Day 2+ (streak > 1) par dikhana hai
-  const applyOnboardingOrStreakState = useCallback((activeProfile: Profile) => {
+  // Day 1: only tour (no Day 1 popup). Day 2+: popup once per day; no tour.
+  const applyOnboardingOrStreakState = useCallback((activeProfile: Profile, todayStr: string) => {
     if (typeof window === "undefined") return;
 
     const streakVal = Number(activeProfile.streak) || 1;
@@ -172,14 +175,16 @@ export default function DashboardPage() {
 
     if (streakVal <= 1) {
       setShowStreakPopup(false);
-      if (!tourDone) {
-        setShowNavTour(true);
-      } else {
-        setShowNavTour(false);
-      }
+      setShowNavTour(!tourDone);
     } else {
       setShowNavTour(false);
-      setShowStreakPopup(true);
+      const shownToday = localStorage.getItem(STREAK_POPUP_DATE_KEY) === todayStr;
+      if (!shownToday) {
+        localStorage.setItem(STREAK_POPUP_DATE_KEY, todayStr);
+        setShowStreakPopup(true);
+      } else {
+        setShowStreakPopup(false);
+      }
     }
   }, []);
 
@@ -229,7 +234,7 @@ export default function DashboardPage() {
                 if (isFresh && parsed.profile) {
                   setProfile(parsed.profile);
                   setUserRank(parsed.rankLabel || "-");
-                  applyOnboardingOrStreakState(parsed.profile);
+                  applyOnboardingOrStreakState(parsed.profile, todayStr);
                   setLoading(false);
                   return;
                 }
@@ -306,7 +311,7 @@ export default function DashboardPage() {
         }
 
         setProfile(activeProfile);
-        applyOnboardingOrStreakState(activeProfile);
+        applyOnboardingOrStreakState(activeProfile, todayStr);
 
         if (typeof window !== "undefined") {
           localStorage.setItem("user_xp_cache", (activeProfile.xp || 0).toString());
@@ -382,11 +387,12 @@ export default function DashboardPage() {
   const sanitizedName = sanitizeString(rawUserName);
 
   const formattedUserName = `${sanitizedName.charAt(0).toUpperCase()}${sanitizedName.slice(1)}!`;
+  const welcomeGreetingLine = userStreak <= 1 ? "Welcome artist," : "Welcome back,";
 
   const slidesData = [
     {
       isWelcome: true,
-      titleLine1: "Welcome back,",
+      titleLine1: welcomeGreetingLine,
       titleLine2: formattedUserName,
       description: "Ready to improve your drawing today?",
       buttonText: null,
@@ -713,20 +719,29 @@ export default function DashboardPage() {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="relative px-6 py-6 sm:px-8 sm:py-8 flex items-center justify-between min-h-[170px] sm:min-h-[190px] bg-[#EBF3FF] rounded-[2.2rem] border border-blue-100/90 shadow-xs overflow-hidden select-none touch-pan-y"
+          className="relative px-6 py-6 sm:px-8 sm:py-8 flex items-center justify-between min-h-[170px] sm:min-h-[190px] bg-[#0D47A1] rounded-[2.2rem] border border-blue-900/40 shadow-inner overflow-hidden select-none touch-pan-y"
         >
+          <Star className="top-2.5 left-4 w-4 h-4 text-amber-200 fill-amber-200 opacity-90 pointer-events-none animate-pulse absolute" />
+          <Star className="bottom-2 left-[18%] w-3.5 h-3.5 text-yellow-300 fill-yellow-300 opacity-80 pointer-events-none absolute" />
+          <Star className="top-3 left-[34%] w-3 h-3 text-orange-300 fill-orange-300 opacity-85 pointer-events-none absolute" />
+          <Star className="bottom-3 left-[48%] w-4 h-4 text-amber-100 fill-amber-100 opacity-90 pointer-events-none animate-pulse absolute" />
+          <Star className="top-2 right-[38%] w-3.5 h-3.5 text-yellow-200 fill-yellow-200 opacity-80 pointer-events-none absolute" />
+          <Star className="bottom-2 right-[24%] w-3 h-3 text-amber-300 fill-amber-300 opacity-85 pointer-events-none absolute" />
+          <Star className="top-3 right-12 w-4 h-4 text-orange-200 fill-orange-200 opacity-90 pointer-events-none animate-pulse absolute" />
+          <Star className="bottom-3 right-3 w-3.5 h-3.5 text-yellow-100 fill-yellow-100 opacity-80 pointer-events-none absolute" />
+
           <div className="z-10 max-w-[60%] sm:max-w-[65%] md:max-w-md flex flex-col justify-center space-y-1.5">
             {currentSlideData.isWelcome ? (
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#0B192C] tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight leading-tight">
                 <div>{currentSlideData.titleLine1}</div>
-                <div className="text-[#2563EB] truncate">{currentSlideData.titleLine2}</div>
+                <div className="text-amber-200 truncate">{currentSlideData.titleLine2}</div>
               </h1>
             ) : (
-              <h1 className="text-2xl sm:text-3xl font-black text-[#0B192C] tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
                 {currentSlideData.title}
               </h1>
             )}
-            <p className="text-xs sm:text-base font-semibold text-slate-600 leading-snug pt-0.5">
+            <p className="text-xs sm:text-base font-semibold text-blue-100 leading-snug pt-0.5">
               {currentSlideData.description}
             </p>
             {currentSlideData.buttonText && currentSlideData.buttonPath ? (
@@ -751,8 +766,8 @@ export default function DashboardPage() {
                   }}
                   className={`transition-all duration-300 ${
                     currentSlide === idx
-                      ? "w-7 h-2.5 rounded-full bg-[#2563EB]"
-                      : "w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-slate-400"
+                      ? "w-7 h-2.5 rounded-full bg-white"
+                      : "w-2.5 h-2.5 rounded-full bg-white/40 hover:bg-white/65"
                   }`}
                   aria-label={`Go to slide ${idx + 1}`}
                 />
@@ -781,13 +796,15 @@ export default function DashboardPage() {
               <h3 className="text-2xl sm:text-3xl font-black text-[#0F172A]">{userXp.toLocaleString()} XP</h3>
             </div>
           </div>
-          <div className="bg-orange-50/60 p-6 rounded-[2.2rem] border border-orange-200/70 shadow-xs flex items-center gap-4 transition-all hover:scale-[1.01]">
-            <div className="w-16 h-16 rounded-2xl bg-orange-500 text-white flex items-center justify-center border-b-4 border-orange-700 shrink-0 shadow-sm">
-              <Flame className="w-11 h-11 fill-white stroke-orange-500" />
+          <div className="bg-[#FFF4EA] p-6 rounded-3xl border border-orange-300/80 shadow-xs flex items-center gap-4 transition-all hover:scale-[1.01]">
+            <div className="w-16 h-16 rounded-2xl bg-[#F95A00] text-white flex items-center justify-center border-b-4 border-orange-700 shrink-0 shadow-sm">
+              <Flame className="w-10 h-10 fill-white text-white" />
             </div>
             <div>
               <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Current Streak</p>
-              <h3 className="text-2xl sm:text-3xl font-black text-[#0F172A]">{userStreak} Days</h3>
+              <h3 className="text-2xl sm:text-3xl font-black text-[#0F172A]">
+                {userStreak} {userStreak === 1 ? "Day" : "Days"}
+              </h3>
             </div>
           </div>
           <div className="bg-blue-50/60 p-6 rounded-[2.2rem] border border-blue-200/70 shadow-xs flex items-center gap-4 transition-all hover:scale-[1.01]">
@@ -892,7 +909,7 @@ export default function DashboardPage() {
       {!showStreakPopup && !isMobileSidebarOpen && (
         <div
           className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-auto sm:w-[410px] sm:mx-auto transition-all duration-300 translate-y-0 opacity-100 pointer-events-none lg:hidden ${
-            showNavTour ? "z-[10001]" : "z-[399]"
+            showNavTour ? "z-[10002]" : "z-[399]"
           }`}
         >
           <div className="w-full rounded-full border transition-colors duration-300 pointer-events-auto backdrop-blur-2xl shadow-2xl overflow-hidden bg-[#F0F6FF]/95 border-blue-100/80 shadow-[0_8px_32px_rgba(0,0,0,0.1)]">
@@ -943,7 +960,15 @@ export default function DashboardPage() {
             localStorage.setItem(NAV_TOUR_STORAGE_KEY, "true");
           }
           setShowNavTour(false);
+          if ((Number(profile?.streak) || 1) <= 1) {
+            setShowConfetti(true);
+          }
         }}
+      />
+
+      <ConfettiBurst
+        trigger={showConfetti}
+        onComplete={() => setShowConfetti(false)}
       />
     </div>
   );

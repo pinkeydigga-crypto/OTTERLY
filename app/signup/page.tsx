@@ -8,6 +8,7 @@ import { ChevronLeft, User, Mail, Lock } from 'lucide-react';
 
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_TIME_MS = 60 * 1000;
+const GOOGLE_SIGNUP_RETURNING_KEY = 'otterleo_google_signup_returning';
 
 const BLOCKED_EXACT_WORDS = new Set([
   "porn", "porno", "pornhub", "xxx", "nsfw", "hentai", "erotic", "nude", "nudes", "naked",
@@ -98,6 +99,35 @@ const getLocalDateString = (date = new Date()) => {
   return `${year}-${month}-${day}`;
 };
 
+function hasGoogleOAuthCallbackParams(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    if (sessionStorage.getItem(GOOGLE_SIGNUP_RETURNING_KEY) === "1") {
+      return true;
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("code") || url.searchParams.has("error")) {
+      return true;
+    }
+    const hash = window.location.hash || "";
+    if (
+      hash.includes("access_token=") ||
+      hash.includes("provider_token=") ||
+      hash.includes("error=")
+    ) {
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+function clearGoogleReturningFlag() {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(GOOGLE_SIGNUP_RETURNING_KEY);
+  } catch {}
+}
+
 async function getCurrentAuthUser() {
   const { data: sessionData } = await supabase.auth.getSession();
   if (sessionData?.session?.user?.email) {
@@ -140,12 +170,14 @@ export default function SignupPage() {
   const mascotUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/onboard%20(1).png';
   const introGifUrl = 'https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/hloi%20(1).gif';
 
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
-  const [introDone, setIntroDone] = useState(false);
+  const initialIsGoogleReturn = hasGoogleOAuthCallbackParams();
+
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(initialIsGoogleReturn ? 4 : 1);
+  const [introDone, setIntroDone] = useState<boolean>(initialIsGoogleReturn);
   const [authUser, setAuthUser] = useState<{ id: string; email: string } | null>(null);
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0].url);
   const [skillLevel, setSkillLevel] = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(initialIsGoogleReturn);
   const [errorMessage, setErrorMessage] = useState('');
   const [showLoginLink, setShowLoginLink] = useState(false);
   const [consent, setConsent] = useState(false);
@@ -178,6 +210,8 @@ export default function SignupPage() {
   };
 
   useEffect(() => {
+    if (step === 1 && introDone) return;
+
     let fullText = "Hi there! I'm Otto";
     if (step === 2) {
       fullText = "Sign up with Google or email to begin!";
@@ -213,7 +247,7 @@ export default function SignupPage() {
     }, 45);
 
     return () => clearInterval(timer);
-  }, [step, skillLevel]);
+  }, [step, introDone, skillLevel]);
 
   const findExistingProfile = useCallback(async (userId: string, email: string) => {
     const { data: byId, error: idErr } = await supabase
@@ -241,6 +275,7 @@ export default function SignupPage() {
 
   const redirectToDashboardWithProfile = useCallback(
     (profile: any, userId: string, email: string) => {
+      clearGoogleReturningFlag();
       try {
         localStorage.removeItem('signup_attempts');
         localStorage.removeItem('signup_lockout_until');
@@ -282,6 +317,8 @@ export default function SignupPage() {
         return;
       }
 
+      clearGoogleReturningFlag();
+
       const googleName =
         typeof user?.user_metadata?.full_name === 'string'
           ? user.user_metadata.full_name.trim()
@@ -294,8 +331,8 @@ export default function SignupPage() {
       }
 
       setAuthUser({ id: user.id, email: cleanEmail });
-      setLoading(false);
       setStep(4);
+      setLoading(false);
     },
     [findExistingProfile, redirectToDashboardWithProfile]
   );
@@ -332,11 +369,31 @@ export default function SignupPage() {
     async function checkAuthReturn() {
       try {
         const user = await getCurrentAuthUser();
-        if (!active || !user) return;
-        await runSignupAuthOnce(user);
+        if (!active) return;
+
+        if (user) {
+          await runSignupAuthOnce(user);
+          return;
+        }
+
+        if (hasGoogleOAuthCallbackParams()) {
+          await new Promise((resolve) => setTimeout(resolve, 600));
+          if (!active) return;
+          const retryUser = await getCurrentAuthUser();
+          if (!active) return;
+
+          if (retryUser) {
+            await runSignupAuthOnce(retryUser);
+          } else {
+            clearGoogleReturningFlag();
+            setLoading(false);
+            setStep(2);
+          }
+        }
       } catch (err: any) {
         if (!active) return;
         console.error("Signup session check error:", err);
+        clearGoogleReturningFlag();
         setIntroDone(true);
         setLoading(false);
         setErrorMessage(err?.message || "Could not verify your account after sign up.");
@@ -359,6 +416,7 @@ export default function SignupPage() {
           await runSignupAuthOnce(session.user);
         } catch (err: any) {
           if (!active) return;
+          clearGoogleReturningFlag();
           setIntroDone(true);
           setLoading(false);
           setErrorMessage(err?.message || "Could not verify your account.");
@@ -420,6 +478,12 @@ export default function SignupPage() {
     setShowLoginLink(false);
 
     try {
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem(GOOGLE_SIGNUP_RETURNING_KEY, '1');
+        } catch {}
+      }
+
       const redirectTo =
         typeof window !== 'undefined' ? `${window.location.origin}/signup` : undefined;
 
@@ -433,6 +497,7 @@ export default function SignupPage() {
       if (error) throw error;
     } catch (err: any) {
       console.error("Google OAuth start error:", err);
+      clearGoogleReturningFlag();
       setErrorMessage(err?.message || "Could not start Google sign up.");
       setLoading(false);
     }

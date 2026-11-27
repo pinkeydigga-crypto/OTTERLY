@@ -670,28 +670,28 @@ const CHAIR_STEPS: TutorialStep[] = [
     title: "Step 2: Sketch Chair Frame and Guidelines",
     instruction: "Lightly sketch the seat plane, backrest posts, cross rail, and four angled legs with construction lines.",
     tips: ["Keep initial sketch lines light", "Check leg angles and seat perspective"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair4.jpeg"
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair1.jpeg"
   },
   {
     step: 3,
     title: "Step 3: Refine Seat, Backrest and Support Bars",
     instruction: "Define the seat thickness, backrest panel, side stretcher bars, and leg edges cleanly.",
     tips: ["Keep wooden edges straight and neat", "Clean up extra construction marks gently"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair3.jpeg"
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair2.jpeg"
   },
   {
     step: 4,
     title: "Step 4: Add Outline Depth and Light Shadow Guide",
     instruction: "Strengthen key structural contours and lightly outline the cast shadow under the chair.",
     tips: ["Keep outer edges crisp", "Lightly map where the shadow falls"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair2.jpeg"
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair3.jpeg"
   },
   {
     step: 5,
     title: "Step 5: Shade Wood Surfaces and Cast Shadow",
     instruction: "Shade the chair legs, backrest, and seat edge with soft directional strokes, and blend the ground shadow underneath.",
     tips: ["Keep top surfaces lighter than shaded sides", "Blend the ground shadow smoothly for 3D depth"],
-    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair1.jpeg"
+    imageUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/chair4.jpeg"
   }
 ];
 
@@ -1137,7 +1137,7 @@ export default function ChallengesPage() {
 
   const logoUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
   const ottoMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Otterly%20Take%20the%20Challenge%20(1)%20(2)%20(1).png";
-  const challengesBannerUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/challangesotto.jpeg";
+  const challengesBannerUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/challanges.jpeg";
   const claimMascotUrl = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/Cheerful%20Otter%20Mascot%20with%20Star%20Icon%20(1)%20(1).png";
 
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -1879,13 +1879,11 @@ export default function ChallengesPage() {
 
         {activeView === 'hub' ? (
           <>
-            <div className="bg-white p-3 sm:p-4 rounded-[2rem] border border-slate-200/80 shadow-2xs flex items-center justify-center relative overflow-hidden">
-              <img
-                src={challengesBannerUrl}
-                alt="Challenges with Otto"
-                className="w-full h-28 sm:h-36 object-contain -rotate-1 hover:rotate-0 transition-transform duration-300 select-none"
-              />
-            </div>
+            <img
+              src={challengesBannerUrl}
+              alt="Challenges with Otto"
+              className="w-full h-28 sm:h-36 object-contain -rotate-1 hover:rotate-0 transition-transform duration-300 select-none"
+            />
 
             <div className="flex items-stretch justify-between bg-white rounded-full border border-slate-200/90 shadow-2xs overflow-hidden">
               <div className="flex flex-col justify-center pl-5 pr-4 py-2">
@@ -1906,9 +1904,9 @@ export default function ChallengesPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               {filteredChallenges.length === 0 ? (
-                <div className="bg-[#E8F1FF] rounded-[2rem] p-8 border border-blue-100 text-center space-y-2">
+                <div className="bg-[#DCEBFE] rounded-[2rem] p-8 border border-blue-200/80 text-center space-y-2">
                   <p className="text-sm font-black text-slate-700">No challenges available for this level yet.</p>
                   <p className="text-xs font-bold text-slate-500">Try changing your level to explore more challenges!</p>
                 </div>
@@ -1918,41 +1916,58 @@ export default function ChallengesPage() {
                   return (
                     <div
                       key={challenge.id}
-                      className="relative overflow-hidden bg-[#E8F1FF] rounded-[2rem] p-5 border border-blue-100 shadow-2xs space-y-4"
+                      className="relative overflow-hidden rounded-[2rem] border border-blue-200/80 shadow-[0_8px_24px_rgba(37,99,235,0.08)] bg-white flex flex-col"
                     >
-                      <div className="pointer-events-none absolute inset-y-0 left-0 w-24 sm:w-28 bg-gradient-to-r from-transparent via-white/65 to-transparent animate-card-shine z-30" />
+                      <div
+                        style={{ animationDelay: "1s", animationDuration: "4s" }}
+                        className="pointer-events-none inset-y-0 left-0 w-24 sm:w-28 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-card-shine z-30 absolute"
+                      />
 
-                      {isDone && (
-                        <div className="flex justify-end w-full relative z-20">
-                          <span className="text-[11px] font-black bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-xl flex items-center gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Completed
-                          </span>
+                      {/* Top half: clean white surface with soft blue corner accents */}
+                      <div className="relative bg-white px-5 pt-5 pb-4 overflow-hidden">
+                        <div className="pointer-events-none -top-10 -left-10 w-28 h-28 rounded-full bg-blue-100/75 absolute" />
+                        <div className="pointer-events-none -bottom-6 -right-8 w-24 h-24 rounded-full bg-blue-100/65 absolute" />
+
+                        <div className="pointer-events-none top-3.5 right-4 flex items-center gap-1 rotate-12 opacity-80 absolute">
+                          <span className="w-2.5 h-0.5 rounded-full bg-blue-300" />
+                          <span className="w-2.5 h-0.5 rounded-full bg-blue-300" />
                         </div>
-                      )}
 
-                      <div className="w-full h-36 sm:h-44 flex items-center justify-center relative z-20">
-                        <img
-                          src={challenge.previewImage}
-                          alt={challenge.title}
-                          className="w-full h-full object-contain hover:scale-105 transition-all duration-300"
-                        />
+                        {isDone && (
+                          <div className="flex justify-end mb-2 relative z-20">
+                            <span className="text-[11px] font-black bg-emerald-50 text-emerald-600 border border-emerald-200/70 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Completed
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="relative z-20 w-full h-36 sm:h-44 flex items-center justify-center">
+                          <img
+                            src={challenge.previewImage}
+                            alt={challenge.title}
+                            className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
                       </div>
 
-                      <div className="space-y-3 relative z-20">
+                      {/* Bottom half: slightly deeper light-blue section */}
+                      <div className="bg-[#DCEBFE] px-5 pt-4 pb-5 space-y-3.5 border-t border-blue-200/80 relative z-20">
                         <div>
-                          <h2 className="font-black text-slate-900 text-lg">{challenge.title}</h2>
-                          <p className="text-xs font-bold text-slate-600 mt-1">
+                          <h2 className="font-black text-[#0F172A] text-base sm:text-lg leading-snug">
+                            {challenge.title}
+                          </h2>
+                          <p className="text-xs font-medium text-slate-600 mt-1 leading-relaxed">
                             {challenge.description}
                           </p>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2 text-xs font-black">
-                          <span className="flex items-center gap-1 text-amber-500 bg-amber-50 border border-amber-200/60 px-2.5 py-1 rounded-full">
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold">
+                          <span className="flex items-center gap-1 text-amber-600 bg-amber-50 border border-amber-200/80 px-3 py-1 rounded-full">
                             <Zap className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                             +{challenge.xp} XP
                           </span>
 
-                          <span className="px-2.5 py-1 rounded-full text-[11px] uppercase border bg-blue-50 text-blue-700 border-blue-200/70">
+                          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide border bg-white text-[#2563EB] border-blue-200/90">
                             {challenge.stepsCount} STEPS
                           </span>
                         </div>
@@ -1965,14 +1980,14 @@ export default function ChallengesPage() {
                             setActiveView('challenge-flow');
                             setCurrentStep(0);
                           }}
-                          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-xs border-b-2 transition-all cursor-pointer ${
+                          className={`w-full flex items-center justify-center gap-1.5 py-3.5 rounded-2xl font-black text-xs sm:text-sm border-b-4 transition-all cursor-pointer active:border-b-0 active:translate-y-0.5 ${
                             isDone
                               ? "bg-slate-800 hover:bg-slate-900 text-white border-slate-950"
-                              : "bg-[#2563EB] hover:bg-blue-600 text-white border-blue-800"
+                              : "bg-[#2563EB] hover:bg-blue-700 text-white border-blue-800 shadow-md shadow-blue-500/15"
                           }`}
                         >
                           <span>{isDone ? 'Review Challenge' : 'Accept Challenge 🚀'}</span>
-                          {!isDone && <ChevronRight className="w-4 h-4" />}
+                          {!isDone && <ChevronRight className="w-4 h-4 stroke-[2.5]" />}
                         </button>
                       </div>
                     </div>
@@ -2022,12 +2037,12 @@ export default function ChallengesPage() {
                 </div>
 
                 <div className="relative bg-blue-50/80 border border-blue-200 rounded-2xl px-5 py-3 shadow-2xs max-w-xs text-center sm:text-left">
-                  <div className="hidden sm:block absolute -right-2.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-t-transparent border-l-[10px] border-l-blue-200 border-b-8 border-b-transparent">
-                    <div className="absolute right-[1px] -top-[7px] w-0 h-0 border-t-[7px] border-t-transparent border-l-[9px] border-l-blue-50 border-b-[7px] border-b-transparent" />
+                  <div className="hidden sm:block -right-2.5 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-t-transparent border-l-[10px] border-l-blue-200 border-b-8 border-b-transparent absolute">
+                    <div className="-top-[7px] w-0 h-0 border-t-[7px] border-t-transparent border-l-[9px] border-l-blue-50 border-b-[7px] border-b-transparent right-[1px] absolute" />
                   </div>
 
-                  <div className="block sm:hidden absolute -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-b-[10px] border-b-blue-200 border-r-8 border-r-transparent">
-                    <div className="absolute -left-[7px] top-[1px] w-0 h-0 border-l-[7px] border-l-transparent border-b-[9px] border-b-blue-50 border-r-[7px] border-r-transparent" />
+                  <div className="block sm:hidden -top-2.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-b-[10px] border-b-blue-200 border-r-8 border-r-transparent absolute">
+                    <div className="top-[1px] w-0 h-0 border-l-[7px] border-l-transparent border-b-[9px] border-b-blue-50 border-r-[7px] border-r-transparent -left-[7px] absolute" />
                   </div>
 
                   <p className="text-sm font-extrabold text-blue-950">

@@ -50,7 +50,6 @@ interface DashboardTourProps {
 export default function DashboardTour({ isOpen, onFinish }: DashboardTourProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
-  const [navTopPx, setNavTopPx] = useState<number>(0);
 
   const currentStep = TOUR_STEPS[stepIndex];
   const isLastStep = stepIndex === TOUR_STEPS.length - 1;
@@ -60,12 +59,9 @@ export default function DashboardTour({ isOpen, onFinish }: DashboardTourProps) 
 
     const el = document.getElementById(currentStep.targetId);
     if (el) {
-      const rect = el.getBoundingClientRect();
-      setTargetRect(rect);
-      setNavTopPx(Math.max(rect.top - 10, 0));
+      setTargetRect(el.getBoundingClientRect());
     } else {
       setTargetRect(null);
-      setNavTopPx(typeof window !== "undefined" ? window.innerHeight - 76 : 0);
     }
   }, [isOpen, currentStep]);
 
@@ -85,7 +81,6 @@ export default function DashboardTour({ isOpen, onFinish }: DashboardTourProps) 
     };
   }, [isOpen, stepIndex, updatePosition]);
 
-  // Poori screen ka scroll & touch lock
   useEffect(() => {
     if (!isOpen) return;
     const prevOverflow = document.body.style.overflow;
@@ -110,12 +105,18 @@ export default function DashboardTour({ isOpen, onFinish }: DashboardTourProps) 
 
   const arrowLeft =
     typeof window !== "undefined"
-      ? Math.min(Math.max(centerX, 32), window.innerWidth - 32)
+      ? Math.min(Math.max(centerX, 28), window.innerWidth - 28)
       : centerX;
 
   const cardBottomPx = hasTarget
-    ? Math.max(window.innerHeight - targetRect.top + 16, 86)
-    : 92;
+    ? Math.max(window.innerHeight - targetRect.top + 18, 88)
+    : 94;
+
+  const ringSize = 38;
+  const ringLeft = centerX - ringSize / 2;
+  const ringTop = hasTarget
+    ? targetRect.top + targetRect.height / 2 - ringSize / 2
+    : 0;
 
   const handleNext = () => {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
@@ -151,42 +152,30 @@ export default function DashboardTour({ isOpen, onFinish }: DashboardTourProps) 
       aria-modal="true"
       aria-label="Navigation guide"
     >
-      {/* Top & main area blur + dark lock (leaves bottom nav bar crisp/unblurred) */}
+      {/* Full-screen blur & click lock */}
       <div
         onClick={blockClick}
-        style={{
-          height: hasTarget && navTopPx > 0 ? `${navTopPx}px` : "100%",
-        }}
-        className="fixed top-0 left-0 right-0 bg-slate-950/60 backdrop-blur-md pointer-events-auto"
+        className="fixed inset-0 bg-slate-950/65 backdrop-blur-md pointer-events-auto"
       />
 
-      {/* Side & bottom click blockers around nav bar so user can't tap nav tabs directly */}
-      <div
-        onClick={blockClick}
-        style={{
-          top: hasTarget && navTopPx > 0 ? `${navTopPx}px` : "auto",
-        }}
-        className="fixed bottom-0 left-0 right-0 pointer-events-auto"
-      />
-
-      {/* Highlight ring around active nav tab */}
+      {/* Compact spotlight circle above the active nav icon */}
       {hasTarget && (
         <div
           style={{
             position: "fixed",
-            left: targetRect.left - 4,
-            top: targetRect.top - 4,
-            width: targetRect.width + 8,
-            height: targetRect.height + 8,
+            left: `${ringLeft}px`,
+            top: `${ringTop}px`,
+            width: `${ringSize}px`,
+            height: `${ringSize}px`,
           }}
-          className="rounded-full ring-3 ring-[#2563EB] bg-blue-400/15 pointer-events-none transition-all duration-200 z-10"
+          className="rounded-full border-2 border-[#2563EB] bg-blue-500/15 shadow-[0_0_12px_rgba(37,99,235,0.5)] pointer-events-none transition-all duration-200 z-[10003]"
         />
       )}
 
       {/* Tooltip Card + Downward Arrow */}
       <div
         style={{ bottom: `${cardBottomPx}px` }}
-        className="fixed left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-[340px] z-20 pointer-events-auto transition-all duration-200"
+        className="fixed left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-[340px] z-[10004] pointer-events-auto transition-all duration-200"
       >
         <div className="bg-white rounded-3xl p-5 border-[3px] border-[#2563EB] shadow-2xl relative">
           <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-[#2563EB] mb-1.5">
@@ -225,10 +214,10 @@ export default function DashboardTour({ isOpen, onFinish }: DashboardTourProps) 
 
         {hasTarget && (
           <div
-            style={{ left: `${arrowLeft - 12}px` }}
+            style={{ left: `${arrowLeft - 11}px` }}
             className="fixed flex flex-col items-center pointer-events-none transition-all duration-200"
           >
-            <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[12px] border-t-[#2563EB]" />
+            <div className="w-0 h-0 border-l-[11px] border-l-transparent border-r-[11px] border-r-transparent border-t-[11px] border-t-[#2563EB]" />
           </div>
         )}
       </div>
