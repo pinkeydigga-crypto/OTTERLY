@@ -15,17 +15,26 @@ export async function POST(request: Request) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const anonKey = process.env.NEXT_PUBLIC_SUAbPABASE_ANON_KEY;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
+    const missingVars: string[] = [];
+    if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL');
+    if (!anonKey) missingVars.push('NEXT_PUBLIC_SUAbPABASE_ANON_KEY');
+    if (!serviceRoleKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY');
+
+    if (missingVars.length > 0) {
       return NextResponse.json(
-        { error: 'Server configuration missing' },
+        { error: `Server configuration missing: ${missingVars.join(', ')}` },
         { status: 500 }
       );
     }
 
-    const supabaseAuth = createClient(supabaseUrl, anonKey, {
+    const validUrl = supabaseUrl as string;
+    const validAnonKey = anonKey as string;
+    const validServiceRoleKey = serviceRoleKey as string;
+
+    const supabaseAuth = createClient(validUrl, validAnonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
@@ -43,7 +52,7 @@ export async function POST(request: Request) {
 
     const targetUserId = user.id;
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+    const supabaseAdmin = createClient(validUrl, validServiceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 

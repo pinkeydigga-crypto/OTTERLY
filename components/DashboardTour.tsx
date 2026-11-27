@@ -50,17 +50,22 @@ interface DashboardTourProps {
 export default function DashboardTour({ isOpen, onFinish }: DashboardTourProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [navTopPx, setNavTopPx] = useState<number>(0);
 
   const currentStep = TOUR_STEPS[stepIndex];
   const isLastStep = stepIndex === TOUR_STEPS.length - 1;
 
   const updatePosition = useCallback(() => {
     if (!isOpen || !currentStep) return;
+
     const el = document.getElementById(currentStep.targetId);
     if (el) {
-      setTargetRect(el.getBoundingClientRect());
+      const rect = el.getBoundingClientRect();
+      setTargetRect(rect);
+      setNavTopPx(Math.max(rect.top - 10, 0));
     } else {
       setTargetRect(null);
+      setNavTopPx(typeof window !== "undefined" ? window.innerHeight - 76 : 0);
     }
   }, [isOpen, currentStep]);
 
@@ -80,7 +85,7 @@ export default function DashboardTour({ isOpen, onFinish }: DashboardTourProps) 
     };
   }, [isOpen, stepIndex, updatePosition]);
 
-  // Poori screen ka scroll & touch interaction lock
+  // Poori screen ka scroll & touch lock
   useEffect(() => {
     if (!isOpen) return;
     const prevOverflow = document.body.style.overflow;
@@ -134,40 +139,54 @@ export default function DashboardTour({ isOpen, onFinish }: DashboardTourProps) 
     onFinish();
   };
 
+  const blockClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
     <div
-      className="fixed inset-0 z-[10000] select-none"
+      className="fixed inset-0 z-[10000] select-none pointer-events-none"
       role="dialog"
       aria-modal="true"
       aria-label="Navigation guide"
     >
-      {/* Full-screen blur + dark overlay + click blocker */}
+      {/* Top & main area blur + dark lock (leaves bottom nav bar crisp/unblurred) */}
       <div
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+        onClick={blockClick}
+        style={{
+          height: hasTarget && navTopPx > 0 ? `${navTopPx}px` : "100%",
         }}
-        className="fixed inset-0 bg-slate-950/65 backdrop-blur-md pointer-events-auto"
+        className="fixed top-0 left-0 right-0 bg-slate-950/60 backdrop-blur-md pointer-events-auto"
       />
 
-      {/* Highlighted active nav tab spotlight */}
+      {/* Side & bottom click blockers around nav bar so user can't tap nav tabs directly */}
+      <div
+        onClick={blockClick}
+        style={{
+          top: hasTarget && navTopPx > 0 ? `${navTopPx}px` : "auto",
+        }}
+        className="fixed bottom-0 left-0 right-0 pointer-events-auto"
+      />
+
+      {/* Highlight ring around active nav tab */}
       {hasTarget && (
         <div
           style={{
             position: "fixed",
-            left: targetRect.left - 5,
-            top: targetRect.top - 5,
-            width: targetRect.width + 10,
-            height: targetRect.height + 10,
+            left: targetRect.left - 4,
+            top: targetRect.top - 4,
+            width: targetRect.width + 8,
+            height: targetRect.height + 8,
           }}
-          className="rounded-full bg-white ring-4 ring-[#60A5FA] shadow-[0_0_25px_rgba(96,165,250,0.85)] pointer-events-none transition-all duration-200 z-10 flex items-center justify-center"
+          className="rounded-full ring-3 ring-[#2563EB] bg-blue-400/15 pointer-events-none transition-all duration-200 z-10"
         />
       )}
 
       {/* Tooltip Card + Downward Arrow */}
       <div
         style={{ bottom: `${cardBottomPx}px` }}
-        className="fixed left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-[340px] z-20 transition-all duration-200"
+        className="fixed left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 sm:w-[340px] z-20 pointer-events-auto transition-all duration-200"
       >
         <div className="bg-white rounded-3xl p-5 border-[3px] border-[#2563EB] shadow-2xl relative">
           <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-[#2563EB] mb-1.5">
