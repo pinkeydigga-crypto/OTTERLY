@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { useOfflineGuard } from "@/hooks/useOfflineGuard";
 import LoadingScreen from "@/components/LoadingScreen";
 import XpWheel from "@/components/xpwheel";
+import DashboardTour from "@/components/DashboardTour";
 import {
   LayoutDashboard,
   Swords,
@@ -47,6 +48,7 @@ const PRACTICE_CARD_IMAGE_URL =
 
 const DASHBOARD_CACHE_KEY = "otterleo_dashboard_cache_v1";
 const DASHBOARD_CACHE_TTL_MS = 90 * 1000;
+const NAV_TOUR_STORAGE_KEY = "otterleo_nav_tour_done_v1";
 
 const getLocalDateString = (date = new Date()) => {
   const year = date.getFullYear();
@@ -74,6 +76,7 @@ export default function DashboardPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showStreakPopup, setShowStreakPopup] = useState(false);
+  const [showNavTour, setShowNavTour] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
   const touchEndX = useRef<number | null>(null);
@@ -331,6 +334,18 @@ export default function DashboardPage() {
     fetchDashboardData(false);
   }, [fetchDashboardData]);
 
+  // Show walkthrough only once for first-time visitors after initial load/streak popup
+  useEffect(() => {
+    if (loading || showStreakPopup || typeof window === "undefined") return;
+    const alreadyDone = localStorage.getItem(NAV_TOUR_STORAGE_KEY) === "true";
+    if (!alreadyDone) {
+      const timer = setTimeout(() => {
+        setShowNavTour(true);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, showStreakPopup]);
+
   useEffect(() => {
     const handleXpUpdated = (e: Event) => {
       const customEvent = e as CustomEvent<number>;
@@ -433,30 +448,35 @@ export default function DashboardPage() {
 
   const mobileGamifiedNav = [
     {
+      tourId: "nav-tour-home",
       path: "/dashboard",
       label: "Home",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/HOME.png",
       sizeClass: "w-[26px] h-[26px]",
     },
     {
+      tourId: "nav-tour-challenges",
       path: "/challenges",
       label: "Challenges",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/SWORD.png",
       sizeClass: "w-[26px] h-[26px]",
     },
     {
+      tourId: "nav-tour-otto-chat",
       path: "/otto-chat",
       label: "Otto Chat",
       iconUrl: CHAT_NAV_ICON_URL,
       sizeClass: "w-[26px] h-[26px]",
     },
     {
+      tourId: "nav-tour-scan",
       path: "/scan",
       label: "Scan",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/EYES%20NAV.png",
       sizeClass: "w-[30px] h-[30px]",
     },
     {
+      tourId: "nav-tour-leaderboard",
       path: "/leaderboard",
       label: "Leaderboard",
       iconUrl:
@@ -464,6 +484,7 @@ export default function DashboardPage() {
       sizeClass: "w-[30px] h-[30px]",
     },
     {
+      tourId: "nav-tour-tools",
       path: "/tools",
       label: "Tools",
       iconUrl: "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/settingnav.png",
@@ -883,6 +904,7 @@ export default function DashboardPage() {
                 return (
                   <Link
                     key={item.label}
+                    id={item.tourId}
                     href={item.path}
                     onClick={triggerHaptic}
                     aria-label={item.label}
@@ -910,6 +932,16 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <DashboardTour
+        isOpen={showNavTour}
+        onFinish={() => {
+          if (typeof window !== "undefined") {
+            localStorage.setItem(NAV_TOUR_STORAGE_KEY, "true");
+          }
+          setShowNavTour(false);
+        }}
+      />
     </div>
   );
 }

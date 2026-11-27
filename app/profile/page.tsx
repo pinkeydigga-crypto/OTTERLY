@@ -294,33 +294,68 @@ export default function ProfilePage() {
   const handleDeleteAccount = async () => {
     triggerHaptic();
     setDeleting(true);
+    setMessage(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-      if (!session?.access_token || !session?.user) {
-        throw new Error("Session expired. Please login again.");
+      if (sessionError || !session?.access_token || !session?.user) {
+        const reason = sessionError?.message || "Missing session or token";
+        throw new Error(`[DEL_AUTH_01] ${reason}`);
       }
 
-      const apiRes = await fetch("/api/delete-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      let apiRes: Response;
+      try {
+        apiRes = await fetch("/api/delete-user", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
+      } catch (netErr: unknown) {
+        const netMsg = netErr instanceof Error ? netErr.message : "Network request failed";
+        throw new Error(`[DEL_NET_02] ${netMsg}`);
+      }
+
+      let payload: Record<string, unknown> | null = null;
+      try {
+        payload = (await apiRes.json()) as Record<string, unknown>;
+      } catch {
+        throw new Error(`[DEL_PARSE_03] Invalid JSON response (HTTP ${apiRes.status})`);
+      }
 
       if (!apiRes.ok) {
-        throw new Error("Failed to delete account");
+        const apiErr =
+          (typeof payload?.error === "string" && payload.error) ||
+          (typeof payload?.message === "string" && payload.message) ||
+          "Server rejected request";
+        throw new Error(`[DEL_SRV_04] HTTP ${apiRes.status}: ${apiErr}`);
       }
 
-      await supabase.auth.signOut();
-      clearAppStorage();
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutErr: unknown) {
+        const signOutMsg =
+          signOutErr instanceof Error ? signOutErr.message : "Sign out failed after delete";
+        throw new Error(`[DEL_SIGNOUT_05] ${signOutMsg}`);
+      }
 
+      clearAppStorage();
       router.replace("/login");
     } catch (err: unknown) {
       console.error("Delete Account Error:", err);
-      setMessage({ type: "error", text: "Failed to delete account. Please try again." });
+      const rawText =
+        err instanceof Error && err.message
+          ? err.message
+          : "[DEL_SRV_04] Failed to delete account.";
+      const formattedText = rawText.startsWith("[DEL_")
+        ? rawText
+        : `[DEL_SRV_04] ${rawText}`;
+      setMessage({ type: "error", text: formattedText });
       setShowDeleteModal(false);
     } finally {
       setDeleting(false);
