@@ -47,6 +47,79 @@ function TypewriterText({ text, speed = 50 }: { text: string; speed?: number }) 
   );
 }
 
+const CARD_CROSS_CONFETTI = [
+  // Left side outside card -> across card at card cross height
+  { side: "left", top: "28%", tx: "58px", ty: "-18px", rot: "145deg", color: "#2563EB", delay: "0ms" },
+  { side: "left", top: "36%", tx: "84px", ty: "-8px", rot: "-125deg", color: "#F59E0B", delay: "20ms" },
+  { side: "left", top: "44%", tx: "110px", ty: "6px", rot: "160deg", color: "#10B981", delay: "10ms" },
+  { side: "left", top: "52%", tx: "76px", ty: "16px", rot: "-140deg", color: "#EC4899", delay: "35ms" },
+  { side: "left", top: "60%", tx: "96px", ty: "24px", rot: "120deg", color: "#8B5CF6", delay: "15ms" },
+  { side: "left", top: "32%", tx: "126px", ty: "-12px", rot: "-155deg", color: "#F97316", delay: "30ms" },
+  { side: "left", top: "48%", tx: "142px", ty: "10px", rot: "135deg", color: "#06B6D4", delay: "25ms" },
+  { side: "left", top: "66%", tx: "68px", ty: "32px", rot: "-110deg", color: "#EF4444", delay: "40ms" },
+
+  // Right side outside card -> across card at card cross height
+  { side: "right", top: "28%", tx: "-58px", ty: "-18px", rot: "-145deg", color: "#F59E0B", delay: "10ms" },
+  { side: "right", top: "36%", tx: "-84px", ty: "-8px", rot: "125deg", color: "#2563EB", delay: "25ms" },
+  { side: "right", top: "44%", tx: "-110px", ty: "6px", rot: "-160deg", color: "#EC4899", delay: "15ms" },
+  { side: "right", top: "52%", tx: "-76px", ty: "16px", rot: "140deg", color: "#10B981", delay: "30ms" },
+  { side: "right", top: "60%", tx: "-96px", ty: "24px", rot: "-120deg", color: "#F97316", delay: "20ms" },
+  { side: "right", top: "32%", tx: "-126px", ty: "-12px", rot: "155deg", color: "#8B5CF6", delay: "35ms" },
+  { side: "right", top: "48%", tx: "-142px", ty: "10px", rot: "-135deg", color: "#06B6D4", delay: "15ms" },
+  { side: "right", top: "66%", tx: "-68px", ty: "32px", rot: "110deg", color: "#EF4444", delay: "45ms" },
+];
+
+function CardEdgeConfetti({ burstKey }: { burstKey: number }) {
+  if (burstKey <= 0) return null;
+
+  return (
+    <div
+      key={burstKey}
+      className="pointer-events-none inset-0 z-20 overflow-hidden rounded-[2.2rem] absolute"
+      aria-hidden="true"
+    >
+      <style>{`
+        @keyframes otterleoCardCrossConfetti {
+          0% {
+            opacity: 0;
+            transform: translate(0px, 0px) rotate(0deg) scale(0.5);
+          }
+          18% {
+            opacity: 1;
+            transform: translate(calc(var(--tx) * 0.45), calc(var(--ty) * 0.5)) rotate(calc(var(--rot) * 0.45)) scale(1.08);
+          }
+          75% {
+            opacity: 0.95;
+            transform: translate(var(--tx), calc(var(--ty) + 26px)) rotate(var(--rot)) scale(0.96);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(calc(var(--tx) * 1.15), calc(var(--ty) + 52px)) rotate(calc(var(--rot) * 1.2)) scale(0.72);
+          }
+        }
+      `}</style>
+
+      {CARD_CROSS_CONFETTI.map((piece, idx) => (
+        <span
+          key={idx}
+          style={
+            {
+              ...(piece.side === "left" ? { left: "-10px" } : { right: "-10px" }),
+              top: piece.top,
+              backgroundColor: piece.color,
+              "--tx": piece.tx,
+              "--ty": piece.ty,
+              "--rot": piece.rot,
+              animation: `otterleoCardCrossConfetti 1150ms cubic-bezier(0.16, 1, 0.3, 1) ${piece.delay} forwards`,
+            } as React.CSSProperties & Record<"--tx" | "--ty" | "--rot", string>
+          }
+          className="w-2.5 h-1.5 rounded-[2px] opacity-0 absolute"
+        />
+      ))}
+    </div>
+  );
+}
+
 interface TutorialStep {
   step: number;
   title: string;
@@ -1132,6 +1205,7 @@ export default function ChallengesPage() {
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
   const [showClaimModal, setShowClaimModal] = useState<boolean>(false);
+  const [claimBurstKey, setClaimBurstKey] = useState<number>(0);
   const [selectedDifficulty, setSelectedDifficulty] = useState<"beginner" | "intermediate" | "advanced">("beginner");
   const [showLevelModal, setShowLevelModal] = useState<boolean>(false);
 
@@ -1483,8 +1557,9 @@ export default function ChallengesPage() {
   const handleOpenClaimModal = () => {
     triggerHaptic();
     stopSweetBgMusic();
-    playCelebrationSound();
     setShowClaimModal(true);
+    setClaimBurstKey((prev) => prev + 1);
+    playCelebrationSound();
   };
 
   const handleConfirmClaimXP = async (challenge: LocalChallenge) => {
@@ -1656,25 +1731,44 @@ export default function ChallengesPage() {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col md:flex-row tracking-tight font-sans pb-24 md:pb-0 relative">
 
       {showClaimModal && (
-        <div className="fixed inset-0 z-[99999] bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-100 p-6 sm:p-8 max-w-sm w-full text-center space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200 relative">
+        <div
+          key={`claim-modal-${claimBurstKey}`}
+          className="fixed inset-0 z-[99999] bg-slate-900/65 backdrop-blur-md flex items-center justify-center p-4"
+        >
+          <div className="relative overflow-hidden bg-gradient-to-b from-[#FFFDF7] via-[#FFF9EC] to-white rounded-[2.2rem] border border-amber-100/90 p-6 sm:p-8 max-w-xs w-full text-center space-y-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 34%, rgba(254, 240, 138, 0.72) 0%, rgba(254, 249, 195, 0.35) 45%, rgba(255, 255, 255, 0) 72%)",
+              }}
+              className="pointer-events-none inset-0 absolute"
+            />
+
+            <CardEdgeConfetti burstKey={claimBurstKey} />
+
             <button
               onClick={() => setShowClaimModal(false)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              aria-label="Close XP card"
+              className="absolute right-4 top-4 z-30 text-slate-400 hover:text-slate-600 p-1 rounded-full transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="pt-1 flex flex-col items-center justify-center">
-              <div className="w-32 h-32 relative flex items-center justify-center mx-auto">
+            <div className="relative z-10 pt-1 flex flex-col items-center justify-center">
+              <div className="relative w-36 h-36 flex items-center justify-center mx-auto">
+                <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400 top-5 left-3 absolute" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 fill-amber-300 top-14 right-3 absolute" />
+                <Sparkles className="w-3 h-3 text-yellow-400 fill-yellow-400 bottom-6 left-5 absolute" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400 bottom-7 right-5 absolute" />
+
                 <img
                   src={claimMascotUrl}
                   alt="Otto Celebration Mascot"
-                  className="w-full h-full object-contain drop-shadow-md"
+                  className="w-32 h-32 object-contain drop-shadow-[0_10px_18px_rgba(245,158,11,0.22)]"
                 />
               </div>
 
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight mt-2">
+              <h2 className="text-3xl font-black text-[#0B152B] tracking-tight mt-1">
                 + {currentChallenge.xp} XP
               </h2>
             </div>
@@ -1682,13 +1776,13 @@ export default function ChallengesPage() {
             <button
               onClick={() => handleConfirmClaimXP(currentChallenge)}
               disabled={claimingId === currentChallenge.id}
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-black text-base rounded-full shadow-lg shadow-blue-500/30 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+              className="relative z-30 w-full py-3.5 px-6 bg-[#1D63ED] hover:bg-[#1754D1] active:scale-[0.98] text-white font-black text-base rounded-full shadow-[0_12px_24px_-4px_rgba(29,99,237,0.48)] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
             >
               {claimingId === currentChallenge.id ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <Star className="w-5 h-5 fill-white text-white" />
+                  <Star className="w-5 h-5 fill-white text-white shrink-0" />
                   <span>Claim XP</span>
                 </>
               )}
@@ -1923,7 +2017,6 @@ export default function ChallengesPage() {
                         className="pointer-events-none inset-y-0 left-0 w-24 sm:w-28 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-card-shine z-30 absolute"
                       />
 
-                      {/* Top half: clean white surface with soft blue corner accents */}
                       <div className="relative bg-white px-5 pt-5 pb-4 overflow-hidden">
                         <div className="pointer-events-none -top-10 -left-10 w-28 h-28 rounded-full bg-blue-100/75 absolute" />
                         <div className="pointer-events-none -bottom-6 -right-8 w-24 h-24 rounded-full bg-blue-100/65 absolute" />
@@ -1950,7 +2043,6 @@ export default function ChallengesPage() {
                         </div>
                       </div>
 
-                      {/* Bottom half: slightly deeper light-blue section */}
                       <div className="bg-[#DCEBFE] px-5 pt-4 pb-5 space-y-3.5 border-t border-blue-200/80 relative z-20">
                         <div>
                           <h2 className="font-black text-[#0F172A] text-base sm:text-lg leading-snug">
