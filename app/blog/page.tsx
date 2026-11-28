@@ -2,7 +2,22 @@ import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, User, Home, Camera, Sparkles, CheckCircle2, BookOpen, Layers } from 'lucide-react';
+import {
+  ArrowLeft,
+  User,
+  Home,
+  Camera,
+  Sparkles,
+  CheckCircle2,
+  BookOpen,
+  Layers,
+  Scan,
+  Flame,
+  Pencil,
+  Compass,
+  Grid,
+  ChevronRight,
+} from 'lucide-react';
 
 const SITE_URL = "https://www.otterleo.in";
 const LOGO_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/LOGO.png";
@@ -10,17 +25,65 @@ const MASCOT_GIF_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/obje
 const FOUNDER_IMAGE_URL = "https://otsiwrtnkzhrztlpcdjx.supabase.co/storage/v1/object/public/DRAW/harjas.jpg";
 const INSTAGRAM_URL = "https://www.instagram.com/harjas_gallery";
 
+const BLOG_POSTS = [
+  {
+    href: "/blog/1",
+    badge: "Guide 1",
+    title: "Instant Sketch Feedback: How to Spot What to Fix Next in Your Drawings",
+    summary:
+      "See how structured feedback on proportions, shading, and line confidence helps you improve faster with Otto on Otterleo.",
+    icon: Scan,
+  },
+  {
+    href: "/blog/2",
+    badge: "Guide 2",
+    title: "How to Build a Daily Sketching Habit That Sticks",
+    summary:
+      "Learn how short daily sessions, streaks, and challenges keep your drawing practice consistent on Otterleo.",
+    icon: Flame,
+  },
+  {
+    href: "/blog/3",
+    badge: "Guide 3",
+    title: "Sketching Ideas for Beginners & Drawing Techniques That Build Real Progress",
+    summary:
+      "Discover beginner sketching ideas, drawing techniques, and tools that help you track progress on Otterleo.",
+    icon: Pencil,
+  },
+  {
+    href: "/blog/4",
+    badge: "Guide 4",
+    title: "Step by Step Drawing for Beginners: Easy Sketches & Guided Practice",
+    summary:
+      "Follow a step-by-step order from rough shapes and proportions to clean lines and shading on Otterleo.",
+    icon: Compass,
+  },
+  {
+    href: "/blog/5",
+    badge: "Guide 5",
+    title: "Best Drawing Practice Tools: Grid Maker, Idea Generator & Canvas",
+    summary:
+      "See how a grid maker, idea generator, and daily practice tools help you draw with better accuracy on Otterleo.",
+    icon: Grid,
+  },
+];
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: 'How to Draw for Beginners: Best Drawing Learning Website & Sketching Guide (2026)',
-  description: 'Master how to draw step-by-step with easy sketches, pencil sketch tutorials, online grid maker tools, and interactive AI feedback on Otterleo.',
+  title: 'Otterleo Blog: Drawing Guides, Grid Tools & Instant Sketch Feedback (2026)',
+  description: 'Explore drawing guides for beginners, grid maker tutorials, and instant sketch feedback articles to improve your sketching skills on Otterleo.',
   keywords: [
     'how to draw',
     'sketching for beginners',
     'drawing learning website',
     'easy sketches to draw',
     'pencil sketch tutorial',
+    'drawing feedback',
     'drawing ideas',
+    'sketching ideas for beginners',
+    'drawing techniques',
+    'step by step drawing for beginners',
+    'drawing practice tools',
     'grid maker for drawing',
     'learn drawing online',
     'Harjass Digga',
@@ -33,8 +96,8 @@ export const metadata: Metadata = {
     canonical: `${SITE_URL}/blog`,
   },
   openGraph: {
-    title: 'How to Draw for Beginners: Ultimate Drawing Learning Website & Tutorials',
-    description: 'Learn sketching for beginners, easy sketches to draw, pencil sketch tutorials, and grid methods on Otterleo.',
+    title: 'Otterleo Blog: Drawing Guides & Sketch Feedback Tutorials',
+    description: 'Learn sketching for beginners, instant sketch feedback, and grid drawing methods on Otterleo.',
     url: `${SITE_URL}/blog`,
     siteName: 'Otterleo',
     locale: 'en_US',
@@ -44,14 +107,14 @@ export const metadata: Metadata = {
         url: FOUNDER_IMAGE_URL,
         width: 1200,
         height: 630,
-        alt: 'How to Draw - Best Drawing Learning Website',
+        alt: 'Otterleo Blog - Drawing Learning Website',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'How to Draw for Beginners | Best Drawing Learning Website',
-    description: 'Learn pencil sketch tutorials, grid drawing methods, and creative drawing ideas on Otterleo.',
+    title: 'Otterleo Blog | Drawing Guides & Tutorials',
+    description: 'Explore pencil sketch tutorials, instant feedback guides, and grid tools on Otterleo.',
     images: [FOUNDER_IMAGE_URL],
   },
   robots: {
@@ -95,7 +158,7 @@ export default function BlogPage() {
           }
         },
         "datePublished": "2026-09-10",
-        "dateModified": "2026-10-14",
+        "dateModified": "2026-11-28",
         "mainEntityOfPage": `${SITE_URL}/blog`
       },
       {
@@ -183,9 +246,56 @@ export default function BlogPage() {
           </Link>
         </div>
 
+        {/* All Blog Guides Directory */}
+        <section className="bg-white rounded-[2rem] p-5 md:p-7 border-2 border-slate-100 shadow-md space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-wider text-blue-600">
+                All Articles & Guides
+              </p>
+              <h2 className="text-xl md:text-2xl font-black text-[#0F172A]">
+                Explore Otterleo Blog Posts
+              </h2>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {BLOG_POSTS.map((post) => {
+              const Icon = post.icon;
+              return (
+                <Link
+                  key={post.href + post.title}
+                  href={post.href}
+                  className="group p-4 rounded-2xl bg-[#F8FAFC] hover:bg-[#EFF6FF] border border-slate-200 hover:border-blue-300 transition-all flex flex-col justify-between space-y-3"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200/70">
+                        <Icon className="w-3.5 h-3.5" />
+                        {post.badge}
+                      </span>
+                    </div>
+                    <h3 className="text-sm md:text-base font-black text-[#0F172A] group-hover:text-blue-700 leading-snug">
+                      {post.title}
+                    </h3>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                      {post.summary}
+                    </p>
+                  </div>
+
+                  <div className="inline-flex items-center gap-1 text-xs font-extrabold text-blue-600 pt-1">
+                    <span>Read Guide</span>
+                    <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Main Article Container */}
         <article className="bg-white rounded-[2.5rem] p-6 md:p-12 border-2 border-slate-100 shadow-xl relative overflow-hidden">
-          
+
           {/* Breadcrumb Navigation */}
           <nav aria-label="Breadcrumb" className="text-xs sm:text-sm text-[#64748B] mb-6 font-semibold">
             <Link href="/" className="hover:underline hover:text-[#2563EB]">Home</Link> &gt;{' '}
@@ -202,7 +312,7 @@ export default function BlogPage() {
           <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 pb-6 mb-8 text-xs sm:text-sm text-[#64748B] font-medium">
             <span>By <Link href="/about" className="font-extrabold text-[#0F172A] hover:text-[#2563EB] hover:underline">Harjass Digga (Founder, Otterleo)</Link></span>
             <span>•</span>
-            <span>Updated October 14, 2026</span>
+            <span>Updated November 28, 2026</span>
             <span>•</span>
             <span className="bg-[#EFF6FF] text-[#2563EB] px-3 py-1 rounded-full font-bold text-xs">
               Drawing Learning Website
@@ -222,7 +332,7 @@ export default function BlogPage() {
           {/* Main Article Body */}
           <div className="space-y-6 text-[#475569] leading-relaxed text-base md:text-lg">
             <p>
-              Learning <strong>how to draw</strong> doesn't have to feel overwhelming. Whether you are searching for <strong>sketching for beginners</strong> guides or practical <strong>pencil sketch tutorials</strong>, having a structured approach makes all the difference when you try to <strong>learn drawing online</strong>.
+              Learning <strong>how to draw</strong> doesn&apos;t have to feel overwhelming. Whether you are searching for <strong>sketching for beginners</strong> guides or practical <strong>pencil sketch tutorials</strong>, having a structured approach makes all the difference when you try to <strong>learn drawing online</strong>.
             </p>
 
             <p>
@@ -289,11 +399,11 @@ export default function BlogPage() {
             {/* Call to Action Box */}
             <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded-[2rem] p-6 md:p-8 my-10 text-center shadow-sm">
               <div className="flex justify-center mb-4">
-                <Image 
-                  src={MASCOT_GIF_URL} 
-                  alt="Otto Mascot GIF - Otterleo Coach" 
-                  width={100} 
-                  height={100} 
+                <Image
+                  src={MASCOT_GIF_URL}
+                  alt="Otto Mascot GIF - Otterleo Coach"
+                  width={100}
+                  height={100}
                   unoptimized={true}
                   className="w-24 h-auto object-contain"
                 />
@@ -312,10 +422,10 @@ export default function BlogPage() {
                   Explore Otterleo
                 </Link>
                 <Link
-                  href="/about"
+                  href="/blog/5"
                   className="inline-block bg-white hover:bg-slate-50 text-blue-600 font-extrabold text-base px-6 py-3.5 rounded-full border-2 border-blue-200 transition-all active:scale-95"
                 >
-                  About Us
+                  Read Guide 5
                 </Link>
               </div>
             </div>
@@ -355,14 +465,34 @@ export default function BlogPage() {
                   <Home className="w-4 h-4 text-blue-500" />
                   <span>Home Page</span>
                 </Link>
+                <Link href="/blog/1" className="flex items-center gap-2 text-slate-600 hover:text-[#2563EB] transition-colors">
+                  <Scan className="w-4 h-4 text-blue-500" />
+                  <span>Guide 1</span>
+                </Link>
+                <Link href="/blog/2" className="flex items-center gap-2 text-slate-600 hover:text-[#2563EB] transition-colors">
+                  <Flame className="w-4 h-4 text-blue-500" />
+                  <span>Guide 2</span>
+                </Link>
+                <Link href="/blog/3" className="flex items-center gap-2 text-slate-600 hover:text-[#2563EB] transition-colors">
+                  <Pencil className="w-4 h-4 text-blue-500" />
+                  <span>Guide 3</span>
+                </Link>
+                <Link href="/blog/4" className="flex items-center gap-2 text-slate-600 hover:text-[#2563EB] transition-colors">
+                  <Compass className="w-4 h-4 text-blue-500" />
+                  <span>Guide 4</span>
+                </Link>
+                <Link href="/blog/5" className="flex items-center gap-2 text-slate-600 hover:text-[#2563EB] transition-colors">
+                  <Grid className="w-4 h-4 text-blue-500" />
+                  <span>Guide 5</span>
+                </Link>
                 <Link href="/about" className="flex items-center gap-2 text-slate-600 hover:text-[#2563EB] transition-colors">
                   <User className="w-4 h-4 text-blue-500" />
                   <span>About Us</span>
                 </Link>
-                <a 
-                  href={INSTAGRAM_URL} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-2 text-slate-600 hover:text-[#E1306C] transition-colors"
                 >
                   <Camera className="w-4 h-4 text-pink-600" />
