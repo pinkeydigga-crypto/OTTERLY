@@ -6,7 +6,7 @@ import Image from "next/image";
 import {
   ArrowLeft, CheckCircle2, LayoutDashboard,
   Swords, Scan, Trophy, Compass, User, Settings, PanelLeft, X, ChevronRight,
-  Sparkles, Check, ShieldAlert, Palette, Grid, Zap, RefreshCw, Star, Volume2, VolumeX
+  Sparkles, Check, ShieldAlert, Palette, Grid, Zap, RefreshCw, Star, Volume2, VolumeX, Info, Ghost
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { updateActivityStreak } from "@/lib/streak";
@@ -1202,6 +1202,10 @@ export default function ChallengesPage() {
   const [activeChallengeId, setActiveChallengeId] = useState<string>("classic-flower-beginner");
   const [currentStep, setCurrentStep] = useState<number>(0);
 
+  // Per-challenge Ghost Mode map + info tooltip state (kept in same pill row so card height stays compact)
+  const [ghostModeByChallenge, setGhostModeByChallenge] = useState<Record<string, boolean>>({});
+  const [openGhostInfoId, setOpenGhostInfoId] = useState<string | null>(null);
+
   const [isMuted, setIsMuted] = useState<boolean>(false);
 
   const [showClaimModal, setShowClaimModal] = useState<boolean>(false);
@@ -1674,6 +1678,11 @@ export default function ChallengesPage() {
   const activeStepList = currentChallenge.steps;
   const isCurrentDone = completedChallenges.includes(currentChallenge.id);
   const isLastStep = currentStep === activeStepList.length - 1;
+  const isGhostEnabledForCurrent = Boolean(ghostModeByChallenge[currentChallenge.id]);
+  const isGhostStepActive =
+    isGhostEnabledForCurrent &&
+    activeStepList.length > 2 &&
+    currentStep >= activeStepList.length - 2;
 
   const desktopNavItems = [
     { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
@@ -2007,17 +2016,41 @@ export default function ChallengesPage() {
               ) : (
                 filteredChallenges.map((challenge) => {
                   const isDone = completedChallenges.includes(challenge.id);
+                  const isGhostOn = Boolean(ghostModeByChallenge[challenge.id]);
+                  const isInfoOpen = openGhostInfoId === challenge.id;
+
                   return (
                     <div
                       key={challenge.id}
-                      className="relative overflow-hidden rounded-[2rem] border border-blue-200/80 shadow-[0_8px_24px_rgba(37,99,235,0.08)] bg-white flex flex-col"
+                      className="relative rounded-[2rem] border border-blue-200/80 shadow-[0_8px_24px_rgba(37,99,235,0.08)] bg-white flex flex-col"
                     >
-                      <div
-                        style={{ animationDelay: "1s", animationDuration: "4s" }}
-                        className="pointer-events-none inset-y-0 left-0 w-24 sm:w-28 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-card-shine z-30 absolute"
-                      />
+                      {isInfoOpen && (
+                        <div className="absolute right-4 bottom-24 z-40 w-64 bg-slate-900 text-white rounded-2xl p-3 shadow-xl border border-slate-700/80 text-[11px] leading-snug space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-black text-blue-300 flex items-center gap-1">
+                              <Ghost className="w-3.5 h-3.5" /> Ghost Mode
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setOpenGhostInfoId(null)}
+                              className="text-slate-400 hover:text-white cursor-pointer"
+                              aria-label="Close Ghost Mode info"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <p className="font-medium text-slate-200">
+                            The initial steps will show the normal reference image, while the final steps will gradually fade the guide image to 20% opacity, allowing users to practise drawing on their own
+                          </p>
+                        </div>
+                      )}
 
-                      <div className="relative bg-white px-5 pt-5 pb-4 overflow-hidden">
+                      <div className="relative bg-white px-5 pt-5 pb-4 overflow-hidden rounded-t-[2rem]">
+                        <div
+                          style={{ animationDelay: "1s", animationDuration: "4s" }}
+                          className="pointer-events-none inset-y-0 left-0 w-24 sm:w-28 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-card-shine z-30 absolute"
+                        />
+
                         <div className="pointer-events-none -top-10 -left-10 w-28 h-28 rounded-full bg-blue-100/75 absolute" />
                         <div className="pointer-events-none -bottom-6 -right-8 w-24 h-24 rounded-full bg-blue-100/65 absolute" />
 
@@ -2043,7 +2076,7 @@ export default function ChallengesPage() {
                         </div>
                       </div>
 
-                      <div className="bg-[#DCEBFE] px-5 pt-4 pb-5 space-y-3.5 border-t border-blue-200/80 relative z-20">
+                      <div className="bg-[#DCEBFE] px-5 pt-4 pb-5 space-y-3.5 border-t border-blue-200/80 relative z-20 rounded-b-[2rem]">
                         <div>
                           <h2 className="font-black text-[#0F172A] text-base sm:text-lg leading-snug">
                             {challenge.title}
@@ -2062,12 +2095,51 @@ export default function ChallengesPage() {
                           <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wide border bg-white text-[#2563EB] border-blue-200/90">
                             {challenge.stepsCount} STEPS
                           </span>
+
+                          <div className="inline-flex items-center gap-1 bg-white border border-blue-200/90 rounded-full pl-2.5 pr-1.5 py-0.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                triggerHaptic();
+                                setGhostModeByChallenge((prev) => ({
+                                  ...prev,
+                                  [challenge.id]: !prev[challenge.id],
+                                }));
+                              }}
+                              className="inline-flex items-center gap-1.5 text-[11px] font-black text-slate-700 cursor-pointer"
+                              aria-pressed={isGhostOn}
+                            >
+                              <Ghost className={`w-3.5 h-3.5 ${isGhostOn ? "text-blue-600" : "text-slate-500"}`} />
+                              <span>Ghost</span>
+                              <span
+                                className={`w-7 h-4 rounded-full p-0.5 transition-colors flex items-center ${
+                                  isGhostOn ? "bg-[#2563EB] justify-end" : "bg-slate-300 justify-start"
+                                }`}
+                              >
+                                <span className="w-3 h-3 rounded-full bg-white shadow-2xs block" />
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                triggerHaptic();
+                                setOpenGhostInfoId((prev) => (prev === challenge.id ? null : challenge.id));
+                              }}
+                              aria-label="What is Ghost Mode?"
+                              className="w-4 h-4 rounded-full text-slate-500 hover:text-blue-600 flex items-center justify-center cursor-pointer shrink-0"
+                            >
+                              <Info className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
 
                         <button
                           onClick={() => {
                             triggerHaptic();
                             ensureAudioContext();
+                            setOpenGhostInfoId(null);
                             setActiveChallengeId(challenge.id);
                             setActiveView('challenge-flow');
                             setCurrentStep(0);
@@ -2091,9 +2163,16 @@ export default function ChallengesPage() {
         ) : (
           <div className="bg-white rounded-[2rem] p-4 sm:p-5 border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex justify-between items-center border-b border-slate-100 pb-2.5">
-              <span className="text-[11px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-xl">
-                Step {currentStep + 1} of {activeStepList.length}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-black bg-blue-50 text-blue-600 px-3 py-1 rounded-xl">
+                  Step {currentStep + 1} of {activeStepList.length}
+                </span>
+                {isGhostEnabledForCurrent && (
+                  <span className="text-[11px] font-black bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-xl inline-flex items-center gap-1">
+                    <Ghost className="w-3 h-3" /> Ghost {isGhostStepActive ? "20%" : "ON"}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => {
                   triggerHaptic();
@@ -2149,7 +2228,9 @@ export default function ChallengesPage() {
                   <img
                     src={activeStepList[currentStep].imageUrl!}
                     alt="Tutorial step reference"
-                    className="w-full h-full object-contain scale-100 transition-all duration-200"
+                    className={`w-full h-full object-contain scale-100 transition-all duration-200 ${
+                      isGhostStepActive ? "opacity-20" : "opacity-100"
+                    }`}
                   />
                 )}
               </div>

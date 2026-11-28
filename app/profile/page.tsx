@@ -116,6 +116,7 @@ function validateDisplayName(rawName: string): { valid: boolean; error?: string;
 function clearAppStorage() {
   if (typeof window === "undefined") return;
   localStorage.removeItem("user");
+  localStorage.removeItem("user_name_cache");
   sessionStorage.clear();
 }
 
@@ -265,22 +266,36 @@ export default function ProfilePage() {
           : null
       );
 
-      const localUserData = localStorage.getItem("user");
-      if (localUserData) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("user_name_cache", nameCheck.cleanName);
         try {
-          const parsed = JSON.parse(localUserData);
-          localStorage.setItem(
-            "user",
-            JSON.stringify({
-              ...parsed,
-              name: nameCheck.cleanName,
-              avatar: validAvatar,
-              skill_level: validSkill,
-            })
-          );
+          sessionStorage.removeItem("otterleo_dashboard_cache_v1");
         } catch {}
+
+        const localUserData = localStorage.getItem("user");
+        if (localUserData) {
+          try {
+            const parsed = JSON.parse(localUserData);
+            localStorage.setItem(
+              "user",
+              JSON.stringify({
+                ...parsed,
+                name: nameCheck.cleanName,
+                avatar: validAvatar,
+                skill_level: validSkill,
+              })
+            );
+          } catch {}
+        }
+
+        window.dispatchEvent(
+          new CustomEvent("profileUpdated", {
+            detail: { name: nameCheck.cleanName, avatar_url: validAvatar },
+          })
+        );
       }
 
+      router.refresh();
       setMessage({ type: "success", text: "Profile updated successfully!" });
       setCooldown(5);
     } catch (err: unknown) {

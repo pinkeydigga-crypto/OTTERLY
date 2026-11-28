@@ -85,6 +85,12 @@ export default function DashboardPage() {
   const touchEndX = useRef<number | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const isFetchingRef = useRef(false);
+  const queuedForceRefreshRef = useRef(false);
+  const profileRef = useRef<Profile | null>(null);
+
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   const triggerHaptic = () => {
     if (typeof window !== "undefined" && "vibrate" in navigator) {
@@ -166,6 +172,29 @@ export default function DashboardPage() {
     return typeof data === "number" ? data : null;
   }, []);
 
+  const refreshRankImmediately = useCallback(
+    async (baseProfile: Profile) => {
+      const exactRank = await computeExactRank(baseProfile);
+      const rankLabel = exactRank ? `#${exactRank}` : "-";
+      setUserRank(rankLabel);
+
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem(
+            DASHBOARD_CACHE_KEY,
+            JSON.stringify({
+              userId: baseProfile.id,
+              cachedAt: Date.now(),
+              profile: baseProfile,
+              rankLabel,
+            })
+          );
+        } catch {}
+      }
+    },
+    [computeExactRank]
+  );
+
   // Day 1: only tour (no Day 1 popup). Day 2+: popup once per day; no tour.
   const applyOnboardingOrStreakState = useCallback((activeProfile: Profile, todayStr: string) => {
     if (typeof window === "undefined") return;
@@ -190,7 +219,18 @@ export default function DashboardPage() {
 
   const fetchDashboardData = useCallback(
     async (forceRefresh = false) => {
-      if (isFetchingRef.current) return;
+      if (forceRefresh && typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
+        } catch {}
+      }
+
+      if (isFetchingRef.current) {
+        if (forceRefresh) {
+          queuedForceRefreshRef.current = true;
+        }
+        return;
+      }
       isFetchingRef.current = true;
 
       try {
@@ -211,8 +251,18 @@ export default function DashboardPage() {
 
         if (typeof window !== "undefined") {
           const cachedXp = localStorage.getItem("user_xp_cache");
-          if (cachedXp) {
-            setProfile((prev) => (prev ? { ...prev, xp: Number(cachedXp) } : prev));
+          const cachedName = localStorage.getItem("user_name_cache");
+
+          if (cachedXp || cachedName) {
+            setProfile((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    ...(cachedXp ? { xp: Number(cachedXp) } : {}),
+                    ...(cachedName ? { name: cachedName } : {}),
+                  }
+                : prev
+            );
           }
 
           if (!forceRefresh) {
@@ -258,6 +308,7 @@ export default function DashboardPage() {
             localStorage.removeItem("user");
             localStorage.removeItem("isLoggedIn");
             localStorage.removeItem("user_xp_cache");
+            localStorage.removeItem("user_name_cache");
             sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
             router.replace("/signup");
           }
@@ -315,6 +366,9 @@ export default function DashboardPage() {
 
         if (typeof window !== "undefined") {
           localStorage.setItem("user_xp_cache", (activeProfile.xp || 0).toString());
+          if (activeProfile.name) {
+            localStorage.setItem("user_name_cache", activeProfile.name);
+          }
         }
 
         const exactRank = await computeExactRank(activeProfile);
@@ -339,22 +393,87 @@ export default function DashboardPage() {
       } finally {
         setLoading(false);
         isFetchingRef.current = false;
+
+        if (queuedForceRefreshRef.current) {
+          queuedForceRefreshRef.current = false;
+          void fetchDashboardData(true);
+        }
       }
     },
     [router, isOffline, computeExactRank, applyOnboardingOrStreakState]
   );
 
+  // Always refresh fresh profile data when mounting or returning to Dashboard
   useEffect(() => {
-    fetchDashboardData(false);
-  }, [fetchDashboardData]);
+    try {
+      sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
+    } catch {}
+    router.refresh();
+    void fetchDashboardData(true);
+
+    const handlePageShow = () => {
+      try {
+        sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
+      } catch {}
+      router.refresh();
+      void fetchDashboardData(true);
+    };
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        try {
+          sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
+        } catch {}
+        void fetchDashboardData(true);
+      }
+    };
+
+    const handleProfileUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ name?: string; avatar_url?: string }>;
+      try {
+        sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
+      } catch {}
+
+      if (customEvent.detail?.name) {
+        localStorage.setItem("user_name_cache", customEvent.detail.name);
+        setProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                name: customEvent.detail.name!,
+                ...(customEvent.detail?.avatar_url
+                  ? { avatar_url: customEvent.detail.avatar_url }
+                  : {}),
+              }
+            : prev
+        );
+      }
+      void fetchDashboardData(true);
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+    window.addEventListener("profileUpdated", handleProfileUpdated);
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+      window.removeEventListener("profileUpdated", handleProfileUpdated);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+    };
+  }, [fetchDashboardData, router]);
 
   useEffect(() => {
     const handleXpUpdated = (e: Event) => {
       const customEvent = e as CustomEvent<number>;
       if (typeof customEvent.detail === "number") {
         const nextXp = Number(customEvent.detail);
+        let updatedProfileForRank: Profile | null = null;
+
         setProfile((prev) => {
           const updated = prev ? { ...prev, xp: nextXp } : prev;
+          updatedProfileForRank = updated || null;
           if (updated && typeof window !== "undefined") {
             try {
               sessionStorage.removeItem(DASHBOARD_CACHE_KEY);
@@ -362,8 +481,16 @@ export default function DashboardPage() {
           }
           return updated;
         });
+
         if (typeof window !== "undefined") {
           localStorage.setItem("user_xp_cache", nextXp.toString());
+        }
+
+        const targetProfile = updatedProfileForRank || profileRef.current;
+        if (targetProfile) {
+          void refreshRankImmediately({ ...targetProfile, xp: nextXp });
+        } else {
+          void fetchDashboardData(true);
         }
       }
     };
@@ -375,7 +502,7 @@ export default function DashboardPage() {
         audioCtxRef.current.close().catch(() => {});
       }
     };
-  }, []);
+  }, [refreshRankImmediately, fetchDashboardData]);
 
   if (loading) {
     return <LoadingScreen />;
